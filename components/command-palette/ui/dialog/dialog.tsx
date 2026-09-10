@@ -69,13 +69,18 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  * closed for `idleResetMs`, at which point the stack goes back to a freshly
  * mounted root. See `useIdleReset`.
  *
- * Three consequences of that:
+ * Four consequences of that:
  *  - the dialog is non-modal and force-mounted, because modal content aria-hides
  *    the rest of the app from a mount-only effect — see `useModalShell`, which
  *    puts modal behavior back for as long as the palette is open;
  *  - `Dialog.Overlay` renders nothing when non-modal, so the overlay below is a
  *    plain div. Clicking it still counts as outside the content, so Radix
  *    dismisses as before;
+ *  - `onFocusOutside` is prevented, because a dismissable layer closes as soon
+ *    as anything outside it takes focus, and the palette is the only thing
+ *    focusable while it is open — so focus landing anywhere else means
+ *    something slipped past, not that the user left. Clicking outside still
+ *    dismisses. The frame keeps tab from getting out in the first place;
  *  - `onEscapeKeyDown` is prevented, because Radix listens for esc in the
  *    capture phase and would close on the first press. Esc has to clear the
  *    input and unwind the stack first, so the palette decides instead and the
@@ -126,6 +131,7 @@ export function CommandPaletteDialog({
             forceMount
             inert={!open}
             onEscapeKeyDown={(event) => event.preventDefault()}
+            onFocusOutside={(event) => event.preventDefault()}
             aria-describedby={undefined}
             className="fixed top-[20vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 data-[state=closed]:pointer-events-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           >

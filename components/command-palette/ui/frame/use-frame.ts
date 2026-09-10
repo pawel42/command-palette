@@ -32,6 +32,59 @@ function isInside(
   )
 }
 
+/** What the browser would tab through, in document order. */
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",")
+
+/**
+ * Keeps tab inside the palette, wrapping at both ends.
+ *
+ * The dialog is non-modal, so nothing stops focus walking out the back of it
+ * — and the first thing outside that takes focus dismisses the layer, which
+ * closes the palette. Covering the app with `inert` hides the host's own
+ * controls, but not a dev-tools overlay or anything else portalled beside it.
+ *
+ * Hidden pages are skipped: `Activity` hides with `display: none`, and an
+ * element with no box has no client rects.
+ */
+function wrapTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
+  if (!root) return
+
+  const focusable = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (element) => element.getClientRects().length > 0
+  )
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement
+
+  // Nowhere to go: hold on to the press rather than hand focus to the page.
+  if (!first) {
+    event.preventDefault()
+    return
+  }
+
+  // The frame itself counts as the start — it sits before its own children.
+  const target = event.shiftKey
+    ? active === first || active === root
+      ? last
+      : null
+    : active === last
+      ? first
+      : null
+
+  if (!target) return
+
+  event.preventDefault()
+  target.focus()
+}
+
 export type FrameHint = { keys: string[]; label: string }
 
 /**
@@ -153,6 +206,11 @@ export function usePaletteFrame() {
 
       // The page had first refusal on everything else.
       if (event.defaultPrevented) return
+
+      if (event.key === "Tab") {
+        wrapTabFocus(event, rootRef.current)
+        return
+      }
 
       // Reached from pages whose input is disabled or hidden.
       handleBackspace(event, isTypingTarget(event.target))
