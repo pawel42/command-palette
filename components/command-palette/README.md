@@ -17,7 +17,7 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 
 1. **Tailwind v4 and the shadcn color tokens.** The markup uses
    `--popover`, `--popover-foreground`, `--accent`, `--accent-foreground`,
-   `--border`, `--foreground`, `--muted-foreground`, and `tw-animate-css`'s
+   `--border`, `--ring`, `--foreground`, `--muted-foreground`, and `tw-animate-css`'s
    `animate-in` / `animate-out` utilities for the dialog. A shadcn project
    already has all of them.
 2. **`data-app-shell` on whatever the palette should cover** — the dialog puts

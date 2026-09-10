@@ -155,6 +155,27 @@ export function usePaletteFrame() {
     consumedByDelete.current = false
   }, [view.instance.instanceId, view.depth, editable])
 
+  // Esc has to work even when focus is not in the palette. Keys reach the
+  // frame as React events, so anything that steals focus — an overlay the host
+  // portals beside us, a browser widget — leaves the frame deaf, and the
+  // palette looks stuck. The window always hears the press; `claimEscape`
+  // keeps this from acting a second time on a press the frame already took,
+  // and the listener only exists while the surface is visible, because
+  // `Activity` tears this effect down when it hides.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      if (isInside(rootRef.current, document.activeElement)) return
+      if (!claimEscape({ nativeEvent: event })) return
+
+      event.preventDefault()
+      store.escape()
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [store])
+
   /** Returns true when the press was handled and should go no further. */
   const handleBackspace = (
     event: React.KeyboardEvent,

@@ -28,7 +28,7 @@ export function PaletteFrame({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={goBack}
               aria-label="Go back"
-              className="-ml-1 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="-ml-1 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Icon path={ICONS.chevronLeft} className="size-4" />
             </button>
