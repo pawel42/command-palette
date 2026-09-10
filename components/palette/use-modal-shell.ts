@@ -31,7 +31,10 @@ export function useModalShell(open: boolean) {
       shell?.toggleAttribute("inert", false)
       document.body.style.overflow = overflow
 
-      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+      if (
+        previouslyFocused instanceof HTMLElement &&
+        previouslyFocused.isConnected
+      ) {
         previouslyFocused.focus()
       }
     }
