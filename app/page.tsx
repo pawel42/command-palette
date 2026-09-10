@@ -1,19 +1,31 @@
-import { Button } from "@/components/ui/button"
+"use client"
+
+import { useActivity } from "@/components/palette/activity"
+import { CommandPalette } from "@/components/palette/command-palette"
 
 export default function Page() {
+  const activity = useActivity()
+
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+    <main className="flex min-h-svh items-start justify-center px-4 pt-24">
+      <div className="w-full max-w-xl">
+        <CommandPalette />
+
+        <ul
+          aria-live="polite"
+          aria-label="Recent palette activity"
+          className="mt-3 space-y-1 text-center text-xs text-muted-foreground"
+        >
+          {activity.map((entry, index) => (
+            <li
+              key={`${entry}-${index}`}
+              className={index > 0 ? "opacity-50" : undefined}
+            >
+              {entry}
+            </li>
+          ))}
+        </ul>
       </div>
-    </div>
+    </main>
   )
 }
