@@ -5,6 +5,7 @@ import { Dialog, VisuallyHidden } from "radix-ui"
 
 import type { PageTarget } from "../../core"
 import { PaletteRoot, PaletteSurface } from "../palette"
+import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
 import { useToggleHotkey } from "./use-toggle-hotkey"
 
@@ -50,11 +51,23 @@ function usePaletteOpenState() {
 }
 
 /**
+ * Runs the idle timer, which needs the store and so has to sit inside the
+ * provider — the dialog itself renders the provider and is therefore outside
+ * it. Renders nothing.
+ */
+function IdleReset({ open, after }: { open: boolean; after: number }) {
+  useIdleReset(open, after)
+  return null
+}
+
+/**
  * The palette in a Radix dialog, toggled globally with ⌘K.
  *
  * Nothing here ever unmounts the palette, which is the whole point: `Activity`
  * hides it instead, so every page keeps its state, its scroll and its caret,
- * and reopening lands exactly where the user left off.
+ * and reopening lands exactly where the user left off — until it has been
+ * closed for `idleResetMs`, at which point the stack goes back to a freshly
+ * mounted root. See `useIdleReset`.
  *
  * Three consequences of that:
  *  - the dialog is non-modal and force-mounted, because modal content aria-hides
@@ -71,12 +84,18 @@ function usePaletteOpenState() {
 export function CommandPaletteDialog({
   rootPage,
   shellSelector,
+  idleResetMs = IDLE_RESET_MS,
   children,
 }: {
   /** The page the stack starts on. */
   rootPage: PageTarget
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
   shellSelector?: string
+  /**
+   * How long a closed palette holds its place before starting over at the
+   * root. Defaults to 30s; `0` keeps the stack forever.
+   */
+  idleResetMs?: number
   /** Bridges mounted for as long as the palette lives — see `PaletteRoot`. */
   children?: React.ReactNode
 }) {
@@ -88,6 +107,7 @@ export function CommandPaletteDialog({
   return (
     <PaletteRoot rootPage={rootPage} onDismiss={() => setOpen(false)}>
       {children}
+      <IdleReset open={open} after={idleResetMs} />
 
       <Dialog.Root open={open} onOpenChange={setOpen} modal={false}>
         <Dialog.Portal forceMount>

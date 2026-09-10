@@ -38,25 +38,39 @@ export function usePaletteFrame() {
   const consumedByDelete = useRef(false)
   /** Where the last render left the stack, so the next one can tell push from pop. */
   const previousDepth = useRef<number | null>(null)
+  /** Which instance the effect below last ran for — see `reopened`. */
+  const previousInstanceId = useRef<string | null>(null)
 
   const editable = isEditable(view.search)
   const hasList = view.instance.page.list === true
 
   useEffect(() => {
+    const instanceId = view.instance.instanceId
+
     // A shallower stack than last time means we came back to a page that
-    // already holds a query. That restored text is the thing the user is most
-    // likely to replace, so it arrives selected: typing overwrites it, and the
-    // arrow keys still put the caret back without losing it.
+    // already holds a query.
     const cameBack =
       previousDepth.current !== null && view.depth < previousDepth.current
+
+    // Same instance as last time, yet the effect is running again: nothing
+    // navigated, the surface was hidden and shown. That is a close and
+    // reopen — `Activity` tears effects down on the way out, which is the
+    // only reason the frame can tell.
+    const reopened = previousInstanceId.current === instanceId
+
     previousDepth.current = view.depth
+    previousInstanceId.current = instanceId
 
     // Focus follows the page: the input when it can be typed into, otherwise
     // the frame itself — key handling is React events, so without focus inside
     // the frame esc would never reach it.
     if (editable) {
       inputRef.current?.focus()
-      if (cameBack) inputRef.current?.select()
+      // Text that was already in the input — restored by a pop, or left there
+      // when the palette was closed — is the thing the user is most likely to
+      // replace, so it arrives selected: typing overwrites it, and the arrow
+      // keys still put the caret back without losing it.
+      if (cameBack || reopened) inputRef.current?.select()
     } else rootRef.current?.focus()
 
     consumedByDelete.current = false

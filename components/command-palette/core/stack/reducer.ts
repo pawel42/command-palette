@@ -73,6 +73,34 @@ export function paletteReducer(
       return { ...state, stack: state.stack.slice(0, 1) }
     }
 
+    case "reset": {
+      const [root] = state.stack
+
+      // Nothing was ever done to this palette: it sits on the root it started
+      // on, with an empty input and no row picked. Remounting is the costly
+      // half of a reset — the root page is built again — so an untouched root
+      // keeps the instance it has, and the store reports no change at all.
+      if (
+        state.stack.length === 1 &&
+        root.query === "" &&
+        root.activeItemId === null
+      ) {
+        return state
+      }
+
+      // Otherwise a brand new instance rather than a cleared one: the id is
+      // what the host keys the page on, so a new id remounts the root — the
+      // only thing that also drops what the engine does not hold, the page's
+      // own React state and the scroll offset of its list.
+      const fresh = createInstance(
+        root.page,
+        root.props,
+        state.sequence,
+        root.escape
+      )
+      return { stack: [fresh], sequence: state.sequence + 1 }
+    }
+
     case "unwindTo": {
       const index = state.stack.findIndex(
         (instance) => instance.instanceId === action.instanceId

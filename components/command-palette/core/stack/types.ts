@@ -21,6 +21,8 @@ export type PaletteAction =
   | { type: "push"; page: AnyPage; props: unknown; escape?: EscapeRoute }
   | { type: "pop" }
   | { type: "popToRoot" }
+  /** Back to a freshly mounted root — the state the palette started in. */
+  | { type: "reset" }
   /** Drop everything above this instance, keeping it. */
   | { type: "unwindTo"; instanceId: string }
   /** Drop this instance and everything above it. */

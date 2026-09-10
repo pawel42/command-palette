@@ -61,6 +61,8 @@ export function createNavigation(deps: NavigationDeps): Navigation {
 
     popToRoot: () => deps.dispatch({ type: "popToRoot" }),
 
+    reset: () => deps.dispatch({ type: "reset" }),
+
     escape: () => {
       const outcome = resolveEscape(deps.getState())
 

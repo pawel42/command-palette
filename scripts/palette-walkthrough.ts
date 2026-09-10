@@ -59,4 +59,10 @@ show(store, 'esc with route "root"')
 store.escape()
 show(store, "esc at the root dismisses")
 
+void store.navigation.push(page2)
+store.navigation.setQuery("left mid-flow")
+show(store, "closed here, one page deep")
+store.navigation.reset()
+show(store, "idle reset while closed")
+
 console.log("\nside effects:", log)

@@ -58,6 +58,16 @@ export function App() {
 }
 ```
 
+A closed palette keeps the user's place — the same stack, page state, text and
+scroll are there on the next ⌘K — but only for a while: after 30 seconds
+closed, `nav.reset()` starts it over, so reopening much later lands on a clean
+root rather than on some half-finished page. Reset drops every page above the
+root and remounts the root itself, which is what also clears page state and
+the list's scroll offset; an ordinary close still restores all of it. A
+palette closed on an untouched root is left alone — no remount, no state
+change — so the timer is free in the case it fires in most often. Pass
+`idleResetMs` to change the delay, or `0` to keep the stack forever.
+
 A command either opens a page or runs an action, never both. Pages that need
 props bind them at the call site with `page.with({ … })`, and `nav.push`
 returns a promise that settles with whatever the page resolves — or `undefined`
@@ -79,4 +89,6 @@ delete `ui/dialog/` and compose the two halves directly:
 ```
 
 `PaletteRoot` holds all the state and renders nothing, so keeping it mounted
-while the surface comes and goes is what makes the stack outlive a close.
+while the surface comes and goes is what makes the stack outlive a close. Drop
+`useIdleReset(open)` into a component inside it to keep the timed reset, or
+call `nav.reset()` on whatever schedule suits the host.

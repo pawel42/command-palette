@@ -100,6 +100,12 @@ export type Navigation = {
   /** Unwind to the topmost instance of a page already on the stack. */
   popTo(page: AnyPage): void
   popToRoot(): void
+  /**
+   * Back to a freshly mounted root: every page above it is dropped and the
+   * root itself is remounted, so page state and list scroll start over too.
+   * A root that was never touched is left exactly as it is.
+   */
+  reset(): void
   /** Apply the esc rule: clear the input, or unwind along the page's route. */
   escape(): void
   setQuery(query: string): void
