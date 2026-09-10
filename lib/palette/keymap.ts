@@ -34,6 +34,27 @@ export function resolveKey(event: KeyEvent): ListIntent | null {
   }
 }
 
+/** Presses already spent on an unwind. Keyed by the native event, which is the
+ *  one object every handler along the bubble path shares. */
+const claimedEscapes = new WeakSet<object>()
+
+/**
+ * One press, one unwind.
+ *
+ * A page's key handler runs on the frame's input and the frame's own esc rule
+ * runs on the box around it, so a single press reaches both — and the frame
+ * can't skip an already-prevented event, because the surrounding dialog
+ * prevents esc in the capture phase before either has seen it. So the press
+ * itself is claimed: the first handler to take it unwinds, and the next one
+ * finds it spent and leaves it alone.
+ */
+export function claimEscape(event: { nativeEvent: object }): boolean {
+  if (claimedEscapes.has(event.nativeEvent)) return false
+
+  claimedEscapes.add(event.nativeEvent)
+  return true
+}
+
 const MODIFIERS: Record<string, keyof KeyEvent> = {
   "⌘": "metaKey",
   "⌃": "ctrlKey",

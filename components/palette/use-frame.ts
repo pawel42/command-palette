@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 
-import { isEditable, resolveBackspace } from "@/lib/palette"
+import { claimEscape, isEditable, resolveBackspace } from "@/lib/palette"
 import { usePaletteStore, usePaletteView, useSearch } from "@/lib/palette/react"
 
 import { useFrameBridge } from "./bridge"
@@ -100,7 +100,9 @@ export function usePaletteFrame() {
       // phase, and the palette's own rule still has to run.
       if (event.key === "Escape") {
         event.preventDefault()
-        store.escape()
+        // Claimed, not skipped: the page's handler may already have spent this
+        // press on the way up from the input.
+        if (claimEscape(event)) store.escape()
         return
       }
 

@@ -5,7 +5,12 @@ export { escapeRouteOf, isEditable, resolveEscape } from "./escape"
 export type { EscapeOutcome } from "./escape"
 export { filterItems } from "./filter"
 export { fuzzyMatch, normalizeQuery, scoreItem } from "./fuzzy"
-export { matchesShortcut, resolveBackspace, resolveKey } from "./keymap"
+export {
+  claimEscape,
+  matchesShortcut,
+  resolveBackspace,
+  resolveKey,
+} from "./keymap"
 export type {
   BackspaceContext,
   BackspaceOutcome,

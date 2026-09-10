@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef } from "react"
 import type { RefObject } from "react"
 
 import { filterItems } from "../filter"
-import { matchesShortcut, resolveKey } from "../keymap"
+import { claimEscape, matchesShortcut, resolveKey } from "../keymap"
 import { edge, flatten, resolveActiveIndex, step } from "../list"
 import type {
   FilteredGroup,
@@ -222,9 +222,10 @@ export function useCommandList<T extends ItemMeta>(
         select(activeIndex)
         break
       case "escape":
-        // Clears the input, or unwinds along this page's route.
+        // Clears the input, or unwinds along this page's route — once. The
+        // frame sees this same press on the way up and must not unwind again.
         event.preventDefault()
-        store.escape()
+        if (claimEscape(event)) store.escape()
         break
     }
   }
