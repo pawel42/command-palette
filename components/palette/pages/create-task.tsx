@@ -3,23 +3,15 @@
 import type { ComponentType } from "react"
 
 import { definePage } from "@/lib/palette"
-import { useNavigation, usePageState } from "@/lib/palette/react"
 
-import { logActivity } from "../activity"
 import { ICONS, Icon, Kbd } from "../primitives"
-import { projectsPage, type Project } from "./projects"
-
-type TaskDraft = {
-  title: string
-  notes: string
-  project: Project | null
-}
+import { useTaskDraft, type TaskDraft } from "./use-task-draft"
 
 /**
- * A form page: `search: "disabled"` keeps the frame's input in place but inert,
- * page state holds the draft, and picking a project is an awaited push to
- * another page. Leaving and coming back keeps the draft, because the state
- * lives in the store, not in this component.
+ * A form page: `search: "disabled"` keeps the frame's input in place but
+ * inert, and the draft lives in page state — leaving for the project picker
+ * and coming back keeps what was typed, because that state is in the store,
+ * not in this component. Behavior is in `useTaskDraft`.
  */
 export const createTaskPage = definePage<void, TaskDraft, void, ComponentType>({
   id: "create-task",
@@ -31,23 +23,8 @@ export const createTaskPage = definePage<void, TaskDraft, void, ComponentType>({
 })
 
 function CreateTaskForm() {
-  const [draft, setDraft] = usePageState(createTaskPage)
-  const nav = useNavigation()
-
-  const pickProject = async () => {
-    const project = await nav.push(projectsPage, { archived: false })
-    // undefined when the picker was dismissed with esc.
-    if (project) setDraft({ project })
-  }
-
-  const save = () => {
-    logActivity(
-      `created “${draft.title || "untitled"}”${
-        draft.project ? ` in ${draft.project.name}` : ""
-      }`
-    )
-    nav.popToRoot()
-  }
+  const { draft, setTitle, setNotes, pickProject, save } =
+    useTaskDraft(createTaskPage)
 
   return (
     <div className="space-y-4 p-4">
@@ -55,7 +32,7 @@ function CreateTaskForm() {
         <span className="text-xs font-medium text-muted-foreground">Title</span>
         <input
           value={draft.title}
-          onChange={(event) => setDraft({ title: event.target.value })}
+          onChange={(event) => setTitle(event.target.value)}
           placeholder="Ship the palette"
           autoFocus
           className="w-full rounded-md border border-border bg-transparent px-2.5 py-2 text-sm outline-none focus-visible:border-ring"
@@ -86,7 +63,7 @@ function CreateTaskForm() {
         <span className="text-xs font-medium text-muted-foreground">Notes</span>
         <textarea
           value={draft.notes}
-          onChange={(event) => setDraft({ notes: event.target.value })}
+          onChange={(event) => setNotes(event.target.value)}
           rows={2}
           placeholder="Anything worth remembering"
           className="w-full resize-none rounded-md border border-border bg-transparent px-2.5 py-2 text-sm outline-none focus-visible:border-ring"

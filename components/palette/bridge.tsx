@@ -118,5 +118,6 @@ export function usePublishBridge({
 
   useEffect(() => {
     bridge.setAria({ activeOptionId, listId })
+    return () => bridge.setAria({})
   }, [bridge, activeOptionId, listId])
 }

@@ -5,8 +5,13 @@ export { escapeRouteOf, isEditable, resolveEscape } from "./escape"
 export type { EscapeOutcome } from "./escape"
 export { filterItems } from "./filter"
 export { fuzzyMatch, normalizeQuery, scoreItem } from "./fuzzy"
-export { matchesShortcut, resolveKey } from "./keymap"
-export type { KeyEvent, ListIntent } from "./keymap"
+export { matchesShortcut, resolveBackspace, resolveKey } from "./keymap"
+export type {
+  BackspaceContext,
+  BackspaceOutcome,
+  KeyEvent,
+  ListIntent,
+} from "./keymap"
 export {
   edge,
   firstSelectable,
