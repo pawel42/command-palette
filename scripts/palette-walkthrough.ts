@@ -8,8 +8,8 @@ import {
   page2,
   page3,
   page4,
-} from "../lib/palette/fixtures"
-import type { PaletteStore } from "../lib/palette/store"
+} from "./palette-fixtures"
+import type { PaletteStore } from "../components/command-palette/core/store"
 
 const { store, commands, log } = createTestStore(() => log.push("dismissed"))
 
