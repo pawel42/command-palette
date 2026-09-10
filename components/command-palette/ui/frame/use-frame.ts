@@ -19,6 +19,19 @@ function isTypingTarget(target: EventTarget | null): boolean {
   )
 }
 
+/** Focus the frame may act on: still in the document, and inside the frame. */
+function isInside(
+  root: HTMLElement | null,
+  node: Element | null
+): node is HTMLElement {
+  return (
+    root !== null &&
+    node instanceof HTMLElement &&
+    node.isConnected &&
+    root.contains(node)
+  )
+}
+
 export type FrameHint = { keys: string[]; label: string }
 
 /**
@@ -40,6 +53,8 @@ export function usePaletteFrame() {
   const previousDepth = useRef<number | null>(null)
   /** Which instance the effect below last ran for — see `reopened`. */
   const previousInstanceId = useRef<string | null>(null)
+  /** The last thing focused inside the frame, so a reveal can put it back. */
+  const lastFocused = useRef<HTMLElement | null>(null)
 
   const editable = isEditable(view.search)
   const hasList = view.instance.page.list === true
@@ -61,9 +76,11 @@ export function usePaletteFrame() {
     previousDepth.current = view.depth
     previousInstanceId.current = instanceId
 
-    // Focus follows the page: the input when it can be typed into, otherwise
-    // the frame itself — key handling is React events, so without focus inside
-    // the frame esc would never reach it.
+    // Focus follows the page: the input when it can be typed into, and
+    // otherwise the frame itself — key handling is React events, so without
+    // focus inside the frame esc would never reach it.
+    const root = rootRef.current
+
     if (editable) {
       inputRef.current?.focus()
       // Text that was already in the input — restored by a pop, or left there
@@ -71,7 +88,16 @@ export function usePaletteFrame() {
       // replace, so it arrives selected: typing overwrites it, and the arrow
       // keys still put the caret back without losing it.
       if (cameBack || reopened) inputRef.current?.select()
-    } else rootRef.current?.focus()
+    } else if (reopened && isInside(root, lastFocused.current)) {
+      // Reopened on a page that owns its focus: back to the field the user
+      // was in, the way the input above gets its text back.
+      lastFocused.current.focus()
+    } else if (!isInside(root, document.activeElement)) {
+      // Only what nobody else claimed. A page that focuses a field of its own
+      // — a form with `autoFocus`, say — keeps it: taking that away would
+      // leave the user typing into nothing.
+      root?.focus()
+    }
 
     consumedByDelete.current = false
   }, [view.instance.instanceId, view.depth, editable])
@@ -107,6 +133,12 @@ export function usePaletteFrame() {
   const rootProps = {
     ref: rootRef,
     tabIndex: -1,
+    onFocusCapture: (event: React.FocusEvent) => {
+      // Recorded as it happens, not read back on the way out: by the time the
+      // surface hides, the host has already moved focus out of the palette.
+      if (event.target instanceof HTMLElement)
+        lastFocused.current = event.target
+    },
     onKeyDown: (event: React.KeyboardEvent) => {
       // Esc is checked before the defaultPrevented guard on purpose. A
       // surrounding dialog may already have marked the event in the capture
