@@ -1,6 +1,7 @@
 "use client"
 
-import { useId } from "react"
+import { useEffect, useId, useLayoutEffect, useRef } from "react"
+import type { RefObject } from "react"
 
 import { filterItems } from "../filter"
 import { matchesShortcut, resolveKey } from "../keymap"
@@ -66,6 +67,59 @@ export function useSearch(): [string, (query: string) => void] {
     store.dispatch({ type: "setQuery", instanceId, query })
 
   return [instance?.query ?? "", setQuery]
+}
+
+/**
+ * `useLayoutEffect` on the client, `useEffect` on the server. The palette is
+ * mounted from first paint now, so a bare layout effect would warn in SSR.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect
+
+/**
+ * Ref for a page's scroll container, so its offset outlives being hidden.
+ * A page keeps its React state while it is off screen, but the browser drops
+ * the scroll position of a box it stopped laying out — this puts it back
+ * before the next paint, so returning to a page looks like it never left.
+ *
+ * Effects, not the ref itself: hiding a page tears down its effects and
+ * leaves the DOM node alone, so cleanup is the moment to record the offset
+ * and the next run is the moment to restore it. The offset is written on the
+ * way out rather than on every scroll event — a dispatch per frame would
+ * re-render the page for a value nothing renders.
+ */
+export function useScrollRestore<
+  T extends HTMLElement = HTMLDivElement,
+>(): RefObject<T | null> {
+  const store = usePaletteStore()
+  const instanceId = useInstanceId()
+  const ref = useRef<T | null>(null)
+
+  useIsomorphicLayoutEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const instance = store
+      .getState()
+      .stack.find((entry) => entry.instanceId === instanceId)
+
+    node.scrollTop = instance?.scrollTop ?? 0
+
+    // Tracked in a closure, not in state: only the last value is ever read.
+    let scrollTop = node.scrollTop
+    const onScroll = () => {
+      scrollTop = node.scrollTop
+    }
+    node.addEventListener("scroll", onScroll, { passive: true })
+
+    return () => {
+      node.removeEventListener("scroll", onScroll)
+      // A no-op once the instance is gone — see `mapInstance`.
+      store.dispatch({ type: "setScrollTop", instanceId, scrollTop })
+    }
+  }, [store, instanceId])
+
+  return ref
 }
 
 export type ItemProps = {

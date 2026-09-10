@@ -11,6 +11,7 @@ export {
   useNavigation,
   usePage,
   usePageState,
+  useScrollRestore,
   useSearch,
 } from "./hooks"
 export type { CommandList, ItemProps } from "./hooks"

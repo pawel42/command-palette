@@ -9,9 +9,10 @@ import { useTaskDraft, type TaskDraft } from "./use-task-draft"
 
 /**
  * A form page: `search: "disabled"` keeps the frame's input in place but
- * inert, and the draft lives in page state — leaving for the project picker
- * and coming back keeps what was typed, because that state is in the store,
- * not in this component. Behavior is in `useTaskDraft`.
+ * inert, and the draft lives in page state. Not because a component couldn't
+ * hold it — pages are hidden rather than unmounted, so plain `useState` would
+ * survive the picker and the close too — but because `save` is a command, and
+ * a command reaches state through `ctx`. Behavior is in `useTaskDraft`.
  */
 export const createTaskPage = definePage<void, TaskDraft, void, ComponentType>({
   id: "create-task",

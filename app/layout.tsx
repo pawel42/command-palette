@@ -23,7 +23,10 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {/* Marked inert while the palette is open — see `useModalShell`. */}
+          <div data-app-shell>{children}</div>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -177,6 +177,12 @@ export type PageInstance = {
   /** Per-page local state; dies with the instance. */
   readonly state: unknown
   readonly activeItemId: string | null
+  /**
+   * Scroll offset of the page's scroll container, restored when the page
+   * mounts again — after a child was pushed over it, or after the whole
+   * palette was closed and reopened.
+   */
+  readonly scrollTop: number
   /** Push-site escape override. */
   readonly escape?: EscapeRoute
 }
@@ -197,4 +203,5 @@ export type PaletteAction =
   | { type: "dropFrom"; instanceId: string }
   | { type: "setQuery"; instanceId: string; query: string }
   | { type: "setActiveItem"; instanceId: string; itemId: string | null }
+  | { type: "setScrollTop"; instanceId: string; scrollTop: number }
   | { type: "setState"; instanceId: string; patch: unknown }

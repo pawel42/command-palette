@@ -21,6 +21,7 @@ export function createInstance(
     query: "",
     state: page.initialState ? page.initialState(props) : undefined,
     activeItemId: null,
+    scrollTop: 0,
     escape,
   }
 }
@@ -125,6 +126,14 @@ export function paletteReducer(
         instance.activeItemId === action.itemId
           ? instance
           : { ...instance, activeItemId: action.itemId }
+      )
+    }
+
+    case "setScrollTop": {
+      return mapInstance(state, action.instanceId, (instance) =>
+        instance.scrollTop === action.scrollTop
+          ? instance
+          : { ...instance, scrollTop: action.scrollTop }
       )
     }
 

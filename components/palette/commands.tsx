@@ -10,6 +10,7 @@ import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
 import { detailsPage } from "./pages/details"
 import { projectsPage } from "./pages/projects"
+import { releaseNotesPage } from "./pages/release-notes"
 import { toggleTheme } from "./theme-bridge"
 
 /**
@@ -53,6 +54,15 @@ export const commands: Command[] = [
     keywords: ["stack", "escape"],
     icon: <Icon path={ICONS.layers} />,
     page: level1Page,
+  },
+  {
+    id: "release-notes",
+    title: "Release Notes",
+    subtitle: "long, scrollable, keeps its place",
+    section: "Pages",
+    keywords: ["changelog", "history", "scroll"],
+    icon: <Icon path={ICONS.clock} />,
+    page: releaseNotesPage,
   },
   {
     id: "details",

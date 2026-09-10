@@ -4,6 +4,7 @@ import type { ComponentType } from "react"
 
 import { definePage } from "@/lib/palette"
 import type { PageDefinition } from "@/lib/palette"
+import { useScrollRestore } from "@/lib/palette/react"
 
 import { markListPage } from "./page-kinds"
 import { Highlight, ICONS, Icon, Kbd } from "./primitives"
@@ -42,9 +43,14 @@ export function listPage<Props = void, State = void, Result = void>(
 function ListPageView({ config }: { config: AnyListConfig }) {
   const { sections, isEmpty, emptyMessage, header, listProps } =
     useListPage(config)
+  // Every list page keeps its scroll offset, with nothing to wire up.
+  const scrollRef = useScrollRestore()
 
   return (
-    <div className="max-h-80 overflow-y-auto overscroll-contain p-1.5">
+    <div
+      ref={scrollRef}
+      className="max-h-80 overflow-y-auto overscroll-contain p-1.5"
+    >
       {header}
 
       <div {...listProps}>
