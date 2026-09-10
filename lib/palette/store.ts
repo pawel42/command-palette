@@ -27,8 +27,6 @@ export type PaletteStore = {
   /** Context bound to one instance; null once that instance is gone. */
   contextFor: (instanceId: string) => PageContext | null
   runCommand: (command: Command, instanceId?: string) => Promise<unknown> | void
-  /** Runs a page's `load` once per instance. */
-  loadInstance: (instanceId: string) => void
   /** Lets a host swap the dismiss handler without rebuilding the store. */
   setOnDismiss: (onDismiss: DismissHandler) => void
 }
@@ -44,7 +42,6 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
   let onDismiss = options.onDismiss
   const listeners = new Set<() => void>()
   const resolvers = new Map<string, (value: unknown) => void>()
-  const loaded = new Set<string>()
 
   const getState = () => state
 
@@ -62,7 +59,6 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
 
       const settle = resolvers.get(instance.instanceId)
       resolvers.delete(instance.instanceId)
-      loaded.delete(instance.instanceId)
       settle?.(undefined)
     }
 
@@ -93,8 +89,6 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
     return {
       instanceId,
       props: instance.props,
-      state: instance.state,
-      setState: (patch) => dispatch({ type: "setState", instanceId, patch }),
       query: instance.query,
       setQuery: (query) => dispatch({ type: "setQuery", instanceId, query }),
       resolve: (value) => settleAndClose(instanceId, value),
@@ -124,18 +118,6 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       const ctx = contextFor(target)
       if (!ctx) return
       return resolveCommand(command, ctx)
-    },
-
-    loadInstance: (instanceId) => {
-      if (loaded.has(instanceId)) return
-
-      const ctx = contextFor(instanceId)
-      const load = state.stack.find((entry) => entry.instanceId === instanceId)
-        ?.page.load
-      if (!ctx || !load) return
-
-      loaded.add(instanceId)
-      void load(ctx)
     },
   }
 }

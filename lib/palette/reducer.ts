@@ -19,9 +19,7 @@ export function createInstance(
     page,
     props,
     query: "",
-    state: page.initialState ? page.initialState(props) : undefined,
     activeItemId: null,
-    scrollTop: 0,
     escape,
   }
 }
@@ -29,20 +27,6 @@ export function createInstance(
 export function createInitialState(rootPage: PageTarget): PaletteState {
   const { page, props } = resolveTarget(rootPage)
   return { stack: [createInstance(page, props, 0)], sequence: 1 }
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function applyPatch(previous: unknown, patch: unknown): unknown {
-  if (typeof patch === "function") {
-    return (patch as (previous: unknown) => unknown)(previous)
-  }
-  if (isPlainObject(previous) && isPlainObject(patch)) {
-    return { ...previous, ...patch }
-  }
-  return patch
 }
 
 /** Replaces one instance, returning the same state when nothing changed. */
@@ -127,21 +111,6 @@ export function paletteReducer(
           ? instance
           : { ...instance, activeItemId: action.itemId }
       )
-    }
-
-    case "setScrollTop": {
-      return mapInstance(state, action.instanceId, (instance) =>
-        instance.scrollTop === action.scrollTop
-          ? instance
-          : { ...instance, scrollTop: action.scrollTop }
-      )
-    }
-
-    case "setState": {
-      return mapInstance(state, action.instanceId, (instance) => {
-        const next = applyPatch(instance.state, action.patch)
-        return next === instance.state ? instance : { ...instance, state: next }
-      })
     }
   }
 }

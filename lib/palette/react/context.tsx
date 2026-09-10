@@ -64,7 +64,7 @@ export function usePaletteView(): PaletteView {
 
 /**
  * Binds everything below it to one instance, so a page component reads its own
- * state even when it isn't the top of the stack.
+ * query and selection even when it isn't the top of the stack.
  */
 export function PageProvider({
   instanceId,
@@ -73,13 +73,6 @@ export function PageProvider({
   instanceId: string
   children: React.ReactNode
 }) {
-  const store = usePaletteStore()
-
-  useEffect(() => {
-    // Runs the page's optional `load`, once per instance.
-    store.loadInstance(instanceId)
-  }, [store, instanceId])
-
   return (
     <InstanceContext.Provider value={instanceId}>
       {children}

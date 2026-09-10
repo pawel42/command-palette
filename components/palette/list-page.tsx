@@ -4,8 +4,6 @@ import type { ComponentType } from "react"
 
 import { definePage } from "@/lib/palette"
 import type { PageDefinition } from "@/lib/palette"
-import { useScrollRestore } from "@/lib/palette/react"
-
 import { markListPage } from "./page-kinds"
 import { Highlight, ICONS, Icon, Kbd } from "./primitives"
 import { useListPage } from "./use-list-page"
@@ -18,23 +16,21 @@ export type { ListPageConfig }
  * either open a page or run an action. It is assembled from the public hooks
  * only — a hand-written page can do everything this does.
  */
-export function listPage<Props = void, State = void, Result = void>(
-  config: ListPageConfig<Props, State, Result>
-): PageDefinition<Props, State, Result, ComponentType> {
+export function listPage<Props = void, Result = void>(
+  config: ListPageConfig<Props, Result>
+): PageDefinition<Props, Result, ComponentType> {
   function ListPage() {
     return <ListPageView config={config as unknown as AnyListConfig} />
   }
   ListPage.displayName = `ListPage(${config.id})`
 
   return markListPage(
-    definePage<Props, State, Result, ComponentType>({
+    definePage<Props, Result, ComponentType>({
       id: config.id,
       title: config.title,
       search: config.search ?? "filter",
       placeholder: config.placeholder,
       escape: config.escape,
-      initialState: config.initialState,
-      load: config.load,
       component: ListPage,
     })
   )
@@ -43,14 +39,9 @@ export function listPage<Props = void, State = void, Result = void>(
 function ListPageView({ config }: { config: AnyListConfig }) {
   const { sections, isEmpty, emptyMessage, header, listProps } =
     useListPage(config)
-  // Every list page keeps its scroll offset, with nothing to wire up.
-  const scrollRef = useScrollRestore()
 
   return (
-    <div
-      ref={scrollRef}
-      className="max-h-80 overflow-y-auto overscroll-contain p-1.5"
-    >
+    <div className="max-h-80 overflow-y-auto overscroll-contain p-1.5">
       {header}
 
       <div {...listProps}>

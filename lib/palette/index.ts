@@ -51,7 +51,6 @@ export type {
   PaletteState,
   PushOptions,
   SearchMode,
-  SetState,
 } from "./types"
 export { selectView } from "./view"
 export type { Breadcrumb, PaletteView } from "./view"

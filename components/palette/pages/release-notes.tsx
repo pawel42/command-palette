@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { ComponentType } from "react"
 
 import { definePage } from "@/lib/palette"
-import { useNavigation, useScrollRestore } from "@/lib/palette/react"
+import { useNavigation } from "@/lib/palette/react"
 
 import { ICONS, Icon, Kbd } from "../primitives"
 
@@ -16,6 +16,15 @@ type Release = {
 }
 
 const RELEASES: Release[] = [
+  {
+    version: "0.15.0",
+    date: "Sep 2026",
+    headline: "Pages own their own state",
+    notes: [
+      "Hidden pages keep their React state, so the engine holds none of it.",
+      "Scroll offsets moved into the hook that restores them.",
+    ],
+  },
   {
     version: "0.14.0",
     date: "Sep 2026",
@@ -76,10 +85,10 @@ const RELEASES: Release[] = [
   {
     version: "0.9.0",
     date: "Jun 2026",
-    headline: "Async pages",
+    headline: "Instances, not pages",
     notes: [
-      "load() runs once per instance and fills state in.",
-      "A late setState on a dropped page is a no-op, not a crash.",
+      "The same page can sit on the stack twice with separate state.",
+      "An action aimed at a dropped instance is a no-op, not a crash.",
     ],
   },
   {
@@ -132,13 +141,12 @@ const RELEASES: Release[] = [
 ]
 
 /**
- * A long page, to show what surviving a close actually means. Two things here
- * are deliberately *not* in the store: the scroll offset, kept by
- * `useScrollRestore`, and `detailed` below, which is a plain `useState`. Close
- * the palette halfway down the list and reopen it — both come back, because
- * the page is hidden rather than unmounted.
+ * A long page, to show what surviving a close actually means. Nothing here is
+ * held by the engine: `detailed` below is a plain `useState`, and the scroll
+ * offset is the browser's own. Close the palette halfway down the list and
+ * reopen it — both come back, because the page is hidden rather than unmounted.
  */
-export const releaseNotesPage = definePage<void, void, void, ComponentType>({
+export const releaseNotesPage = definePage<void, void, ComponentType>({
   id: "release-notes",
   title: "Release Notes",
   search: "hidden",
@@ -147,7 +155,6 @@ export const releaseNotesPage = definePage<void, void, void, ComponentType>({
 
 function ReleaseNotes() {
   const nav = useNavigation()
-  const scrollRef = useScrollRestore()
   const [detailed, setDetailed] = useState(true)
 
   return (
@@ -165,10 +172,7 @@ function ReleaseNotes() {
         </button>
       </div>
 
-      <div
-        ref={scrollRef}
-        className="max-h-80 space-y-4 overflow-y-auto overscroll-contain p-4 text-sm"
-      >
+      <div className="max-h-80 space-y-4 overflow-y-auto overscroll-contain p-4 text-sm">
         {RELEASES.map((release) => (
           <article key={release.version} className="space-y-1.5">
             <h3 className="flex items-baseline gap-2">

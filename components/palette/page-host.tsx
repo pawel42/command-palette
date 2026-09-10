@@ -14,8 +14,11 @@ import { PageProvider, usePaletteState } from "@/lib/palette/react"
  * tear down is effects, which is what we want: a page that isn't on top stops
  * publishing its key handler to the frame and stops holding focus.
  *
- * The one thing it can't preserve is scroll offset, because it hides with
- * `display: none` — that's what `useScrollRestore` is for.
+ * Scroll offsets come back too, with nothing to wire up. `Activity` hides with
+ * `display: none`, and while a box has no layout its `scrollTop` reads 0 — but
+ * the browser holds the offset and restores it along with the box. Verified in
+ * Chrome and Safari; the reading of 0 while hidden is what makes this look like
+ * data loss when it isn't.
  */
 export function PageHost() {
   const state = usePaletteState()

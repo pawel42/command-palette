@@ -18,7 +18,7 @@ export function notePage(
   body: React.ReactNode,
   /** "disabled" keeps the frame's input in place but greyed out. */
   search: SearchMode = "disabled"
-): PageDefinition<void, void, void, ComponentType> {
+): PageDefinition<void, void, ComponentType> {
   function Note() {
     const nav = useNavigation()
 
@@ -45,7 +45,7 @@ export function notePage(
   }
   Note.displayName = `NotePage(${id})`
 
-  return definePage<void, void, void, ComponentType>({
+  return definePage<void, void, ComponentType>({
     id,
     title,
     search,

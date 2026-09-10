@@ -11,6 +11,7 @@ import { level1Page } from "./pages/deep"
 import { detailsPage } from "./pages/details"
 import { projectsPage } from "./pages/projects"
 import { releaseNotesPage } from "./pages/release-notes"
+import { accountPage } from "./pages/signup"
 import { toggleTheme } from "./theme-bridge"
 
 /**
@@ -37,9 +38,18 @@ export const commands: Command[] = [
     page: createTaskPage,
   },
   {
+    id: "account",
+    title: "New Account",
+    subtitle: "two forms, one pushed from the other",
+    section: "Pages",
+    keywords: ["signup", "form", "profile", "wizard"],
+    icon: <Icon path={ICONS.user} />,
+    page: accountPage,
+  },
+  {
     id: "projects",
     title: "Browse Projects",
-    subtitle: "loads async, returns a value",
+    subtitle: "takes props, returns a value",
     section: "Pages",
     keywords: ["client", "work", "picker"],
     icon: <Icon path={ICONS.folder} />,

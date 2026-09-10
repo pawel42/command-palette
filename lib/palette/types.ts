@@ -11,15 +11,10 @@ import type { ReactNode } from "react"
  */
 export type SearchMode = "filter" | "input" | "disabled" | "hidden"
 
-/** Object states can be patched shallowly; anything else uses the updater form. */
-export type SetState<State> = (
-  patch: Partial<State> | ((previous: State) => State)
-) => void
-
 /**
  * Where esc goes once the page's input is already empty. The default unwinds
- * one level; the others unwind several at once, dropping the state of every
- * instance they pass.
+ * one level; the others unwind several at once, dropping every instance they
+ * pass.
  */
 export type EscapeRoute = "back" | "root" | { to: AnyPage }
 
@@ -28,12 +23,16 @@ export type PushOptions = {
   escape?: EscapeRoute
 }
 
-/** Everything a page, or a command running on it, can reach. */
-export type PageContext<Props = unknown, State = unknown, Result = unknown> = {
+/**
+ * Everything a page, or a command running on it, can reach.
+ *
+ * Deliberately not here: the page's own state. A page is hidden rather than
+ * unmounted, so ordinary React state survives being navigated away from and
+ * closed — there is nothing for the engine to hold on its behalf.
+ */
+export type PageContext<Props = unknown, Result = unknown> = {
   instanceId: string
   props: Props
-  state: State
-  setState: SetState<State>
   query: string
   setQuery: (query: string) => void
   /** Settles the promise returned by the `push` that opened this page, then closes it. */
@@ -41,22 +40,12 @@ export type PageContext<Props = unknown, State = unknown, Result = unknown> = {
   nav: Navigation
 }
 
-export type PageDefinition<
-  Props = void,
-  State = unknown,
-  Result = void,
-  Component = unknown,
-> = {
+export type PageDefinition<Props = void, Result = void, Component = unknown> = {
   readonly id: string
   /** Breadcrumb label. */
   readonly title?: string
   readonly search: SearchMode
   readonly placeholder?: string
-  readonly initialState?: (props: Props) => State
-  /** Optional async init; its context is bound to the new instance. */
-  readonly load?: (
-    ctx: PageContext<Props, State, Result>
-  ) => void | Promise<void>
   readonly escape?: EscapeRoute
   /** Opaque to the engine — the React layer decides what a component is. */
   readonly component: Component
@@ -66,43 +55,36 @@ export type PageDefinition<
    */
   readonly __props?: (props: Props) => void
   /** Binds props so the page can be referenced from a plain object literal. */
-  with(props: Props): BoundPage<Props, State, Result, Component>
+  with(props: Props): BoundPage<Props, Result, Component>
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- variance placeholders: these
    types are containers, and narrowing them to `unknown` makes every concrete page
    unassignable to them. */
 
-export type AnyPage = PageDefinition<any, any, any, any>
+export type AnyPage = PageDefinition<any, any, any>
 
-export type BoundPage<
-  Props = any,
-  State = any,
-  Result = any,
-  Component = any,
-> = {
-  readonly page: PageDefinition<Props, State, Result, Component>
+export type BoundPage<Props = any, Result = any, Component = any> = {
+  readonly page: PageDefinition<Props, Result, Component>
   readonly props: Props
 }
 
 /** A page reference that needs nothing else: propless, or already bound. */
 export type PageTarget<Result = any> =
-  PageDefinition<void, any, Result, any> | BoundPage<any, any, Result, any>
+  PageDefinition<void, Result, any> | BoundPage<any, Result, any>
 
-export type ActionHandler<State = any> = (
-  ctx: PageContext<any, State, any>
-) => void | Promise<void>
+export type ActionHandler = (ctx: PageContext<any, any>) => void | Promise<void>
 
-export type CommandContext = PageContext<unknown, any, unknown>
+export type CommandContext = PageContext<unknown, unknown>
 
 export type Navigation = {
-  push<State, Result>(
-    page: PageDefinition<void, State, Result, any>,
+  push<Result>(
+    page: PageDefinition<void, Result, any>,
     props?: void,
     options?: PushOptions
   ): Promise<Result | undefined>
-  push<Props, State, Result>(
-    page: PageDefinition<Props, State, Result, any>,
+  push<Props, Result>(
+    page: PageDefinition<Props, Result, any>,
     props: Props,
     options?: PushOptions
   ): Promise<Result | undefined>
@@ -174,15 +156,7 @@ export type PageInstance = {
   readonly props: unknown
   /** Per-page input text. */
   readonly query: string
-  /** Per-page local state; dies with the instance. */
-  readonly state: unknown
   readonly activeItemId: string | null
-  /**
-   * Scroll offset of the page's scroll container, restored when the page
-   * mounts again — after a child was pushed over it, or after the whole
-   * palette was closed and reopened.
-   */
-  readonly scrollTop: number
   /** Push-site escape override. */
   readonly escape?: EscapeRoute
 }
@@ -197,11 +171,9 @@ export type PaletteAction =
   | { type: "push"; page: AnyPage; props: unknown; escape?: EscapeRoute }
   | { type: "pop" }
   | { type: "popToRoot" }
-  /** Drop everything above this instance, keeping it and its state. */
+  /** Drop everything above this instance, keeping it. */
   | { type: "unwindTo"; instanceId: string }
   /** Drop this instance and everything above it. */
   | { type: "dropFrom"; instanceId: string }
   | { type: "setQuery"; instanceId: string; query: string }
   | { type: "setActiveItem"; instanceId: string; itemId: string | null }
-  | { type: "setScrollTop"; instanceId: string; scrollTop: number }
-  | { type: "setState"; instanceId: string; patch: unknown }

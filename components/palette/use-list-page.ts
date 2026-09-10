@@ -17,22 +17,20 @@ import {
 
 import { usePublishBridge } from "./bridge"
 
-export type ListPageConfig<Props, State, Result> = {
+export type ListPageConfig<Props, Result> = {
   id: string
   title?: string
   placeholder?: string
   search?: SearchMode
   escape?: EscapeRoute
   emptyMessage?: string
-  initialState?: (props: Props) => State
-  load?: (ctx: PageContext<Props, State, Result>) => void | Promise<void>
-  /** Static, or derived from the page's props and state. */
-  items: Command[] | ((ctx: PageContext<Props, State, Result>) => Command[])
+  /** Static, or derived from the page's props. */
+  items: Command[] | ((ctx: PageContext<Props, Result>) => Command[])
   /** Optional note above the list. */
-  header?: (ctx: PageContext<Props, State, Result>) => React.ReactNode
+  header?: (ctx: PageContext<Props, Result>) => React.ReactNode
 }
 
-export type AnyListConfig = ListPageConfig<unknown, unknown, unknown>
+export type AnyListConfig = ListPageConfig<unknown, unknown>
 
 /** One rendered row: everything the markup needs, nothing it has to derive. */
 export type ListRow = {
@@ -56,7 +54,7 @@ export type ListSection = {
 export function useListPage(config: AnyListConfig) {
   const store = usePaletteStore()
   const instanceId = useInstanceId()
-  // Subscribes this page to the store, so state and query changes re-render it.
+  // Subscribes this page to the store, so query and selection changes re-render it.
   usePaletteState()
 
   const ctx = store.contextFor(instanceId)

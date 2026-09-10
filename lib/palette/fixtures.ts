@@ -7,63 +7,54 @@ import type { Command, PaletteStore } from "./index"
  * opaque to the engine, so null is a perfectly good page here.
  */
 
-export const rootPage = definePage<{ commands: Command[] }, void, void, null>({
+export const rootPage = definePage<{ commands: Command[] }, void, null>({
   id: "root",
   title: "Root",
   placeholder: "Search commands…",
   component: null,
 })
 
-export const page1 = definePage<void, void, void, null>({
+export const page1 = definePage<void, void, null>({
   id: "page1",
   title: "Page 1",
   placeholder: "Where to?",
   component: null,
 })
 
-export const page2 = definePage<void, void, void, null>({
+export const page2 = definePage<void, void, null>({
   id: "page2",
   title: "Page 2",
   component: null,
 })
 
-export const page3 = definePage<void, void, void, null>({
+export const page3 = definePage<void, void, null>({
   id: "page3",
   title: "Page 3",
   component: null,
 })
 
-export const page4 = definePage<void, void, void, null>({
+export const page4 = definePage<void, void, null>({
   id: "page4",
   title: "Page 4",
   component: null,
 })
 
-export const page41 = definePage<void, void, void, null>({
+export const page41 = definePage<void, void, null>({
   id: "page4.1",
   title: "Page 4.1",
   component: null,
 })
 
-/** Keeps per-instance state, so state isolation is observable. */
-export const statefulPage = definePage<void, { value: string }, void, null>({
-  id: "stateful",
-  title: "Stateful",
-  initialState: () => ({ value: "" }),
-  component: null,
-})
-
 /** A form: the input is inert, so esc pops on the first press. */
-export const formPage = definePage<void, { draft: string }, void, null>({
+export const formPage = definePage<void, void, null>({
   id: "form",
   title: "Form",
   search: "disabled",
-  initialState: () => ({ draft: "" }),
   component: null,
 })
 
 /** Deep page that jumps straight home on esc. */
-export const confirmPage = definePage<void, void, void, null>({
+export const confirmPage = definePage<void, void, null>({
   id: "confirm",
   title: "Confirm",
   escape: "root",
@@ -71,15 +62,9 @@ export const confirmPage = definePage<void, void, void, null>({
 })
 
 /** Takes props and returns a value — the picker shape. */
-export const projectsPage = definePage<
-  { archived: boolean },
-  { projects: string[] },
-  string,
-  null
->({
+export const projectsPage = definePage<{ archived: boolean }, string, null>({
   id: "projects",
   title: "Projects",
-  initialState: () => ({ projects: [] }),
   component: null,
 })
 

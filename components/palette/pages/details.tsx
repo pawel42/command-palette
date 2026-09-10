@@ -12,7 +12,10 @@ export const detailsPage = notePage(
       with the frame&apos;s input switched off.
     </p>
     <ul className="list-disc space-y-1 pl-4">
-      <li>Each page keeps its own query, selection and state.</li>
+      <li>
+        Each page keeps its own query and selection; its React state survives
+        too, because pages are hidden rather than unmounted.
+      </li>
       <li>Esc clears the input first, then unwinds one level.</li>
       <li>
         A page (or a single push) can override that and jump straight to the
