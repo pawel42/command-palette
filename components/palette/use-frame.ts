@@ -37,19 +37,31 @@ export function usePaletteFrame() {
   const inputRef = useRef<HTMLInputElement>(null)
   /** Set while a backspace press is spending itself on text; cleared on keyup. */
   const consumedByDelete = useRef(false)
+  /** Where the last render left the stack, so the next one can tell push from pop. */
+  const previousDepth = useRef<number | null>(null)
 
   const editable = isEditable(view.search)
   const hasList = isListPage(view.instance.page)
 
   useEffect(() => {
+    // A shallower stack than last time means we came back to a page that
+    // already holds a query. That restored text is the thing the user is most
+    // likely to replace, so it arrives selected: typing overwrites it, and the
+    // arrow keys still put the caret back without losing it.
+    const cameBack =
+      previousDepth.current !== null && view.depth < previousDepth.current
+    previousDepth.current = view.depth
+
     // Focus follows the page: the input when it can be typed into, otherwise
     // the frame itself — key handling is React events, so without focus inside
     // the frame esc would never reach it.
-    if (editable) inputRef.current?.focus()
-    else rootRef.current?.focus()
+    if (editable) {
+      inputRef.current?.focus()
+      if (cameBack) inputRef.current?.select()
+    } else rootRef.current?.focus()
 
     consumedByDelete.current = false
-  }, [view.instance.instanceId, editable])
+  }, [view.instance.instanceId, view.depth, editable])
 
   /** Returns true when the press was handled and should go no further. */
   const handleBackspace = (
