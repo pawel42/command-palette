@@ -95,6 +95,8 @@ export type CommandList<T> = {
  * The list controller every list-shaped page shares: filtering, wraparound
  * keyboard nav that skips disabled rows, item shortcuts, and the aria wiring.
  * State lives in the store, so nothing here writes React state in an effect.
+ *
+ * Esc is not handled here — see the "escape" case below.
  */
 export function useCommandList<T extends ItemMeta>(
   items: readonly T[],

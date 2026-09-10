@@ -83,14 +83,17 @@ export function usePaletteFrame() {
     ref: rootRef,
     tabIndex: -1,
     onKeyDown: (event: React.KeyboardEvent) => {
-      // The page had first refusal; what's left are the frame's own rules.
-      if (event.defaultPrevented) return
-
+      // Esc is checked before the defaultPrevented guard on purpose. A
+      // surrounding dialog may already have marked the event in the capture
+      // phase, and the palette's own rule still has to run.
       if (event.key === "Escape") {
         event.preventDefault()
         store.escape()
         return
       }
+
+      // The page had first refusal on everything else.
+      if (event.defaultPrevented) return
 
       // Reached from pages whose input is disabled or hidden.
       handleBackspace(event, isTypingTarget(event.target))
