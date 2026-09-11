@@ -1,6 +1,6 @@
 "use client"
 
-import { useId } from "react"
+import { useCallback, useId, useRef } from "react"
 
 import type { ItemMeta } from "../core/command"
 import { claimEscape, matchesShortcut, resolveKey } from "../core/keys"
@@ -66,6 +66,8 @@ export type ItemProps = {
   "aria-selected": boolean
   "aria-disabled": true | undefined
   "data-index": number
+  /** Only the active row gets one: it scrolls itself back into view. */
+  ref?: (node: HTMLElement | null) => void
   onMouseMove: () => void
   onClick: () => void
 }
@@ -116,6 +118,31 @@ export function useCommandList<T extends ItemMeta>(
       instanceId,
       itemId: entries[index]?.item.id ?? null,
     })
+
+  // Set by the pointer, cleared by the reveal below: hovering a half-visible
+  // row must not scroll it, or the list would crawl away under the cursor.
+  const pointerDriven = useRef(false)
+
+  // A ref, not an effect: the callback runs exactly when the active row
+  // changes, which is the only moment there is anything to scroll to.
+  const reveal = useCallback((node: HTMLElement | null) => {
+    if (!node) return
+    if (pointerDriven.current) {
+      pointerDriven.current = false
+      return
+    }
+
+    node.scrollIntoView({ block: "nearest" })
+
+    // A row that opens a group brings the group's heading along — that being
+    // whatever sits directly above it that isn't another option. Revealed
+    // after the row and with "nearest" as well, so it does nothing unless the
+    // heading is actually cut off, and nothing here has to know how tall it is.
+    const heading = node.previousElementSibling
+    if (heading && heading.getAttribute("role") !== "option") {
+      heading.scrollIntoView({ block: "nearest" })
+    }
+  }, [])
 
   const { onSelect } = options
 
@@ -174,9 +201,12 @@ export function useCommandList<T extends ItemMeta>(
     "aria-selected": index === activeIndex,
     "aria-disabled": item.disabled || undefined,
     "data-index": index,
+    ref: index === activeIndex ? reveal : undefined,
     // Mouse move, not enter: scrolling must not steal the selection.
     onMouseMove: () => {
-      if (!item.disabled && index !== activeIndex) setActiveIndex(index)
+      if (item.disabled || index === activeIndex) return
+      pointerDriven.current = true
+      setActiveIndex(index)
     },
     onClick: () => select(index),
   })

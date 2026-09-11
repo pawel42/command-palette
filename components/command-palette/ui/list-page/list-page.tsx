@@ -40,7 +40,9 @@ function ListPageView({ config }: { config: AnyListConfig }) {
     useListPage(config)
 
   return (
-    <div className="max-h-80 overflow-y-auto overscroll-contain p-1.5">
+    // --list-gap is the list's breathing room: its own padding, and the margin
+    // every scrolled-to row and heading keeps from the edge of the scrollport.
+    <div className="max-h-80 overflow-y-auto overscroll-contain p-(--list-gap) [--list-gap:--spacing(1.5)]">
       {header}
 
       <div {...listProps}>
@@ -59,7 +61,7 @@ function ListPageView({ config }: { config: AnyListConfig }) {
               {section.section && (
                 <div
                   id={section.headingId}
-                  className="px-2 pt-2 pb-1.5 text-xs font-medium text-muted-foreground"
+                  className="scroll-mt-(--list-gap) px-2 pt-2 pb-1.5 text-xs font-medium text-muted-foreground"
                 >
                   {section.section}
                 </div>
@@ -84,6 +86,8 @@ function Row({ row }: { row: ListRow }) {
       {...row.props}
       className={[
         "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-sm select-none",
+        // Keeps the row clear of the scrollport edge when it scrolls itself in.
+        "scroll-my-(--list-gap)",
         isActive ? "bg-accent text-accent-foreground" : "text-foreground",
         item.disabled ? "pointer-events-none opacity-40" : "",
       ].join(" ")}
