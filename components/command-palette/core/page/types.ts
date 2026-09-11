@@ -6,6 +6,12 @@
  *  - "hidden"   — not rendered at all
  *
  * The last two have no query to clear, so esc unwinds on the first press.
+ *
+ * While the input is editable the frame keeps the caret in it — a click on
+ * anything unfocusable inside the palette goes back to the input, because the
+ * list is driven from its key handler. A page with fields of its own is
+ * therefore a page whose search is off: pick "disabled" for a form, so the row
+ * stays put and nothing shifts on the way in, or "hidden" to drop it.
  */
 export type SearchMode = "filter" | "input" | "disabled" | "hidden"
 

@@ -208,6 +208,18 @@ export function usePaletteFrame() {
     ref: rootRef,
     tabIndex: -1,
     onFocusCapture: (event: React.FocusEvent) => {
+      // A click on anything the browser cannot focus — a row, a group
+      // heading, the padding around them — lands on the frame instead, and
+      // the caret leaves the input with it: arrow keys and typing would go
+      // nowhere, because the list is driven from the input's key handler.
+      // While the input is live it is the only thing here meant to hold a
+      // caret, so hand focus straight back. A page whose search is off keeps
+      // the frame focused instead — that is what makes esc work there.
+      if (editable && event.target === rootRef.current) {
+        inputRef.current?.focus()
+        return
+      }
+
       // Recorded as it happens, not read back on the way out: by the time the
       // surface hides, the host has already moved focus out of the palette.
       if (event.target instanceof HTMLElement)
