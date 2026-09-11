@@ -109,3 +109,8 @@ delete `ui/dialog/` and compose the two halves directly:
 while the surface comes and goes is what makes the stack outlive a close. Drop
 `useIdleReset(open)` into a component inside it to keep the timed reset, or
 call `nav.reset()` on whatever schedule suits the host.
+
+A host that _hides_ the surface instead of unmounting it — as `ui/dialog/` does,
+so every page keeps its scroll and its caret — passes `revealId` and bumps it on
+every reveal. That is the only thing telling the frame it is being shown again,
+and it is what puts the caret back in the input.

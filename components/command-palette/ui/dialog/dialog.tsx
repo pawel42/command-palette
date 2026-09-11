@@ -24,10 +24,17 @@ const EXIT_MS = 200
  *
  * Both flags move in the same event handler, never in an effect: an effect
  * that mirrors one piece of state into another just renders twice.
+ *
+ * `reveal` counts the openings, because neither flag can stand in for one:
+ * reopening inside `EXIT_MS` clears the pending hide, so `visible` never
+ * flips and the surface is shown again without anything about it changing.
+ * The count is what the surface reads to know it is back — see
+ * `PaletteSurface`.
  */
 function usePaletteOpenState() {
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [reveal, setReveal] = useState(0)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const openRef = useRef(false)
 
@@ -48,11 +55,15 @@ function usePaletteOpenState() {
     clearHide()
     setOpen(next)
 
-    if (next) setVisible(true)
-    else hideTimer.current = setTimeout(() => setVisible(false), EXIT_MS)
+    if (next) {
+      setVisible(true)
+      setReveal((count) => count + 1)
+    } else {
+      hideTimer.current = setTimeout(() => setVisible(false), EXIT_MS)
+    }
   }, [])
 
-  return { open, visible, setOpen: set }
+  return { open, visible, reveal, setOpen: set }
 }
 
 /**
@@ -114,7 +125,7 @@ export function CommandPaletteDialog({
   /** Bridges mounted for as long as the palette lives — see `PaletteRoot`. */
   children?: React.ReactNode
 }) {
-  const { open, visible, setOpen } = usePaletteOpenState()
+  const { open, visible, reveal, setOpen } = usePaletteOpenState()
 
   useToggleHotkey(() => setOpen(!open))
   useModalShell(open, { shellSelector })
@@ -153,7 +164,7 @@ export function CommandPaletteDialog({
 
             {/* Hidden, never unmounted — the stack outlives every close. */}
             <Activity mode={visible ? "visible" : "hidden"}>
-              <PaletteSurface />
+              <PaletteSurface revealId={reveal} />
             </Activity>
           </Dialog.Content>
         </Dialog.Portal>

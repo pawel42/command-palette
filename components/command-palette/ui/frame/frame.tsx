@@ -7,9 +7,16 @@ import { usePaletteFrame } from "./use-frame"
  * The chrome around every page: the one input and the footer. All behavior
  * lives in `usePaletteFrame`; this is layout only.
  */
-export function PaletteFrame({ children }: { children: React.ReactNode }) {
+export function PaletteFrame({
+  children,
+  revealId,
+}: {
+  children: React.ReactNode
+  /** Bumped by the host every time it shows the surface — see `PaletteSurface`. */
+  revealId?: number
+}) {
   const { view, showInput, rootProps, slotProps, inputProps, hints, goBack } =
-    usePaletteFrame()
+    usePaletteFrame({ revealId })
 
   return (
     // h-102 is the whole point of a fixed palette: one height for every page

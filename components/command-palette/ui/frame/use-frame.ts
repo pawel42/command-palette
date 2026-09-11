@@ -180,7 +180,7 @@ export type FrameHint = { keys: string[]; label: string }
  * rules, and the footer hints. The component below it only lays out what this
  * returns.
  */
-export function usePaletteFrame() {
+export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const view = usePaletteView()
   const store = usePaletteStore()
   const [query, setQuery] = useSearch()
@@ -194,8 +194,8 @@ export function usePaletteFrame() {
   const consumedByDelete = useRef(false)
   /** Where the last render left the stack, so the next one can tell push from pop. */
   const previousDepth = useRef<number | null>(null)
-  /** Which instance the effect below last ran for — see `reopened`. */
-  const previousInstanceId = useRef<string | null>(null)
+  /** Which reveal the effect below last ran for — see `reopened`. */
+  const previousRevealId = useRef<number | null>(null)
   /** The last thing focused inside the frame, so a reveal can put it back. */
   const lastFocused = useRef<HTMLElement | null>(null)
 
@@ -203,21 +203,21 @@ export function usePaletteFrame() {
   const hasList = view.instance.page.list === true
 
   useEffect(() => {
-    const instanceId = view.instance.instanceId
-
     // A shallower stack than last time means we came back to a page that
     // already holds a query.
     const cameBack =
       previousDepth.current !== null && view.depth < previousDepth.current
 
-    // Same instance as last time, yet the effect is running again: nothing
-    // navigated, the surface was hidden and shown. That is a close and
-    // reopen — `Activity` tears effects down on the way out, which is the
-    // only reason the frame can tell.
-    const reopened = previousInstanceId.current === instanceId
+    // The host counts its own reveals, so this is a fact rather than a
+    // reading of one: a moved count means the surface was shown again. It
+    // cannot be inferred from anything here, because a reopen inside the
+    // close animation never hides the surface in the first place — the DOM,
+    // the state and the effects all sit untouched through it.
+    const reopened =
+      previousRevealId.current !== null && previousRevealId.current !== revealId
 
     previousDepth.current = view.depth
-    previousInstanceId.current = instanceId
+    previousRevealId.current = revealId ?? null
 
     // Focus follows the page: the input when it can be typed into, and
     // otherwise the frame itself — key handling is React events, so without
@@ -243,7 +243,7 @@ export function usePaletteFrame() {
     }
 
     consumedByDelete.current = false
-  }, [view.instance.instanceId, view.depth, editable])
+  }, [view.instance.instanceId, view.depth, editable, revealId])
 
   // Esc has to work even when focus is not in the palette. Keys reach the
   // frame as React events, so anything that steals focus — an overlay the host

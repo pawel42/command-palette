@@ -38,10 +38,16 @@ export function PaletteRoot({
  * The visible half: frame and page host. Mounting it is what focuses the
  * palette, so a host can mount and unmount it freely — no state lives here.
  * Must be rendered inside a `PaletteRoot`.
+ *
+ * A host that hides the surface rather than unmounting it has to say when it
+ * comes back, by bumping `revealId` on every reveal. Nothing here could work
+ * it out: the DOM is still in place, the effects may never have been torn
+ * down, and a reveal would be indistinguishable from an ordinary re-render —
+ * which is what decides whether the caret goes back in the input.
  */
-export function PaletteSurface() {
+export function PaletteSurface({ revealId }: { revealId?: number }) {
   return (
-    <PaletteFrame>
+    <PaletteFrame revealId={revealId}>
       <PageHost />
     </PaletteFrame>
   )
