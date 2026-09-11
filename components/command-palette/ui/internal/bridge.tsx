@@ -134,6 +134,14 @@ function createBridge(): Bridge {
 
     subscribe: (listener) => {
       listeners.add(listener)
+
+      // Caught up the moment it arrives, because the first publish is always
+      // missed: the page publishes from an effect of its own, the frame
+      // subscribes from one of its own, and a child's effects run first — so
+      // the footer of a freshly shown palette is announced to an empty room.
+      // React compares snapshots and drops this if nothing moved.
+      listener()
+
       return () => listeners.delete(listener)
     },
   }
