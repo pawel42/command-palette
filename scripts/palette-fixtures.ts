@@ -71,6 +71,23 @@ export const projectsPage = definePage<{ archived: boolean }, string, null>({
   component: null,
 })
 
+/**
+ * Work that takes a beat, so a walkthrough can watch the bar come and go —
+ * and that gives up when its signal says to, the way `fetch` does.
+ */
+const wait = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms)
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer)
+        reject(signal.reason)
+      },
+      { once: true }
+    )
+  })
+
 export function createCommands(log: string[]): Command[] {
   return [
     { id: "page-1", title: "Page 1", section: "Pages", page: page1 },
@@ -91,6 +108,47 @@ export function createCommands(log: string[]): Command[] {
       },
     },
     {
+      // The declared form: named outcomes, and `runAsync` never rejects.
+      id: "sync",
+      title: "Sync With Remote",
+      section: "Actions",
+      run: ({ runAsync }) =>
+        runAsync(
+          async (signal) => {
+            signal.addEventListener("abort", () => log.push("sync:aborted"))
+            await wait(20, signal)
+            return 12
+          },
+          {
+            loading: "Syncing…",
+            success: (files) => `Synced ${files} files`,
+            error: "Couldn't reach the remote",
+          }
+        ),
+    },
+    {
+      // The zero-config form: a bare async handler that throws. The store
+      // tracks it because it returned a promise, and nothing else was said.
+      id: "deploy",
+      title: "Deploy a Preview",
+      section: "Actions",
+      run: async () => {
+        await wait(20)
+        throw new Error("The preview build failed")
+      },
+      // Nothing is logged for you: the command says what its failure deserves.
+      onError: (error) =>
+        log.push(`caught:${error instanceof Error ? error.message : error}`),
+    },
+    {
+      // Instant, and it has something to say: the pair of cases that broke
+      // once — a toast from a quiet palette, and one that replaces a run.
+      id: "copy",
+      title: "Copy Link",
+      section: "Actions",
+      run: ({ toast }) => toast({ title: "Copied" }),
+    },
+    {
       id: "blocked",
       title: "Push to Remote",
       section: "Actions",
@@ -103,7 +161,10 @@ export function createCommands(log: string[]): Command[] {
   ]
 }
 
-export function createTestStore(onDismiss?: () => void): {
+export function createTestStore(
+  onDismiss?: () => void,
+  options: { revealMs?: number } = {}
+): {
   store: PaletteStore
   commands: Command[]
   log: string[]
@@ -113,6 +174,7 @@ export function createTestStore(onDismiss?: () => void): {
   const store = createPaletteStore({
     rootPage: rootPage.with({ commands }),
     onDismiss,
+    revealMs: options.revealMs,
   })
 
   return { store, commands, log }

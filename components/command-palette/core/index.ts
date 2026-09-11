@@ -7,14 +7,17 @@
  *   command/  what a row is, and what running it does
  *   stack/    the state machine: push, pop, esc, and the derived view
  *
- * plus `store.ts`, which is the only stateful thing here and ties the last
- * two together. Nothing in this folder imports React at runtime.
+ * plus two stateful modules that import none of the above: `async.ts`, which
+ * holds what the palette is doing and what it has to say about it, and
+ * `store.ts`, which ties the stack, the commands and the tasks together.
+ * Nothing in this folder imports React at runtime.
  *
  * `page/` and `command/` are the one pair that name each other: a command
  * targets a page, and a page declares a footer of commands. Type-only in both
  * directions, so the dependency order above still holds at runtime.
  */
 
+export * from "./async"
 export * from "./command"
 export * from "./keys"
 export * from "./list"

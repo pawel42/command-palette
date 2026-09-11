@@ -1,5 +1,13 @@
 /** Presentational pieces shared by the frame and the built-in pages. */
 
+/**
+ * How anything arriving in the footer's left half comes in: the toast, and the
+ * key hints when they come back afterwards. One constant, because "the same
+ * way" is the requirement — that half swaps between the two on every run, and
+ * two animations that merely resembled each other would read as a stutter.
+ */
+export const FOOTER_ENTER = "animate-in fade-in-0 slide-in-from-bottom-1"
+
 export function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
@@ -105,6 +113,8 @@ export const ICONS = {
   moon: "M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9",
   upload: "M12 19V5m0 0-6 6m6-6 6 6",
   check: "m5 13 4 4L19 7",
+  alert:
+    "M12 9v4m0 4h.01M10.3 4.3 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0",
   chevronLeft: "m14 6-6 6 6 6",
   chevronRight: "m10 6 6 6-6 6",
   close: "M18 6 6 18M6 6l12 12",

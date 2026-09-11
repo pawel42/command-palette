@@ -1,3 +1,4 @@
+import type { RunAsync, ToastInput } from "../async"
 import type { FooterInput } from "./footer"
 
 /**
@@ -47,6 +48,17 @@ export type PageContext<Props = unknown, Result = unknown> = {
   /** Settles the promise returned by the `push` that opened this page, then closes it. */
   resolve: (value: Result) => void
   nav: Navigation
+  /**
+   * Work that takes a moment, with the palette reporting on it: the progress
+   * bar while it runs, a toast when it lands. See `RunAsync`.
+   *
+   * A handler that simply returns its promise gets the same bar and the same
+   * failure toast for free — this is the form that also names the outcome, and
+   * the one a page's own buttons and effects can call.
+   */
+  runAsync: RunAsync
+  /** Says something in the footer with no work behind it. */
+  toast: (input: ToastInput) => void
 }
 
 /**
@@ -124,7 +136,12 @@ export type BoundPage<Props = any, Result = any, Component = any> = {
 export type PageTarget<Result = any> =
   PageDefinition<void, Result, any> | BoundPage<any, Result, any>
 
-export type ActionHandler = (ctx: PageContext<any, any>) => void | Promise<void>
+/**
+ * What a command does. The return value is the handler's own business, with
+ * one exception the palette reads: a promise means work that takes a moment,
+ * and it gets the progress bar and a toast if it fails — see `RunAsync`.
+ */
+export type ActionHandler = (ctx: PageContext<any, any>) => unknown
 
 export type Navigation = {
   push<Result>(

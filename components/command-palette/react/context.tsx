@@ -23,6 +23,7 @@ export function PaletteProvider({
   rootPage,
   onDismiss,
   onCommand,
+  revealMs,
   children,
 }: {
   rootPage: PageTarget
@@ -30,9 +31,13 @@ export function PaletteProvider({
   onDismiss?: () => void
   /** Called with every command the palette runs. */
   onCommand?: (command: Command) => void
+  /** How long work runs before the palette shows a bar — see `REVEAL_MS`. */
+  revealMs?: number
   children: React.ReactNode
 }) {
-  const [store] = useState(() => createPaletteStore({ rootPage }))
+  // Read once, like `rootPage`: both describe the store being built, not the
+  // render doing it.
+  const [store] = useState(() => createPaletteStore({ rootPage, revealMs }))
 
   // Swapped on the store rather than captured at creation, so a changing
   // callback never rebuilds the stack.

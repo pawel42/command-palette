@@ -1,3 +1,5 @@
+import { createAsyncTasks, isUntracked } from "./async"
+import type { AsyncTasks } from "./async"
 import { resolveCommand } from "./command/run"
 import type { Command } from "./command/types"
 import type { Navigation, PageContext, PageTarget } from "./page/types"
@@ -16,6 +18,25 @@ export type PaletteStoreOptions = {
    * command that opens a page has nowhere to put.
    */
   onCommand?: (command: Command) => void
+  /**
+   * How long work must run before the palette shows a progress bar for it.
+   * See `REVEAL_MS`; `0` shows one the moment anything starts.
+   */
+  revealMs?: number
+}
+
+/**
+ * What the palette says while a command that declared nothing is running: its
+ * own title, as something in progress. "Deploy a Preview" → "Deploy a
+ * Preview…".
+ *
+ * Every run has to say what it is — see `RunAsyncOptions.loading` — and a
+ * handler that merely returned a promise has said nothing. The row the user
+ * just pressed ↵ on is the best answer available, and it is usually the right
+ * one: they named the command after what it does.
+ */
+function progressLabel(title: string): string {
+  return title.endsWith("…") ? title : `${title}…`
 }
 
 export type DismissHandler = (() => void) | undefined
@@ -30,7 +51,14 @@ export type PaletteStore = {
   escape: () => void
   /** Context bound to one instance; null once that instance is gone. */
   contextFor: (instanceId: string) => PageContext | null
-  runCommand: (command: Command, instanceId?: string) => Promise<unknown> | void
+  /** Whatever the command's handler returned — see `ActionHandler`. */
+  runCommand: (command: Command, instanceId?: string) => unknown
+  /**
+   * The progress bar and the toast, and the way to put work behind them. Not
+   * tied to a page: a run outlives the row that started it, and the palette
+   * reports it wherever the user has got to by the time it lands.
+   */
+  readonly tasks: AsyncTasks
   /** Lets a host swap the dismiss handler without rebuilding the store. */
   setOnDismiss: (onDismiss: DismissHandler) => void
   /** The same, for the ran-a-command handler. */
@@ -47,15 +75,48 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
 
   let onDismiss = options.onDismiss
   let onCommand = options.onCommand
+  const tasks = createAsyncTasks({ revealMs: options.revealMs })
   const listeners = new Set<() => void>()
   const resolvers = new Map<string, (value: unknown) => void>()
 
   const getState = () => state
 
+  /**
+   * Which actions mean "the user has moved on". Typing and picking a row are
+   * not on the list: a run that started from this page is still the run this
+   * page is waiting for.
+   */
+  const NAVIGATIONS: ReadonlySet<PaletteAction["type"]> = new Set([
+    "push",
+    "pop",
+    "popToRoot",
+    "reset",
+    "unwindTo",
+    "dropFrom",
+  ])
+
   const dispatch = (action: PaletteAction) => {
     const previous = state
     const next = paletteReducer(previous, action)
+
+    // A reset is the palette starting over, and the footer is part of what
+    // starts over — including the message a run left behind while the palette
+    // was closed, which has been sitting there with its timer stopped. Before
+    // the early return below, because a reset on an untouched root changes no
+    // state and still means this.
+    if (action.type === "reset") {
+      tasks.cancel()
+      tasks.dismissToast()
+    }
+
     if (next === previous) return
+
+    // Work belongs to the page that asked for it. Leaving that page — popping
+    // it, pushing over it, resolving it, unwinding past it — calls the work
+    // off, rather than leaving a bar running over a page that never asked for
+    // one and an outcome landing somewhere it means nothing. Only on a real
+    // transition: an action the reducer ignored has moved nobody.
+    if (NAVIGATIONS.has(action.type)) tasks.cancel()
 
     state = next
 
@@ -100,6 +161,8 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       setQuery: (query) => dispatch({ type: "setQuery", instanceId, query }),
       resolve: (value) => settleAndClose(instanceId, value),
       nav: navigation,
+      runAsync: tasks.run,
+      toast: tasks.toast,
     }
   }
 
@@ -109,6 +172,7 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
     navigation,
     escape: navigation.escape,
     contextFor,
+    tasks,
 
     setOnDismiss: (handler) => {
       onDismiss = handler
@@ -133,7 +197,56 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       // something — `resolveCommand` drops a disabled one on the floor.
       if (!command.disabled) onCommand?.(command)
 
-      return resolveCommand(command, ctx)
+      // What the palette was saying before this command touched anything.
+      const runBefore = tasks.currentRun()
+      const toastBefore = tasks.getSnapshot().toast?.id
+
+      const result = resolveCommand(command, ctx)
+
+      // Neither ran: a disabled row, or a display-only one. The user picked
+      // nothing, so nothing about what is in flight changes.
+      if (command.disabled || (!command.run && !command.page)) return result
+
+      // The run in flight is no longer the one we started with, so this
+      // command has already dealt with it — by starting a run of its own
+      // (`async save() { await runAsync(…) }`), or by navigating, which calls
+      // work off in `dispatch`. Wrapping again would only cancel what it just
+      // started, since a second run is what cancelling means.
+      if (tasks.currentRun() !== runBefore) return result
+
+      // An `async run` is a run that takes a moment, with nothing declared
+      // anywhere: returning a promise is the whole opt-in. The bar shows if it
+      // outlasts the reveal delay, and a rejection becomes a toast instead of
+      // an unhandled rejection nobody sees.
+      //
+      // `isUntracked` is what keeps the two promises that only *look* like
+      // work out of it — a page push, and a handler that already called
+      // `runAsync` itself. See `async.ts`.
+      if (result instanceof Promise && !isUntracked(result)) {
+        return tasks.run(result, {
+          loading: progressLabel(command.title),
+          // The command's own say in how its failure is handled. Only reached
+          // on this path: a handler that called `runAsync` itself passed its
+          // options there, and they are the ones that count.
+          onError: command.onError,
+        })
+      }
+
+      // A command that did its work there and then. It is still the thing the
+      // user just chose, so it replaces what the palette was busy with: one
+      // command at a time is one command at a time whether or not the new one
+      // takes any. Without this, picking something instant while a run was in
+      // flight left the spinner turning behind its message.
+      //
+      // The old message goes with it — but only if there was one, and only if
+      // it is still the one showing. Guarded rather than passed straight
+      // through, because `dismissToast()` with nothing means *whatever is up*,
+      // and from a quiet palette that is the toast this command just put there
+      // ("Copied") — which is the one thing here that must survive.
+      tasks.cancel()
+      if (toastBefore !== undefined) tasks.dismissToast(toastBefore)
+
+      return result
     },
   }
 }

@@ -17,7 +17,8 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 
 1. **Tailwind v4 and the shadcn color tokens.** The markup uses
    `--popover`, `--popover-foreground`, `--accent`, `--accent-foreground`,
-   `--border`, `--foreground`, `--muted-foreground`, and `tw-animate-css`'s
+   `--border`, `--foreground`, `--muted-foreground`, `--primary` for the
+   progress bar, `--destructive` for a failure, and `tw-animate-css`'s
    `animate-in` / `animate-out` utilities for the dialog. A shadcn project
    already has all of them.
 2. **`data-app-shell` on whatever the palette should cover** — the dialog puts
@@ -130,7 +131,7 @@ chevron everywhere else, then the one input. A page cannot change it, and that
 is enforced rather than implied — `definePage` and `listPage` type `icon`,
 `backIcon`, `header` and friends as `never`, so a config that tries fails to
 compile whether it was written as a literal or built by spreading. `search:
-"hidden"` hides the *input*, not the row: the title takes its place and the way
+"hidden"` hides the _input_, not the row: the title takes its place and the way
 back stays where the user left it.
 
 What a page does get is the footer:
@@ -174,6 +175,138 @@ Whoever declares the footer declares all of it: `usePageFooter` replaces the
 page's config footer rather than adding to it, so there is only ever one place
 to look. The config form is the default because it is read during render — a
 footer published from an effect lands one frame after the page does.
+
+## Work that takes a moment
+
+A command that returns a promise is an async command, and returning it is the
+whole declaration:
+
+```tsx
+{ id: "deploy", title: "Deploy a Preview", run: () => api.deploy() }
+```
+
+While it runs, a bar sweeps under the input and the footer says what is
+happening — a spinner, and **"Deploy a Preview…"**, taken from the row the user
+pressed ↵ on. If it fails, the footer says that instead, in the error's own
+words. Both belong to the frame, so a page never draws a spinner of its own,
+and a command reports itself the same way whether it was taken from a row, from
+the action panel, or from a chord. The input row is left alone throughout — it
+is the same row on every page and in every state, which is the point of it.
+
+Every run says what it is. A user made to wait is owed the reason, so `loading`
+is required of `runAsync` — and a handler that merely returned a promise, like
+the one above, has its command's own title used as the message. The key hints
+stand down for the duration: they are always true and can be read at any other
+moment, and while something is running that is the one thing the footer is for.
+
+Nothing at all is shown for the first 120ms, from quiet: a bar that flashes for
+two frames reads as a glitch, and a run that lands inside that window shows
+only its outcome. Pass `revealMs` to move the line, or `0` to show the bar at
+once.
+
+To name the outcome, put the work through `runAsync`, which every command
+context carries:
+
+```tsx
+run: ({ runAsync }) =>
+  runAsync((signal) => api.sync({ signal }), {
+    loading: "Syncing with remote…",
+    success: (files) => `Synced ${files} files`,
+    error: "Couldn't reach the remote",
+  })
+```
+
+`loading` is the one that must be there. `success` and `error` are optional on
+top of it: a silent success is a fair thing to want, and a failure falls back
+to the error's own message.
+
+`runAsync` never rejects. It resolves with the value, or with `undefined` once
+it has shown the failure — so a caller checks for `undefined` instead of
+catching. `success` and `error` take a string or a function of what came back,
+and returning `null` from one says nothing at all. Omitting `error` shows the
+error's own message, so a rejection is never silent to the _user_.
+
+To the console it is, because catching the rejection is what stopped the
+browser from logging it and putting a line there is not a palette's decision to
+make. What the caught error gets is a way out:
+
+```tsx
+<CommandPaletteDialog rootPage={rootPage} onError={console.error} />
+```
+
+`onError` is handed every failure the palette swallowed, after the user has
+been shown it — `console.error` to get the old browser behavior back, or a
+reporter, or nothing.
+
+A page's own code — a button, an effect, a hook it keeps its behavior in —
+reaches the same thing with `useRunAsync()`, so work started inside a page is
+reported exactly like a command's:
+
+```tsx
+const runAsync = useRunAsync()
+
+const save = async () => {
+  const task = await runAsync((signal) => api.save(draft, signal), {
+    loading: "Saving…",
+  })
+  // undefined: it failed and has said so, or it was called off. Either way it
+  // did not happen, so the form stays where it is.
+  if (task) nav.popToRoot()
+}
+```
+
+## One run at a time
+
+The palette runs one thing, and the next one calls off the first. Picking any
+other command does it — an instant one counts, since one command at a time is
+one command at a time whether or not the new one takes any — and so does going
+anywhere: a push, a pop, a page resolving, an `esc` that unwinds, the idle
+reset. All of them abort the run in flight:
+
+- the signal handed to the work fires, so a `fetch` really is cancelled;
+- the bar goes and the loading toast with it, at once, rather than whenever the
+  work notices;
+- `runAsync` resolves `undefined` immediately, and **says nothing** — a user
+  who has moved on does not need a toast about what they left behind.
+
+The handover is instant in both directions. Starting a run clears the footer —
+the old run's "Syncing…", and equally a "Synced 12 files" still sitting out its
+two and a half seconds — and the new run puts its own bar and message up with
+no reveal delay, because the delay is there to keep a _quiet_ palette from
+flashing and this one was already speaking. So there is never a moment where
+the footer is describing the command before last.
+
+That is what makes `undefined` the one thing to check for: it means _this
+didn't happen_, whether it failed or was abandoned. The alternative is a bar
+running over a page that never asked for one, and an outcome landing three
+pages later where it means nothing.
+
+Typing and moving the selection are not commands and not navigation — a run
+survives the user searching around it, and a disabled or display-only row that
+does nothing when picked leaves it alone too.
+
+Closing the palette is not navigation either: the work carries on, and the bar
+is still there on the next ⌘K. What a closed palette does stop is the clock on
+its messages — a toast's 2.5 seconds are seconds to read it in, and they are
+not spent while nobody can see it. So a run that lands after you close lands in
+a footer that waits: reopen a minute later and "Synced 12 files" is still
+there, starting its time from the moment you come back. The idle reset ends
+that — 30 seconds closed calls off anything still running and clears the
+footer, because a palette starting over starts over.
+
+Only `runAsync`'s function form can be cut short for real, because only it is
+handed a signal. A bare `run: () => api.deploy()` still stops being reported
+the moment the user leaves — but nothing tells the request itself, so take the
+signal for anything worth aborting.
+
+`ctx.toast({ title, message })` and `useToast()` say the same line with no work
+behind it. There is one toast at a time and the newest replaces it — the footer
+has one line for it, and a stack of them would be a second thing to dismiss on
+the way out. A success clears itself after 2.5s and a failure after 5s.
+
+Two promises are deliberately not treated as work: `nav.push(…)`, which stays
+pending for as long as the pushed page is open, and anything already handed to
+`runAsync`. Both are marked at the source — see `core/async.ts`.
 
 ## Composing it yourself
 

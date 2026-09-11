@@ -1,7 +1,8 @@
 "use client"
 
-import { ICONS, Icon, Kbd, SearchIcon } from "../primitives"
+import { FOOTER_ENTER, ICONS, Icon, Kbd, SearchIcon } from "../primitives"
 import { ActionPanel } from "./action-panel"
+import { FrameToast, ProgressBar, Spinner } from "./async-status"
 import { usePaletteFrame } from "./use-frame"
 
 /**
@@ -32,6 +33,8 @@ export function PaletteFrame({
     goBack,
     panel,
     triggerProps,
+    busy,
+    toast,
   } = usePaletteFrame({ revealId })
 
   return (
@@ -45,8 +48,10 @@ export function PaletteFrame({
       className="flex h-(--palette-h) w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none [--palette-h:--spacing(102)]"
     >
       {/* Always rendered, whatever the page's search mode: the way back is not
-          a thing a page gets to take away. */}
-      <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-3.5">
+          a thing a page gets to take away. `relative`, because the progress bar
+          is laid over this row's bottom edge rather than given a row of its
+          own — one palette height, whatever is happening in it. */}
+      <div className="relative flex shrink-0 items-center gap-2.5 border-b border-border px-3.5">
         {view.isRoot ? (
           <span className="text-muted-foreground">
             <SearchIcon />
@@ -79,6 +84,8 @@ export function PaletteFrame({
             {title}
           </h2>
         )}
+
+        {busy && <ProgressBar />}
       </div>
 
       {/* The page gets whatever the input row and footer leave, and a page
@@ -93,23 +100,51 @@ export function PaletteFrame({
       </div>
 
       <div className="flex shrink-0 items-center gap-4 border-t border-border px-3.5 py-2 text-xs text-muted-foreground">
-        {hints.map((hint) => (
-          <span
-            key={hint.label + hint.keys.join()}
-            className="flex items-center gap-1.5"
-          >
-            {hint.keys.map((key) => (
-              <Kbd key={key}>{key}</Kbd>
+        {/* The footer's left half says one thing at a time, in this order:
+            that something is running, what the last thing that ran did, or —
+            only when neither is true — the keys. */}
+
+        {/* Every run says so here. The loading message draws the spinner as
+            part of itself, and one is required of every run — so this is the
+            fallback for the one thing that slips past that: a message handed
+            over empty. The spinner turns either way. */}
+        {busy && toast?.kind !== "loading" && (
+          <Spinner className="size-3.5 shrink-0" />
+        )}
+
+        {/* Keyed on the toast, so a second outcome animates in as its own
+            line rather than sliding its text into the first one's. */}
+        {toast && <FrameToast key={toast.id} toast={toast} />}
+
+        {/* The hints stand down for the duration. They are always true and can
+            be read at any other moment, and a row that keeps them beside a
+            spinner reads as a palette doing two things — the one thing the
+            footer is for is saying which of them it is doing.
+
+            Wrapped, so they come back the way the toast arrived: they are
+            unmounted while it is up, and mounting is what runs the animation
+            again. No key needed for the same reason. */}
+        {!busy && !toast && (
+          <div className={`flex items-center gap-4 ${FOOTER_ENTER}`}>
+            {hints.map((hint) => (
+              <span
+                key={hint.label + hint.keys.join()}
+                className="flex items-center gap-1.5"
+              >
+                {hint.keys.map((key) => (
+                  <Kbd key={key}>{key}</Kbd>
+                ))}
+                {hint.label}
+              </span>
             ))}
-            {hint.label}
-          </span>
-        ))}
+          </div>
+        )}
 
         {triggerProps && (
           // The panel is anchored to its trigger rather than to the frame, so
           // opening upward stays structural — there is no offset here to keep
           // in step with the footer's padding.
-          <div className="relative ml-auto">
+          <div className="relative ml-auto shrink-0">
             <button
               {...triggerProps}
               className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

@@ -1,3 +1,4 @@
+import { untracked } from "../async"
 import { resolveTarget } from "../page/define"
 import type {
   AnyPage,
@@ -30,9 +31,13 @@ export function createNavigation(deps: NavigationDeps): Navigation {
 
     const instance = topInstance()
     // Settles with the page's own `resolve(value)`, or with undefined as soon
-    // as the instance is dropped by any unwind.
-    return new Promise<unknown>((settle) =>
-      deps.registerResolver(instance.instanceId, settle)
+    // as the instance is dropped by any unwind. Marked untracked because it
+    // stays pending for as long as the page is open, and a command that
+    // returns it is navigating rather than working — see `async.ts`.
+    return untracked(
+      new Promise<unknown>((settle) =>
+        deps.registerResolver(instance.instanceId, settle)
+      )
     )
   }
 

@@ -4,12 +4,10 @@ import type { Command } from "./types"
 /**
  * Turns a command into its effect: run the handler, or open the page it points
  * at. Disabled and display-only commands do neither. Returns whatever the
- * effect returns, so callers can await it.
+ * effect returned, so a caller can await it — and so the store can tell a
+ * promise from anything else.
  */
-export function resolveCommand(
-  command: Command,
-  ctx: PageContext
-): Promise<unknown> | void {
+export function resolveCommand(command: Command, ctx: PageContext): unknown {
   if (command.disabled) return
 
   if (command.run) return command.run(ctx) ?? undefined

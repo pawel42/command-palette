@@ -12,7 +12,12 @@ import {
   resolveBackspace,
 } from "../../core"
 import type { Command, FooterHint } from "../../core"
-import { usePaletteStore, usePaletteView, useSearch } from "../../react"
+import {
+  usePaletteStore,
+  usePaletteTasks,
+  usePaletteView,
+  useSearch,
+} from "../../react"
 
 import { useFrameBridge, useFrameFooter } from "../internal/bridge"
 
@@ -202,6 +207,9 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const [query, setQuery] = useSearch()
   const { getKeyHandler, activeOptionId, listId } = useFrameBridge()
   const { footer, getFooter } = useFrameFooter()
+  // Palette-wide, not per page: a run outlives the row that started it, and it
+  // is reported wherever the user has got to by the time it lands.
+  const { busy, toast } = usePaletteTasks()
 
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -392,6 +400,8 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const rootProps = {
     ref: rootRef,
     tabIndex: -1,
+    /** The bar is `aria-hidden`; this is what says the same thing out loud. */
+    "aria-busy": busy || undefined,
     // Every click inside the palette passes through here, so the panel needs
     // no document listener to know it was dismissed — and a click outside the
     // palette is the dialog's own dismissal, which the token above shuts the
@@ -532,6 +542,10 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   return {
     view,
     editable,
+    /** Something is running, and has been for long enough to say so. */
+    busy,
+    /** The one outcome the footer is showing, if any. */
+    toast,
     /** The input is gone on a "hidden" page; the row it sits in never is. */
     showInput: view.search !== "hidden",
     /** What the row says instead, then. */

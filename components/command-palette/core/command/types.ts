@@ -31,9 +31,33 @@ export type ItemMeta = {
  * registry is just the one place that is *only* commands.
  */
 export type Command =
-  | (ItemMeta & { page: PageTarget; options?: PushOptions; run?: never })
-  | (ItemMeta & { run: ActionHandler; page?: never; options?: never })
+  | (ItemMeta & {
+      page: PageTarget
+      options?: PushOptions
+      run?: never
+      onError?: never
+    })
+  | (ItemMeta & {
+      run: ActionHandler
+      page?: never
+      options?: never
+      /**
+       * What to do when this command's work fails, beyond the toast the user
+       * is shown: log it, report it, undo something. Called with the error.
+       *
+       * Nothing happens to a caught failure without this — see
+       * `RunAsyncOptions.onError`, which is where it ends up. It applies to a
+       * handler that returns its promise; one that calls `runAsync` itself
+       * declares the same thing there, next to the messages.
+       */
+      onError?: (error: unknown) => void
+    })
   /** Display-only row: a loading placeholder, a hint, a separator label. */
-  | (ItemMeta & { page?: never; run?: never; options?: never })
+  | (ItemMeta & {
+      page?: never
+      run?: never
+      options?: never
+      onError?: never
+    })
 
 export type CommandContext = PageContext<unknown, unknown>

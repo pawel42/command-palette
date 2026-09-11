@@ -112,6 +112,7 @@ export function CommandPaletteDialog({
   onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
+  revealMs,
   children,
 }: {
   /** The page the stack starts on. */
@@ -125,6 +126,11 @@ export function CommandPaletteDialog({
    * root. Defaults to 30s; `0` keeps the stack forever.
    */
   idleResetMs?: number
+  /**
+   * How long work must run before the palette shows a progress bar for it.
+   * Defaults to 120ms — see `REVEAL_MS`.
+   */
+  revealMs?: number
   /** Bridges mounted for as long as the palette lives — see `PaletteRoot`. */
   children?: React.ReactNode
 }) {
@@ -138,6 +144,7 @@ export function CommandPaletteDialog({
       rootPage={rootPage}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}
+      revealMs={revealMs}
     >
       {children}
       <IdleReset open={open} after={idleResetMs} />

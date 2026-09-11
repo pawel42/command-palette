@@ -4,6 +4,7 @@ import { Icon, ICONS, listPage } from "@/components/command-palette"
 import type { Command } from "@/components/command-palette"
 
 import { clearActivity, logActivity } from "./activity"
+import { deployPreview, syncRemote } from "./api"
 import { recentIds, rememberCommand, subscribeRecent } from "./recent"
 import { branchPage } from "./pages/branch"
 import { createTaskPage } from "./pages/create-task"
@@ -93,6 +94,59 @@ export const commands: Command[] = [
       toggleTheme()
       logActivity("toggled the theme")
     },
+  },
+  {
+    // The declared form: what to say while it runs, and what to say about
+    // what came back. `runAsync` never rejects, so nothing here has to catch —
+    // and `syncRemote` takes the signal, so starting something else or
+    // navigating away really does call the request off.
+    id: "sync",
+    title: "Sync with Remote",
+    subtitle: "slow, and says how it went",
+    section: "Actions",
+    keywords: ["pull", "fetch", "async"],
+    icon: <Icon path={ICONS.branch} />,
+    run: ({ runAsync }) =>
+      runAsync(syncRemote, {
+        loading: "Syncing with remote…",
+        success: (files) => `Synced ${files} files`,
+        error: "Couldn't reach the remote",
+      }),
+  },
+  {
+    // The whole of the zero-config form: an async handler, nothing declared.
+    // The palette still says "Deploy a Preview…" while it runs — a run has to
+    // say what it is, and with nothing declared the row's own title is the
+    // answer — and the rejection becomes a toast carrying the error's own
+    // message, instead of one nobody would have seen.
+    //
+    // What it gives up is the signal: leaving stops the palette waiting on
+    // this, but the work itself has no way of being told. Take the signal —
+    // `runAsync(deployPreview, { loading: "Deploying…" })` — to really abort.
+    id: "deploy",
+    title: "Deploy a Preview",
+    subtitle: "fails, and says so",
+    section: "Actions",
+    keywords: ["ship", "build", "error", "async"],
+    icon: <Icon path={ICONS.upload} />,
+    run: () => deployPreview(),
+    // The failure, after the user has been shown it. Nothing happens to a
+    // caught error unless the command says so — this one writes it to the log
+    // under the palette; yours might be `console.error` or a reporter.
+    onError: (error) =>
+      logActivity(
+        `deploy failed: ${error instanceof Error ? error.message : error}`
+      ),
+  },
+  {
+    // No work behind it at all: the same footer line, said directly.
+    id: "copy-link",
+    title: "Copy Palette Link",
+    section: "Actions",
+    keywords: ["share", "url", "toast"],
+    icon: <Icon path={ICONS.check} />,
+    run: ({ toast }) =>
+      toast({ title: "Copied", message: "The link is on your clipboard" }),
   },
   {
     id: "log-query",

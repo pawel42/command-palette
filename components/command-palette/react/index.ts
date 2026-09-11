@@ -1,4 +1,10 @@
 export {
+  usePaletteTasks,
+  usePaletteVisible,
+  useRunAsync,
+  useToast,
+} from "./async"
+export {
   PageProvider,
   PaletteProvider,
   useInstanceId,
