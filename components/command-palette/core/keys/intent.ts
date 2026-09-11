@@ -15,11 +15,18 @@ export type ListIntent =
   | { type: "select" }
   | { type: "escape" }
 
+/** ⌘ on a Mac, ctrl everywhere else — the pairing the toggle hotkey uses. */
+function toEdge(event: KeyEvent): boolean {
+  return Boolean(event.metaKey || event.ctrlKey)
+}
+
 export function resolveKey(event: KeyEvent): ListIntent | null {
   switch (event.key) {
     case "ArrowDown":
+      if (toEdge(event)) return { type: "edge", edge: "last" }
       return { type: "move", direction: 1 }
     case "ArrowUp":
+      if (toEdge(event)) return { type: "edge", edge: "first" }
       return { type: "move", direction: -1 }
     case "Home":
       return { type: "edge", edge: "first" }

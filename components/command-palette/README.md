@@ -87,6 +87,12 @@ a browser only scrolls a box that is an ancestor of whatever holds focus — and
 a page with no input row leaves focus on the frame, which sits above the box
 rather than inside it.
 
+⌘ + arrow goes the whole way wherever it is pressed: to the end of a scrolling
+page, or to the last row of a list that can be selected. ⌥ + arrow scrolls a
+screenful, and belongs to scrolling only — in a list the arrows move one row at
+a time and nothing else. Ctrl stands in for ⌘ off the Mac, as it does for the
+⌘K that opens the palette.
+
 ## Composing it yourself
 
 `CommandPaletteDialog` is one opinionated host. For any other presentation,
