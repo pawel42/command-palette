@@ -8,16 +8,20 @@ import { usePaletteFrame } from "./use-frame"
  * lives in `usePaletteFrame`; this is layout only.
  */
 export function PaletteFrame({ children }: { children: React.ReactNode }) {
-  const { view, showInput, rootProps, inputProps, hints, goBack } =
+  const { view, showInput, rootProps, slotProps, inputProps, hints, goBack } =
     usePaletteFrame()
 
   return (
+    // h-102 is the whole point of a fixed palette: one height for every page
+    // and every filter, so the footer never walks up the screen while the user
+    // types and a page with no input row is not a shorter palette. The rows
+    // above and below hold their natural size; the page slot takes the rest.
     <div
       {...rootProps}
-      className="w-full overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none"
+      className="flex h-102 w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none"
     >
       {showInput && (
-        <div className="flex items-center gap-2.5 border-b border-border px-3.5">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-3.5">
           {view.isRoot ? (
             <span className="text-muted-foreground">
               <SearchIcon />
@@ -46,9 +50,18 @@ export function PaletteFrame({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {children}
+      {/* The page gets whatever the input row and footer leave, and a page
+          longer than that scrolls inside it — with the keys too, see
+          `scrollByKey`. min-h-0, or a tall page would push the footer out
+          instead of scrolling. */}
+      <div
+        {...slotProps}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+      >
+        {children}
+      </div>
 
-      <div className="flex items-center gap-4 border-t border-border px-3.5 py-2 text-xs text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-4 border-t border-border px-3.5 py-2 text-xs text-muted-foreground">
         {hints.map((hint) => (
           <span
             key={hint.label + hint.keys.join()}

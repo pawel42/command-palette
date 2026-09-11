@@ -161,7 +161,7 @@ function ReleaseNotes() {
   const [detailed, setDetailed] = useState(true)
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5">
         <Icon path={ICONS.clock} className="size-4 text-muted-foreground" />
         <h2 className="text-sm font-medium">Release Notes</h2>
@@ -175,7 +175,7 @@ function ReleaseNotes() {
         </button>
       </div>
 
-      <div className="max-h-80 space-y-4 overflow-y-auto overscroll-contain p-4 text-sm">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 text-sm">
         {RELEASES.map((release) => (
           <article key={release.version} className="space-y-1.5">
             <h3 className="flex items-baseline gap-2">

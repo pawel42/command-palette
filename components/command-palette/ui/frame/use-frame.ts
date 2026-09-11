@@ -85,6 +85,94 @@ function wrapTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
   target.focus()
 }
 
+/** One arrow press worth of scrolling, which is what browsers step by too. */
+const SCROLL_STEP = 40
+
+/**
+ * What the keys should scroll: the page slot when the page overruns it, and
+ * otherwise a box the page scrolls on its own — Release Notes pins a header
+ * and scrolls only the notes under it.
+ *
+ * Pages keep their own boxes rather than sharing the slot's, because that is
+ * what makes an offset survive being covered: `Activity` hands a hidden page
+ * its scroll position back with its DOM, and one shared box would hand every
+ * page the same one.
+ *
+ * Hidden pages need no skipping — with no layout they measure 0 against 0.
+ * Read on the press rather than remembered, so a page that only starts
+ * overflowing later — Release Notes switched from Compact to Detailed — needs
+ * no telling.
+ */
+function scrollRegion(slot: HTMLElement | null): HTMLElement | null {
+  if (!slot) return null
+  if (slot.scrollHeight > slot.clientHeight) return slot
+
+  for (const element of slot.querySelectorAll<HTMLElement>("*")) {
+    if (element.scrollHeight <= element.clientHeight) continue
+
+    const { overflowY } = getComputedStyle(element)
+    if (overflowY === "auto" || overflowY === "scroll") return element
+  }
+
+  return null
+}
+
+/**
+ * Keyboard scrolling, which the browser will not do for us: it scrolls the
+ * nearest scrollable *ancestor* of whatever holds focus, and the frame parks
+ * focus on itself — the box's parent, not the box. So the keys land on nothing
+ * until focus happens to fall inside the box, which is what made this look so
+ * arbitrary: on Release Notes it started working two tab stops in, at the "go
+ * back" button that happens to sit inside the notes.
+ *
+ * Every press is taken, including the ones the browser would have handled from
+ * inside the box, so that one press means one step wherever focus sits — and
+ * never two, once from each of us. Typing fields are filtered out before this.
+ *
+ * The arrows read their modifiers the way the list's do: ⌥ covers more ground
+ * per press, ⌘ goes the whole way.
+ *
+ * Returns true when the press was spent.
+ */
+function scrollByKey(event: React.KeyboardEvent, slot: HTMLElement | null) {
+  const region = scrollRegion(slot)
+  if (!region) return false
+
+  // A screen at a time, less a line to carry the reader's place over — the
+  // same overlap browsers leave.
+  const page = Math.max(region.clientHeight - SCROLL_STEP, SCROLL_STEP)
+  const step = event.altKey ? page : SCROLL_STEP
+  const toEnd = event.metaKey || event.ctrlKey
+
+  switch (event.key) {
+    case "ArrowDown":
+      if (toEnd) region.scrollTo({ top: region.scrollHeight })
+      else region.scrollBy({ top: step })
+      break
+    case "ArrowUp":
+      if (toEnd) region.scrollTo({ top: 0 })
+      else region.scrollBy({ top: -step })
+      break
+    case "PageDown":
+      region.scrollBy({ top: page })
+      break
+    case "PageUp":
+      region.scrollBy({ top: -page })
+      break
+    case "Home":
+      region.scrollTo({ top: 0 })
+      break
+    case "End":
+      region.scrollTo({ top: region.scrollHeight })
+      break
+    default:
+      return false
+  }
+
+  event.preventDefault()
+  return true
+}
+
 export type FrameHint = { keys: string[]; label: string }
 
 /**
@@ -100,6 +188,8 @@ export function usePaletteFrame() {
 
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  /** The page area, which is what the scroll keys act on. */
+  const slotRef = useRef<HTMLDivElement>(null)
   /** Set while a backspace press is spending itself on text; cleared on keyup. */
   const consumedByDelete = useRef(false)
   /** Where the last render left the stack, so the next one can tell push from pop. */
@@ -245,8 +335,16 @@ export function usePaletteFrame() {
         return
       }
 
+      // A field's own caret keys are never the frame's to take.
+      if (isTypingTarget(event.target)) {
+        handleBackspace(event, true)
+        return
+      }
+
+      if (scrollByKey(event, slotRef.current)) return
+
       // Reached from pages whose input is disabled or hidden.
-      handleBackspace(event, isTypingTarget(event.target))
+      handleBackspace(event, false)
     },
   }
 
@@ -295,6 +393,7 @@ export function usePaletteFrame() {
     editable,
     showInput: view.search !== "hidden",
     rootProps,
+    slotProps: { ref: slotRef },
     inputProps,
     hints,
     goBack: () => store.navigation.pop(),

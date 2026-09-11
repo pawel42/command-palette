@@ -42,7 +42,9 @@ function ListPageView({ config }: { config: AnyListConfig }) {
   return (
     // --list-gap is the list's breathing room: its own padding, and the margin
     // every scrolled-to row and heading keeps from the edge of the scrollport.
-    <div className="max-h-80 overflow-y-auto overscroll-contain p-(--list-gap) [--list-gap:--spacing(1.5)]">
+    // h-full, not max-h: the frame's slot sets the height and this fills it, so
+    // a list of two rows leaves the palette exactly as tall as a list of forty.
+    <div className="h-full overflow-y-auto overscroll-contain p-(--list-gap) [--list-gap:--spacing(1.5)]">
       {header}
 
       <div {...listProps}>

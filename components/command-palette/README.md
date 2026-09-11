@@ -76,6 +76,17 @@ if the user escaped out of it.
 Hand-written pages use `definePage` plus the hooks in `react/`; `listPage` is
 built from those same public hooks and does nothing they can't.
 
+The palette is one fixed height, whatever page is on top and however far the
+filter has cut the list down, so nothing reflows under the user mid-keystroke.
+Pages get the space the input row and footer leave, and a page taller than that
+scrolls inside it.
+
+Scrolling answers ↑↓, PageUp/PageDown and Home/End with nothing declared: the
+frame finds the scrolling box and applies the press itself. It has to, because
+a browser only scrolls a box that is an ancestor of whatever holds focus — and
+a page with no input row leaves focus on the frame, which sits above the box
+rather than inside it.
+
 ## Composing it yourself
 
 `CommandPaletteDialog` is one opinionated host. For any other presentation,
