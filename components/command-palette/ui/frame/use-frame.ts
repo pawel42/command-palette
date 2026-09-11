@@ -57,7 +57,7 @@ function wrapTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
   if (!root) return
 
   const focusable = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (element) => element.getClientRects().length > 0
+    (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
   )
 
   const first = focusable[0]

@@ -23,12 +23,17 @@ export function PaletteFrame({ children }: { children: React.ReactNode }) {
               <SearchIcon />
             </span>
           ) : (
-            // The only chrome a nested page gets: a way back for the mouse.
+            // The only chrome a nested page gets: a way back for the mouse,
+            // and only for the mouse. It is out of the tab order because it
+            // repeats what esc and backspace already do — both of which the
+            // footer spells out — and a tab stop that duplicates a key the
+            // page is advertising is a stop with nothing behind it.
             <button
               type="button"
+              tabIndex={-1}
               onClick={goBack}
               aria-label="Go back"
-              className="-ml-1 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="-ml-1 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Icon path={ICONS.chevronLeft} className="size-4" />
             </button>
