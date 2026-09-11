@@ -1,6 +1,7 @@
 "use client"
 
-import { resolveCommand } from "../../core"
+import { useSyncExternalStore } from "react"
+
 import type {
   Command,
   EscapeRoute,
@@ -31,6 +32,12 @@ export type ListPageConfig<Props, Result> = NoHeader & {
   /** Handed straight to `definePage` — see `PageDefinition.footer`. */
   footer?: FooterInput<Props, Result>
   /**
+   * For items that come from a store outside React — a recents list, a cache.
+   * The page only subscribes to the palette's own state, so without this a
+   * write out there would not reach the rows until the next keystroke did.
+   */
+  watch?: ExternalStore
+  /**
    * A line of prose above the rows. Part of the list, not the chrome: it sits
    * inside the list's own scroll box and scrolls with the rows. The header is
    * the frame's on every page — see `NoHeader`.
@@ -38,7 +45,18 @@ export type ListPageConfig<Props, Result> = NoHeader & {
   note?: (ctx: PageContext<Props, Result>) => React.ReactNode
 }
 
+/** The `useSyncExternalStore` pair, named so a config can carry it. */
+export type ExternalStore = {
+  subscribe: (onChange: () => void) => () => void
+  getSnapshot: () => unknown
+}
+
 export type AnyListConfig = ListPageConfig<unknown, unknown>
+
+// Module constants, so the no-watch case hands `useSyncExternalStore` the same
+// two references on every render and never resubscribes.
+const NEVER = () => () => {}
+const NOTHING = () => null
 
 /** Both shapes are the shared renderer's — re-exported for the page kind. */
 export type { ListRow, ListSection }
@@ -52,6 +70,12 @@ export function useListPage(config: AnyListConfig) {
   const instanceId = useInstanceId()
   // Subscribes this page to the store, so query and selection changes re-render it.
   usePaletteState()
+  // And to whatever else the items are built from.
+  useSyncExternalStore(
+    config.watch?.subscribe ?? NEVER,
+    config.watch?.getSnapshot ?? NOTHING,
+    config.watch?.getSnapshot ?? NOTHING
+  )
 
   const ctx = store.contextFor(instanceId)
   const items =
@@ -62,8 +86,11 @@ export function useListPage(config: AnyListConfig) {
         : config.items
 
   const list = useCommandList(items, {
-    onSelect: (item, itemCtx) => {
-      void resolveCommand(item, itemCtx)
+    // Through the store rather than straight to `resolveCommand`: it builds
+    // the same context from the same instance, and it is the one place a host
+    // watching for what ran gets to see it.
+    onSelect: (item) => {
+      void store.runCommand(item, instanceId)
     },
   })
 

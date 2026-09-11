@@ -3,7 +3,7 @@
 import { Activity, useCallback, useEffect, useRef, useState } from "react"
 import { Dialog, VisuallyHidden } from "radix-ui"
 
-import type { PageTarget } from "../../core"
+import type { Command, PageTarget } from "../../core"
 import { PaletteRoot, PaletteSurface } from "../palette"
 import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
@@ -109,12 +109,15 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  */
 export function CommandPaletteDialog({
   rootPage,
+  onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
   children,
 }: {
   /** The page the stack starts on. */
   rootPage: PageTarget
+  /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
+  onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
   shellSelector?: string
   /**
@@ -131,7 +134,11 @@ export function CommandPaletteDialog({
   useModalShell(open, { shellSelector })
 
   return (
-    <PaletteRoot rootPage={rootPage} onDismiss={() => setOpen(false)}>
+    <PaletteRoot
+      rootPage={rootPage}
+      onDismiss={() => setOpen(false)}
+      onCommand={onCommand}
+    >
       {children}
       <IdleReset open={open} after={idleResetMs} />
 

@@ -3,7 +3,7 @@
 import { CommandPaletteDialog, Kbd } from "@/components/command-palette"
 
 import { useActivity } from "./demo/activity"
-import { rootPage } from "./demo/commands"
+import { rememberRootCommand, rootPage } from "./demo/commands"
 import { ThemeCommandBridge } from "./demo/theme-bridge"
 
 export default function Page() {
@@ -23,7 +23,10 @@ export default function Page() {
       {/* The palette knows nothing about this app: it is handed the page the
           stack starts on, and a bridge that publishes the theme toggle to
           commands, which are plain data and cannot call hooks themselves. */}
-      <CommandPaletteDialog rootPage={rootPage}>
+      <CommandPaletteDialog
+        rootPage={rootPage}
+        onCommand={(command) => rememberRootCommand(command.id)}
+      >
         <ThemeCommandBridge />
       </CommandPaletteDialog>
 

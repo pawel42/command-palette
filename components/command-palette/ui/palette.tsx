@@ -1,7 +1,7 @@
 "use client"
 
 import { PaletteProvider } from "../react"
-import type { PageTarget } from "../core"
+import type { Command, PageTarget } from "../core"
 
 import { PaletteFrame } from "./frame/frame"
 import { PaletteBridgeProvider } from "./internal/bridge"
@@ -20,15 +20,22 @@ import { PageHost } from "./page-host"
 export function PaletteRoot({
   rootPage,
   onDismiss,
+  onCommand,
   children,
 }: {
   /** The page the stack starts on, and the one esc unwinds to. */
   rootPage: PageTarget
   onDismiss?: () => void
+  /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
+  onCommand?: (command: Command) => void
   children: React.ReactNode
 }) {
   return (
-    <PaletteProvider rootPage={rootPage} onDismiss={onDismiss}>
+    <PaletteProvider
+      rootPage={rootPage}
+      onDismiss={onDismiss}
+      onCommand={onCommand}
+    >
       <PaletteBridgeProvider>{children}</PaletteBridgeProvider>
     </PaletteProvider>
   )
@@ -61,14 +68,20 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
 export function CommandPalette({
   rootPage,
   onDismiss,
+  onCommand,
   children,
 }: {
   rootPage: PageTarget
   onDismiss?: () => void
+  onCommand?: (command: Command) => void
   children?: React.ReactNode
 }) {
   return (
-    <PaletteRoot rootPage={rootPage} onDismiss={onDismiss}>
+    <PaletteRoot
+      rootPage={rootPage}
+      onDismiss={onDismiss}
+      onCommand={onCommand}
+    >
       {children}
       <PaletteSurface />
     </PaletteRoot>

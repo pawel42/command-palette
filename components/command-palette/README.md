@@ -83,6 +83,29 @@ Either way the shortcut still runs the command: it is matched off the item, not
 off what was drawn. A row grouped under a heading of its own ("Recent",
 "Results") can set `label` to keep saying where it really lives.
 
+Two seams exist for a list the host keeps outside React, and between them they
+are a recents section:
+
+```tsx
+const rootPage = listPage({
+  id: "root",
+  // Idle, what was last used; typing, one ranked list under one heading.
+  items: ({ query }) =>
+    query.trim() ? commands.map(asResult) : [...recentRows(), ...commands],
+  // The page only subscribes to the palette's own state, so say what else to
+  // watch — without this a write out there waits for the next keystroke.
+  watch: { subscribe: subscribeRecent, getSnapshot: recentIds },
+})
+
+// Every command the palette runs, as it runs, and never a disabled one. The
+// host's window on what was used: a command that opens a page has nowhere of
+// its own to put that.
+<CommandPaletteDialog rootPage={rootPage} onCommand={(c) => remember(c.id)} />
+```
+
+A row that appears twice needs an id of its own — the list keys its DOM ids and
+its selection off `item.id`.
+
 The palette is one fixed height, whatever page is on top and however far the
 filter has cut the list down, so nothing reflows under the user mid-keystroke.
 Pages get the space the input row and footer leave, and a page taller than that

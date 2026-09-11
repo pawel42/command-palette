@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
 } from "react"
 
+import type { Command } from "../core/command"
 import type { PageTarget } from "../core/page"
 import { selectView } from "../core/stack"
 import type { PaletteState, PaletteView } from "../core/stack"
@@ -21,11 +22,14 @@ const InstanceContext = createContext<string | null>(null)
 export function PaletteProvider({
   rootPage,
   onDismiss,
+  onCommand,
   children,
 }: {
   rootPage: PageTarget
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
+  /** Called with every command the palette runs. */
+  onCommand?: (command: Command) => void
   children: React.ReactNode
 }) {
   const [store] = useState(() => createPaletteStore({ rootPage }))
@@ -35,6 +39,10 @@ export function PaletteProvider({
   useEffect(() => {
     store.setOnDismiss(onDismiss)
   }, [store, onDismiss])
+
+  useEffect(() => {
+    store.setOnCommand(onCommand)
+  }, [store, onCommand])
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
 }

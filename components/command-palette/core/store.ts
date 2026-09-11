@@ -9,9 +9,18 @@ export type PaletteStoreOptions = {
   rootPage: PageTarget
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
+  /**
+   * Called with every command the palette runs, just before it runs, and never
+   * for a disabled one. The host's window on what was used — a recents list,
+   * an analytics ping — without wrapping each command's own handler, which a
+   * command that opens a page has nowhere to put.
+   */
+  onCommand?: (command: Command) => void
 }
 
 export type DismissHandler = (() => void) | undefined
+
+export type CommandHandler = ((command: Command) => void) | undefined
 
 export type PaletteStore = {
   getState: () => PaletteState
@@ -24,6 +33,8 @@ export type PaletteStore = {
   runCommand: (command: Command, instanceId?: string) => Promise<unknown> | void
   /** Lets a host swap the dismiss handler without rebuilding the store. */
   setOnDismiss: (onDismiss: DismissHandler) => void
+  /** The same, for the ran-a-command handler. */
+  setOnCommand: (onCommand: CommandHandler) => void
 }
 
 /**
@@ -35,6 +46,7 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
   let state = createInitialState(options.rootPage)
 
   let onDismiss = options.onDismiss
+  let onCommand = options.onCommand
   const listeners = new Set<() => void>()
   const resolvers = new Map<string, (value: unknown) => void>()
 
@@ -102,6 +114,10 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       onDismiss = handler
     },
 
+    setOnCommand: (handler) => {
+      onCommand = handler
+    },
+
     subscribe: (listener) => {
       listeners.add(listener)
       return () => listeners.delete(listener)
@@ -112,6 +128,11 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
         instanceId ?? state.stack[state.stack.length - 1].instanceId
       const ctx = contextFor(target)
       if (!ctx) return
+
+      // Announced before it runs, and only for a command that will do
+      // something — `resolveCommand` drops a disabled one on the floor.
+      if (!command.disabled) onCommand?.(command)
+
       return resolveCommand(command, ctx)
     },
   }

@@ -4,6 +4,7 @@ import { Icon, ICONS, listPage } from "@/components/command-palette"
 import type { Command } from "@/components/command-palette"
 
 import { clearActivity, logActivity } from "./activity"
+import { recentIds, rememberCommand, subscribeRecent } from "./recent"
 import { branchPage } from "./pages/branch"
 import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
@@ -112,12 +113,60 @@ export const commands: Command[] = [
   },
 ]
 
+/**
+ * A recent row is the same command under a different heading, so it needs an
+ * id of its own: the list keys its DOM ids and its selection off `item.id`,
+ * and the original is still down in its own section.
+ */
+const RECENT_PREFIX = "recent:"
+
+const byId = new Map(commands.map((command) => [command.id, command]))
+
+/**
+ * Regroups a command under a heading it doesn't belong to, keeping its real
+ * section as the label on the row — so a row in "Recent" or "Results" still
+ * says whether it is a page or an action.
+ */
+function regroup(command: Command, section: string, id = command.id): Command {
+  return { ...command, id, section, label: command.section }
+}
+
+/** The commands last run, in that order, skipping any that have since gone. */
+function recentRows(): Command[] {
+  return recentIds().flatMap((id) => {
+    const command = byId.get(id)
+    return command
+      ? [regroup(command, "Recent", `${RECENT_PREFIX}${command.id}`)]
+      : []
+  })
+}
+
+/** Called with every command the palette runs — see `app/page.tsx`. */
+export function rememberRootCommand(id: string) {
+  const rootId = id.startsWith(RECENT_PREFIX)
+    ? id.slice(RECENT_PREFIX.length)
+    : id
+  // Only the registry's own commands: an action from a page deeper in, or from
+  // the footer's panel, has no row up here to come back to.
+  if (byId.has(rootId)) rememberCommand(rootId)
+}
+
 /** The root is a list page over the registry — not a special case. */
 export const rootPage = listPage({
   id: "root",
   title: "Root",
   placeholder: "Search for a page or an action…",
-  items: commands,
+
+  // Idle, the root is what you last used and then the registry as written.
+  // Typing throws the headings away: the sections are how an untouched list is
+  // read, and a search is one ranked answer to what was typed.
+  items: ({ query }) =>
+    query.trim()
+      ? commands.map((command) => regroup(command, "Results"))
+      : [...recentRows(), ...commands],
+
+  // The recents live outside React, so the page has to be told when they move.
+  watch: { subscribe: subscribeRecent, getSnapshot: recentIds },
 
   // The declarative half of the footer: no page state behind it, so it is
   // known at definition time and paints with the first frame.
