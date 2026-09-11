@@ -9,8 +9,13 @@ import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
 import { useToggleHotkey } from "./use-toggle-hotkey"
 
-/** Matches the exit animation below, so hiding waits for the fade to finish. */
-const EXIT_MS = 150
+/**
+ * Outlasts the exit animation below rather than matching it. The surface holds
+ * its last frame — see `fill-mode-forwards` — so hiding late costs nothing,
+ * while hiding early would cut the fade off mid-way. Two timers that merely
+ * match are a race, and it is the kind that is lost one frame at a time.
+ */
+const EXIT_MS = 200
 
 /**
  * Open/closed, plus a `visible` flag that lingers on the way out so the close
@@ -69,7 +74,7 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  * closed for `idleResetMs`, at which point the stack goes back to a freshly
  * mounted root. See `useIdleReset`.
  *
- * Four consequences of that:
+ * Five consequences of that:
  *  - the dialog is non-modal and force-mounted, because modal content aria-hides
  *    the rest of the app from a mount-only effect — see `useModalShell`, which
  *    puts modal behavior back for as long as the palette is open;
@@ -84,7 +89,12 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *  - `onEscapeKeyDown` is prevented, because Radix listens for esc in the
  *    capture phase and would close on the first press. Esc has to clear the
  *    input and unwind the stack first, so the palette decides instead and the
- *    dialog closes through `onDismiss` — esc at the root with an empty input.
+ *    dialog closes through `onDismiss` — esc at the root with an empty input;
+ *  - the exit animation has to hold its own last frame. Radix pins
+ *    `animation-fill-mode: forwards` when a closing layer unmounts, and a
+ *    force-mounted one never unmounts, so without `fill-mode-forwards` the
+ *    palette snaps back to full opacity and full size the instant the fade
+ *    ends — a flash, whenever that beats the hide below to the paint.
  */
 export function CommandPaletteDialog({
   rootPage,
@@ -118,12 +128,14 @@ export function CommandPaletteDialog({
         <Dialog.Portal forceMount>
           {/* z-40, not 50: this mounts *after* the content, so equal layers
               would put the dim on top of the palette — and swallow its
-              clicks as "outside". */}
+              clicks as "outside". It outlives the close by `EXIT_MS`, so it
+              also has to stop hit-testing on the way out, or a faded-out
+              sheet of nothing eats the first click back on the page. */}
           {visible && (
             <div
               aria-hidden
               data-state={open ? "open" : "closed"}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] data-[state=closed]:pointer-events-none data-[state=closed]:animate-out data-[state=closed]:animation-duration-150 data-[state=closed]:fade-out-0 data-[state=closed]:fill-mode-forwards data-[state=open]:animate-in data-[state=open]:fade-in-0"
             />
           )}
 
@@ -133,7 +145,7 @@ export function CommandPaletteDialog({
             onEscapeKeyDown={(event) => event.preventDefault()}
             onFocusOutside={(event) => event.preventDefault()}
             aria-describedby={undefined}
-            className="fixed top-[20vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 data-[state=closed]:pointer-events-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className="fixed top-[20vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 data-[state=closed]:pointer-events-none data-[state=closed]:animate-out data-[state=closed]:animation-duration-150 data-[state=closed]:fade-out-0 data-[state=closed]:fill-mode-forwards data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           >
             <VisuallyHidden.Root asChild>
               <Dialog.Title>Command palette</Dialog.Title>
