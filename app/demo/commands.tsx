@@ -1,11 +1,15 @@
 "use client"
 
-import { Icon, ICONS, listPage } from "@/components/command-palette"
-import type { Command } from "@/components/command-palette"
+import { Icon, ICONS } from "@/components/command-palette"
+import type {
+  Command,
+  PageContext,
+  PageFooter,
+} from "@/components/command-palette"
 
 import { clearActivity, logActivity } from "./activity"
 import { deployPreview, syncRemote } from "./api"
-import { recentIds, rememberCommand, subscribeRecent } from "./recent"
+import { recentIds, rememberCommand } from "./recent"
 import { branchPage } from "./pages/branch"
 import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
@@ -205,42 +209,38 @@ export function rememberRootCommand(id: string) {
   if (byId.has(rootId)) rememberCommand(rootId)
 }
 
-/** The root is a list page over the registry — not a special case. */
-export const rootPage = listPage({
-  id: "root",
-  title: "Root",
-  placeholder: "Search for a page or an action…",
+/**
+ * What the root opens on. Idle, it is what you last used and then the registry
+ * as written; typing throws the headings away, because the sections are how an
+ * untouched list is read and a search is one ranked answer to what was typed.
+ */
+export function rootCommands({ query }: PageContext): Command[] {
+  return query.trim()
+    ? commands.map((command) => regroup(command, "Results"))
+    : [...recentRows(), ...commands]
+}
 
-  // Idle, the root is what you last used and then the registry as written.
-  // Typing throws the headings away: the sections are how an untouched list is
-  // read, and a search is one ranked answer to what was typed.
-  items: ({ query }) =>
-    query.trim()
-      ? commands.map((command) => regroup(command, "Results"))
-      : [...recentRows(), ...commands],
-
-  // The recents live outside React, so the page has to be told when they move.
-  watch: { subscribe: subscribeRecent, getSnapshot: recentIds },
-
-  // The declarative half of the footer: no page state behind it, so it is
-  // known at definition time and paints with the first frame.
-  footer: {
-    actions: [
-      {
-        id: "clear-activity",
-        title: "Clear the activity log",
-        subtitle: "the list under the palette",
-        shortcut: ["⌘", "⇧", "L"],
-        icon: <Icon path={ICONS.close} />,
-        run: () => clearActivity(),
-      },
-      {
-        id: "whats-new",
-        title: "What's new",
-        subtitle: "an action can open a page",
-        icon: <Icon path={ICONS.clock} />,
-        page: releaseNotesPage,
-      },
-    ],
-  },
-})
+/**
+ * The root's footer. Declared rather than published from inside a page: there
+ * is no page state behind it, so it is known up front and paints with the
+ * first frame.
+ */
+export const rootFooter: PageFooter = {
+  actions: [
+    {
+      id: "clear-activity",
+      title: "Clear the activity log",
+      subtitle: "the list under the palette",
+      shortcut: ["⌘", "⇧", "L"],
+      icon: <Icon path={ICONS.close} />,
+      run: () => clearActivity(),
+    },
+    {
+      id: "whats-new",
+      title: "What's new",
+      subtitle: "an action can open a page",
+      icon: <Icon path={ICONS.clock} />,
+      page: releaseNotesPage,
+    },
+  ],
+}

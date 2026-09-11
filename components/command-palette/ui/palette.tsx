@@ -1,11 +1,13 @@
 "use client"
 
 import { PaletteProvider, usePaletteVisible } from "../react"
-import type { Command, PageTarget } from "../core"
+import type { Command } from "../core"
 
 import { PaletteFrame } from "./frame/frame"
 import { PaletteBridgeProvider } from "./internal/bridge"
 import { PageHost } from "./page-host"
+import { useRootPage } from "./root-page"
+import type { RootConfig } from "./root-page"
 
 /**
  * Everything stateful: the engine and the frame↔page bridge. It renders no UI
@@ -18,14 +20,12 @@ import { PageHost } from "./page-host"
  * small bridge component mounted here publishes what they need.
  */
 export function PaletteRoot({
-  rootPage,
   onDismiss,
   onCommand,
   revealMs,
   children,
-}: {
-  /** The page the stack starts on, and the one esc unwinds to. */
-  rootPage: PageTarget
+  ...root
+}: RootConfig & {
   onDismiss?: () => void
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
@@ -33,6 +33,8 @@ export function PaletteRoot({
   revealMs?: number
   children: React.ReactNode
 }) {
+  const rootPage = useRootPage(root)
+
   return (
     <PaletteProvider
       rootPage={rootPage}
@@ -77,13 +79,12 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
  * and `PaletteSurface` themselves instead, so the stack outlives the close.
  */
 export function CommandPalette({
-  rootPage,
   onDismiss,
   onCommand,
   revealMs,
   children,
-}: {
-  rootPage: PageTarget
+  ...root
+}: RootConfig & {
   onDismiss?: () => void
   onCommand?: (command: Command) => void
   revealMs?: number
@@ -91,7 +92,7 @@ export function CommandPalette({
 }) {
   return (
     <PaletteRoot
-      rootPage={rootPage}
+      {...root}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}

@@ -3,8 +3,9 @@
 import { Activity, useCallback, useEffect, useRef, useState } from "react"
 import { Dialog, VisuallyHidden } from "radix-ui"
 
-import type { Command, PageTarget } from "../../core"
+import type { Command } from "../../core"
 import { PaletteRoot, PaletteSurface } from "../palette"
+import type { RootConfig } from "../root-page"
 import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
 import { useToggleHotkey } from "./use-toggle-hotkey"
@@ -108,15 +109,13 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *    ends — a flash, whenever that beats the hide below to the paint.
  */
 export function CommandPaletteDialog({
-  rootPage,
   onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
   revealMs,
   children,
-}: {
-  /** The page the stack starts on. */
-  rootPage: PageTarget
+  ...root
+}: RootConfig & {
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
@@ -141,7 +140,7 @@ export function CommandPaletteDialog({
 
   return (
     <PaletteRoot
-      rootPage={rootPage}
+      {...root}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}
       revealMs={revealMs}

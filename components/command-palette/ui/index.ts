@@ -6,6 +6,7 @@
  *   frame/        the chrome around every page — the one input and the footer
  *   list-page/    the one prebuilt page kind: a filtered, navigable list
  *   dialog/       the opinionated ⌘K host, and the only place radix-ui appears
+ *   root-page.ts  the root every host builds from the commands it is handed
  *   internal/     the frame↔page channel; not part of the public surface
  */
 
@@ -14,4 +15,6 @@ export * from "./frame"
 export * from "./list-page"
 export { CommandPalette, PaletteRoot, PaletteSurface } from "./palette"
 export { PageHost } from "./page-host"
+export { useRootPage } from "./root-page"
+export type { RootConfig } from "./root-page"
 export { Highlight, ICONS, Icon, Kbd, SearchIcon } from "./primitives"

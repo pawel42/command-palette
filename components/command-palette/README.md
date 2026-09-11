@@ -39,25 +39,38 @@ const settingsPage = listPage({
   items: [{ id: "theme", title: "Toggle Dark Mode", run: () => toggleTheme() }],
 })
 
-// The root is a list page over your commands — not a special case.
-const rootPage = listPage({
-  id: "root",
-  placeholder: "Search for a page or an action…",
-  items: [
-    { id: "settings", title: "Settings", section: "Pages", page: settingsPage },
-    {
-      id: "save",
-      title: "Save",
-      section: "Actions",
-      run: ({ query }) => save(query),
-    },
-  ],
-})
+// Commands, not a root page. The root is always the same page — one list over
+// whatever it was handed — so the palette builds it and the host never writes
+// it. Everything below the root is a page you do write.
+const commands = [
+  { id: "settings", title: "Settings", section: "Pages", page: settingsPage },
+  {
+    id: "save",
+    title: "Save",
+    section: "Actions",
+    run: ({ query }) => save(query),
+  },
+]
 
 export function App() {
-  return <CommandPaletteDialog rootPage={rootPage} />
+  return (
+    <CommandPaletteDialog
+      commands={commands}
+      placeholder="Search for a page or an action…"
+    />
+  )
 }
 ```
+
+The root takes the rest of a list page's config the same way, as props:
+`placeholder`, `emptyMessage`, `footer`, `note` and `watch`. The four it does
+not take are the four that are not the host's at the root — `id` and `title`
+are its own, `search` is the filter it opens on, and `escape` is `onDismiss`.
+
+All of it is read once, when the palette mounts, because the page built from it
+is the page the stack starts on and rebuilding that would remount the root.
+Nothing is lost: the two seams below are what a changing root goes through, and
+a page of your own is free to be built however you like.
 
 A closed palette keeps the user's place — the same stack, page state, text and
 scroll are there on the next ⌘K — but only for a while: after 30 seconds
@@ -88,21 +101,26 @@ Two seams exist for a list the host keeps outside React, and between them they
 are a recents section:
 
 ```tsx
-const rootPage = listPage({
-  id: "root",
+<CommandPaletteDialog
   // Idle, what was last used; typing, one ranked list under one heading.
-  items: ({ query }) =>
-    query.trim() ? commands.map(asResult) : [...recentRows(), ...commands],
-  // The page only subscribes to the palette's own state, so say what else to
+  commands={({ query }) =>
+    query.trim() ? commands.map(asResult) : [...recentRows(), ...commands]
+  }
+  // The root only subscribes to the palette's own state, so say what else to
   // watch — without this a write out there waits for the next keystroke.
-  watch: { subscribe: subscribeRecent, getSnapshot: recentIds },
-})
-
-// Every command the palette runs, as it runs, and never a disabled one. The
-// host's window on what was used: a command that opens a page has nowhere of
-// its own to put that.
-<CommandPaletteDialog rootPage={rootPage} onCommand={(c) => remember(c.id)} />
+  watch={{ subscribe: subscribeRecent, getSnapshot: recentIds }}
+  // Every command the palette runs, as it runs, and never a disabled one. The
+  // host's window on what was used: a command that opens a page has nowhere of
+  // its own to put that.
+  onCommand={(c) => remember(c.id)}
+/>
 ```
+
+The function form runs on every render of the list, so it may read anything
+outside React — a module store, a cache — and `watch` is what tells the list
+when that moved. What it must not do is close over the host's React state: it
+is captured with the page, once. Publish that state through `watch`, or through
+a bridge, like anything else a command needs.
 
 A row that appears twice needs an id of its own — the list keys its DOM ids and
 its selection off `item.id`.
@@ -231,7 +249,7 @@ browser from logging it and putting a line there is not a palette's decision to
 make. What the caught error gets is a way out:
 
 ```tsx
-<CommandPaletteDialog rootPage={rootPage} onError={console.error} />
+<CommandPaletteDialog commands={commands} onError={console.error} />
 ```
 
 `onError` is handed every failure the palette swallowed, after the user has
@@ -314,11 +332,16 @@ pending for as long as the pushed page is open, and anything already handed to
 delete `ui/dialog/` and compose the two halves directly:
 
 ```tsx
-<PaletteRoot rootPage={rootPage} onDismiss={close}>
+<PaletteRoot commands={commands} onDismiss={close}>
   {/* bridges that publish hook-only values to commands live here */}
   {open && <PaletteSurface />}
 </PaletteRoot>
 ```
+
+`PaletteRoot` takes the root exactly as the dialog does — it is where the
+dialog passes it on to. A host that wants a root which is _not_ a list of
+commands has one layer further down: `PaletteProvider`, from `react/`, takes
+the page the stack starts on and nothing else.
 
 `PaletteRoot` holds all the state and renders nothing, so keeping it mounted
 while the surface comes and goes is what makes the stack outlive a close. Drop

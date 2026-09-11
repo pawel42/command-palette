@@ -3,7 +3,8 @@
 import { CommandPaletteDialog, Kbd } from "@/components/command-palette"
 
 import { useActivity } from "./demo/activity"
-import { rememberRootCommand, rootPage } from "./demo/commands"
+import { rememberRootCommand, rootCommands, rootFooter } from "./demo/commands"
+import { recentIds, subscribeRecent } from "./demo/recent"
 import { ThemeCommandBridge } from "./demo/theme-bridge"
 
 export default function Page() {
@@ -20,11 +21,16 @@ export default function Page() {
         to open the command palette
       </p>
 
-      {/* The palette knows nothing about this app: it is handed the page the
-          stack starts on, and a bridge that publishes the theme toggle to
-          commands, which are plain data and cannot call hooks themselves. */}
+      {/* The palette knows nothing about this app: it is handed the commands
+          it opens on, and a bridge that publishes the theme toggle to them —
+          commands are plain data and cannot call hooks themselves. */}
       <CommandPaletteDialog
-        rootPage={rootPage}
+        commands={rootCommands}
+        placeholder="Search for a page or an action…"
+        footer={rootFooter}
+        // The recents live outside React, so say what else the root watches:
+        // without this a write out there waits for the next keystroke.
+        watch={{ subscribe: subscribeRecent, getSnapshot: recentIds }}
         onCommand={(command) => rememberRootCommand(command.id)}
       >
         <ThemeCommandBridge />
