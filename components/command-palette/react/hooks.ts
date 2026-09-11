@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useId, useRef } from "react"
+import { useCallback, useId } from "react"
 
 import type { ItemMeta } from "../core/command"
 import { claimEscape, matchesShortcut, resolveKey } from "../core/keys"
@@ -68,7 +68,6 @@ export type ItemProps = {
   "data-index": number
   /** Only the active row gets one: it scrolls itself back into view. */
   ref?: (node: HTMLElement | null) => void
-  onMouseMove: () => void
   onClick: () => void
 }
 
@@ -119,18 +118,10 @@ export function useCommandList<T extends ItemMeta>(
       itemId: entries[index]?.item.id ?? null,
     })
 
-  // Set by the pointer, cleared by the reveal below: hovering a half-visible
-  // row must not scroll it, or the list would crawl away under the cursor.
-  const pointerDriven = useRef(false)
-
   // A ref, not an effect: the callback runs exactly when the active row
   // changes, which is the only moment there is anything to scroll to.
   const reveal = useCallback((node: HTMLElement | null) => {
     if (!node) return
-    if (pointerDriven.current) {
-      pointerDriven.current = false
-      return
-    }
 
     node.scrollIntoView({ block: "nearest" })
 
@@ -202,12 +193,10 @@ export function useCommandList<T extends ItemMeta>(
     "aria-disabled": item.disabled || undefined,
     "data-index": index,
     ref: index === activeIndex ? reveal : undefined,
-    // Mouse move, not enter: scrolling must not steal the selection.
-    onMouseMove: () => {
-      if (item.disabled || index === activeIndex) return
-      pointerDriven.current = true
-      setActiveIndex(index)
-    },
+    // The pointer never moves the selection: hovering only paints a row (see
+    // the row's hover style), so the arrow keys always resume from wherever
+    // the keyboard left off rather than from wherever the cursor happens to
+    // rest. A click still runs the row it is over, active or not.
     onClick: () => select(index),
   })
 

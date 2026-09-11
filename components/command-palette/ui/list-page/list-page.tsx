@@ -88,7 +88,12 @@ function Row({ row }: { row: ListRow }) {
         "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-sm select-none",
         // Keeps the row clear of the scrollport edge when it scrolls itself in.
         "scroll-my-(--list-gap)",
-        isActive ? "bg-accent text-accent-foreground" : "text-foreground",
+        // Hover paints, it does not select: the cursor gets a dimmer wash so
+        // the keyboard's row stays the one that reads as chosen. The active
+        // row is left alone, or passing over it would look like a downgrade.
+        isActive
+          ? "bg-accent text-accent-foreground"
+          : "text-foreground hover:bg-accent/60",
         item.disabled ? "pointer-events-none opacity-40" : "",
       ].join(" ")}
     >
