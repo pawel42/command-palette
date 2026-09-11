@@ -2,6 +2,7 @@
 
 import { logActivity } from "../activity"
 import { Icon, ICONS, listPage } from "@/components/command-palette"
+import type { PageFooter } from "@/components/command-palette"
 
 export type Project = {
   id: string
@@ -28,6 +29,24 @@ export const projectsPage = listPage<{ archived: boolean }, Project>({
   title: "Projects",
   placeholder: "Search projects…",
   emptyMessage: "No project matches that.",
+
+  // The declarative half of the footer, and the reason it takes a function:
+  // this one is built from the page's own props, and it has to be built late
+  // — a plain object here would name the page before the page exists.
+  footer: ({ props }): PageFooter => ({
+    actions: props.archived
+      ? []
+      : [
+          {
+            id: "archived",
+            title: "Browse archived projects",
+            subtitle: "the same page, other props",
+            section: "View",
+            icon: <Icon path={ICONS.clock} />,
+            page: projectsPage.with({ archived: true }),
+          },
+        ],
+  }),
 
   items: ({ props, resolve }) =>
     ALL_PROJECTS.filter((project) => props.archived || !project.archived).map(

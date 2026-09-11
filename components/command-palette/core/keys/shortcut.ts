@@ -44,3 +44,35 @@ export function matchesShortcut(
     (modifier) => Boolean(event[modifier]) === required.has(modifier)
   )
 }
+
+/** ⌘K on a Mac, ctrl+K everywhere else. The first is what the UI displays. */
+export const TOGGLE_SHORTCUT: readonly (readonly string[])[] = [
+  ["⌘", "K"],
+  ["⌃", "K"],
+]
+
+/** ⌘⇧K: the footer's action panel. Chrome, and not a page's to move. */
+export const ACTIONS_SHORTCUT: readonly (readonly string[])[] = [
+  ["⌘", "⇧", "K"],
+  ["⌃", "⇧", "K"],
+]
+
+/**
+ * The two the palette keeps for itself. A page that declares one of them gets
+ * the palette's behavior, not its own — matched before any page action.
+ */
+export const RESERVED_SHORTCUTS: readonly (readonly string[])[] = [
+  ...TOGGLE_SHORTCUT,
+  ...ACTIONS_SHORTCUT,
+]
+
+/**
+ * Matches any of several spellings of one chord — what a ⌘-on-a-Mac,
+ * ctrl-everywhere-else pair always needs.
+ */
+export function matchesAny(
+  shortcuts: readonly (readonly string[])[],
+  event: KeyEvent
+): boolean {
+  return shortcuts.some((shortcut) => matchesShortcut(shortcut, event))
+}

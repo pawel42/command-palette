@@ -1,12 +1,14 @@
+import type { FooterInput } from "./footer"
 import type {
   AnyPage,
   BoundPage,
+  NoHeader,
   PageDefinition,
   PageTarget,
   SearchMode,
 } from "./types"
 
-export type PageInput<Props, Result, Component> = {
+export type PageInput<Props, Result, Component> = NoHeader & {
   id: string
   title?: string
   search?: SearchMode
@@ -14,6 +16,8 @@ export type PageInput<Props, Result, Component> = {
   escape?: PageDefinition<Props, Result, Component>["escape"]
   /** See `PageDefinition.list` — the frame reads it for the footer hints. */
   list?: boolean
+  /** See `PageDefinition.footer` — the page's one piece of the chrome. */
+  footer?: FooterInput<Props, Result>
   component: Component
 }
 

@@ -1,8 +1,14 @@
 "use client"
 
 import { resolveCommand } from "../../core"
-import type { Command, EscapeRoute, PageContext, SearchMode } from "../../core"
-import type { ItemProps } from "../../react"
+import type {
+  Command,
+  EscapeRoute,
+  FooterInput,
+  NoHeader,
+  PageContext,
+  SearchMode,
+} from "../../core"
 import {
   useCommandList,
   useInstanceId,
@@ -11,8 +17,9 @@ import {
 } from "../../react"
 
 import { usePublishBridge } from "../internal/bridge"
+import type { ListRow, ListSection } from "../internal/rows"
 
-export type ListPageConfig<Props, Result> = {
+export type ListPageConfig<Props, Result> = NoHeader & {
   id: string
   title?: string
   placeholder?: string
@@ -21,26 +28,20 @@ export type ListPageConfig<Props, Result> = {
   emptyMessage?: string
   /** Static, or derived from the page's props. */
   items: Command[] | ((ctx: PageContext<Props, Result>) => Command[])
-  /** Optional note above the list. */
-  header?: (ctx: PageContext<Props, Result>) => React.ReactNode
+  /** Handed straight to `definePage` — see `PageDefinition.footer`. */
+  footer?: FooterInput<Props, Result>
+  /**
+   * A line of prose above the rows. Part of the list, not the chrome: it sits
+   * inside the list's own scroll box and scrolls with the rows. The header is
+   * the frame's on every page — see `NoHeader`.
+   */
+  note?: (ctx: PageContext<Props, Result>) => React.ReactNode
 }
 
 export type AnyListConfig = ListPageConfig<unknown, unknown>
 
-/** One rendered row: everything the markup needs, nothing it has to derive. */
-export type ListRow = {
-  item: Command
-  indices: readonly number[]
-  isActive: boolean
-  props: ItemProps
-}
-
-export type ListSection = {
-  key: string
-  section?: string
-  headingId?: string
-  rows: ListRow[]
-}
+/** Both shapes are the shared renderer's — re-exported for the page kind. */
+export type { ListRow, ListSection }
 
 /**
  * Turns a list page's config into a view model: the filtered sections with
@@ -98,7 +99,7 @@ export function useListPage(config: AnyListConfig) {
     sections,
     isEmpty: list.entries.length === 0,
     emptyMessage: config.emptyMessage ?? "No results found.",
-    header: ctx === null ? null : config.header?.(ctx),
+    note: ctx === null ? null : config.note?.(ctx),
     listProps: { ...list.listProps, "aria-label": config.title ?? "Commands" },
   }
 }

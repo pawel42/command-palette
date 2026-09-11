@@ -6,5 +6,11 @@ export {
   usePaletteStore,
   usePaletteView,
 } from "./context"
-export { useCommandList, useNavigation, usePage, useSearch } from "./hooks"
-export type { CommandList, ItemProps } from "./hooks"
+export {
+  useCommandList,
+  useListController,
+  useNavigation,
+  usePage,
+  useSearch,
+} from "./hooks"
+export type { CommandList, ItemProps, ListControl } from "./hooks"

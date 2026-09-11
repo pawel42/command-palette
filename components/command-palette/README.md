@@ -84,14 +84,66 @@ scrolls inside it.
 Scrolling answers ↑↓, PageUp/PageDown and Home/End with nothing declared: the
 frame finds the scrolling box and applies the press itself. It has to, because
 a browser only scrolls a box that is an ancestor of whatever holds focus — and
-a page with no input row leaves focus on the frame, which sits above the box
-rather than inside it.
+a page with no editable input leaves focus on the frame, which sits above the
+box rather than inside it.
 
 ⌘ + arrow goes the whole way wherever it is pressed: to the end of a scrolling
 page, or to the last row of a list that can be selected. ⌥ + arrow scrolls a
 screenful, and belongs to scrolling only — in a list the arrows move one row at
 a time and nothing else. Ctrl stands in for ⌘ off the Mac, as it does for the
 ⌘K that opens the palette.
+
+## The header is the frame's; the footer is the page's
+
+The input row is the same on every page: the search glyph at the root, the back
+chevron everywhere else, then the one input. A page cannot change it, and that
+is enforced rather than implied — `definePage` and `listPage` type `icon`,
+`backIcon`, `header` and friends as `never`, so a config that tries fails to
+compile whether it was written as a literal or built by spreading. `search:
+"hidden"` hides the *input*, not the row: the title takes its place and the way
+back stays where the user left it.
+
+What a page does get is the footer:
+
+```tsx
+const notesPage = definePage({
+  id: "notes",
+  title: "Notes",
+  search: "hidden",
+  footer: {
+    hints: [{ keys: ["esc"], label: "discards this draft" }],
+    actions: [
+      { id: "save", title: "Save", shortcut: ["⌘", "↵"], run: () => save() },
+      { id: "archive", title: "Open the archive", page: archivePage },
+    ],
+  },
+  component: Notes,
+})
+```
+
+`hints` are key legends with nothing behind them, drawn beside the frame's own.
+`actions` are ordinary commands — the same shape as a list row, so they filter,
+group by `section` and open pages just as rows do. They live behind **⌘⇧K**,
+which opens a searchable panel at the footer's right; any that carry a
+`shortcut` also fire straight from the page. A shortcut that is meant to work
+while a form field has focus has to include ⌘ or ⌃, or it would be taken out of
+the middle of a word — and ⌘K and ⌘⇧K stay the palette's.
+
+A footer that depends on the page's own React state cannot be declared on the
+definition, so that page publishes it from inside instead:
+
+```tsx
+usePageFooter({
+  actions: [
+    { id: "density", title: detailed ? "Compact" : "Detailed", run: toggle },
+  ],
+})
+```
+
+Whoever declares the footer declares all of it: `usePageFooter` replaces the
+page's config footer rather than adding to it, so there is only ever one place
+to look. The config form is the default because it is read during render — a
+footer published from an effect lands one frame after the page does.
 
 ## Composing it yourself
 

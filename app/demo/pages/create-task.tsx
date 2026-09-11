@@ -2,7 +2,12 @@
 
 import type { ComponentType } from "react"
 
-import { definePage, Icon, ICONS, Kbd } from "@/components/command-palette"
+import {
+  definePage,
+  Icon,
+  ICONS,
+  usePageFooter,
+} from "@/components/command-palette"
 
 import { useTaskDraft } from "./use-task-draft"
 
@@ -23,6 +28,22 @@ export const createTaskPage = definePage<void, void, ComponentType>({
 
 function CreateTaskForm() {
   const { draft, setTitle, setNotes, save } = useTaskDraft()
+
+  // Save reads the draft, so the footer is published from in here. ⌘↵ works
+  // with the caret in either field — a chord with ⌘ in it is the only kind
+  // allowed to fire while the user is typing.
+  usePageFooter({
+    actions: [
+      {
+        id: "save",
+        title: "Save and go home",
+        shortcut: ["⌘", "↵"],
+        icon: <Icon path={ICONS.check} />,
+        run: save,
+      },
+    ],
+    hints: [{ keys: ["esc"], label: "discards this draft" }],
+  })
 
   return (
     <div className="space-y-4 p-4">
@@ -48,19 +69,14 @@ function CreateTaskForm() {
         />
       </label>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={save}
-          className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover focus-visible:outline-none"
-        >
-          <Icon path={ICONS.check} className="size-3.5" />
-          Save and go home
-        </button>
-        <p className="text-xs text-muted-foreground">
-          <Kbd>esc</Kbd> discards this draft
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={save}
+        className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover focus-visible:outline-none"
+      >
+        <Icon path={ICONS.check} className="size-3.5" />
+        Save and go home
+      </button>
     </div>
   )
 }

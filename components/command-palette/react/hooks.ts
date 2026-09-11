@@ -84,25 +84,37 @@ export type CommandList<T> = {
   select: (index: number) => void
 }
 
+export type ListControl<T> = {
+  /** What to filter by. */
+  query: string
+  /** The row the keyboard is on, by id. */
+  activeItemId: string | null
+  setActiveItemId: (itemId: string | null) => void
+  onSelect?: (item: T, ctx: PageContext) => void
+  /**
+   * What esc does here. The default is the palette's own rule — clear the
+   * input, or unwind — which is right for a page and wrong for anything that
+   * merely sits on top of one, like the footer's action panel.
+   */
+  onEscape?: (event: React.KeyboardEvent) => void
+}
+
 /**
- * The list controller every list-shaped page shares: filtering, wraparound
- * keyboard nav that skips disabled rows, item shortcuts, and the aria wiring.
- * State lives in the store, so nothing here writes React state in an effect.
- *
- * Esc is not handled here — see the "escape" case below.
+ * The list controller: filtering, wraparound keyboard nav that skips disabled
+ * rows, item shortcuts, and the aria wiring. Where the query and the selection
+ * are kept is the caller's business — `useCommandList` below keeps them in the
+ * store, and the action panel keeps its own in React state, because its text
+ * is not the page's text.
  */
-export function useCommandList<T extends ItemMeta>(
+export function useListController<T extends ItemMeta>(
   items: readonly T[],
-  options: { onSelect?: (item: T, ctx: PageContext) => void } = {}
+  control: ListControl<T>
 ): CommandList<T> {
   const store = usePaletteStore()
   const instanceId = useInstanceId()
-  const state = usePaletteState()
   const baseId = useId()
 
-  const instance = state.stack.find((entry) => entry.instanceId === instanceId)
-  const query = instance?.query ?? ""
-  const activeItemId = instance?.activeItemId ?? null
+  const { query, activeItemId } = control
 
   const groups = filterItems(items, query)
   const entries = flatten(groups)
@@ -112,11 +124,7 @@ export function useCommandList<T extends ItemMeta>(
   const optionId = (item: T) => `${baseId}-option-${item.id}`
 
   const setActiveIndex = (index: number) =>
-    store.dispatch({
-      type: "setActiveItem",
-      instanceId,
-      itemId: entries[index]?.item.id ?? null,
-    })
+    control.setActiveItemId(entries[index]?.item.id ?? null)
 
   // A ref, not an effect: the callback runs exactly when the active row
   // changes, which is the only moment there is anything to scroll to.
@@ -135,7 +143,7 @@ export function useCommandList<T extends ItemMeta>(
     }
   }, [])
 
-  const { onSelect } = options
+  const { onSelect } = control
 
   const select = (index: number) => {
     const entry = entries[index]
@@ -181,7 +189,8 @@ export function useCommandList<T extends ItemMeta>(
         // Clears the input, or unwinds along this page's route — once. The
         // frame sees this same press on the way up and must not unwind again.
         event.preventDefault()
-        if (claimEscape(event)) store.escape()
+        if (control.onEscape) control.onEscape(event)
+        else if (claimEscape(event)) store.escape()
         break
     }
   }
@@ -211,4 +220,30 @@ export function useCommandList<T extends ItemMeta>(
     onKeyDown,
     select,
   }
+}
+
+/**
+ * The controller every list-shaped *page* uses: the same thing, with the query
+ * and the selection kept in the store under this page's instance. State lives
+ * there, so nothing here writes React state in an effect, and a page keeps its
+ * text and its row when it is navigated away from.
+ */
+export function useCommandList<T extends ItemMeta>(
+  items: readonly T[],
+  options: { onSelect?: (item: T, ctx: PageContext) => void } = {}
+): CommandList<T> {
+  const store = usePaletteStore()
+  const instanceId = useInstanceId()
+  // Subscribes to the store, so a query or selection change re-renders.
+  const state = usePaletteState()
+
+  const instance = state.stack.find((entry) => entry.instanceId === instanceId)
+
+  return useListController(items, {
+    query: instance?.query ?? "",
+    activeItemId: instance?.activeItemId ?? null,
+    setActiveItemId: (itemId) =>
+      store.dispatch({ type: "setActiveItem", instanceId, itemId }),
+    onSelect: options.onSelect,
+  })
 }

@@ -7,9 +7,9 @@ import {
   definePage,
   Icon,
   ICONS,
-  Kbd,
   useNavigation,
   usePage,
+  usePageFooter,
 } from "@/components/command-palette"
 
 import { logActivity } from "../activity"
@@ -69,11 +69,27 @@ function ProfileForm() {
   const [role, setRole] = useState(ROLES[0])
   const [bio, setBio] = useState("")
 
+  const saveProfile = () => resolve({ name: name || "Unnamed", role, bio })
+
+  usePageFooter({
+    actions: [
+      {
+        id: "save-profile",
+        title: "Save profile",
+        subtitle: "hands the values back to step one",
+        shortcut: ["\u2318", "\u21b5"],
+        icon: <Icon path={ICONS.check} />,
+        run: saveProfile,
+      },
+    ],
+    hints: [{ keys: ["esc"], label: "abandons this step" }],
+  })
+
   return (
     <div className="space-y-4 p-4">
       <p className="text-xs text-muted-foreground">
         Fill this in and save — the values travel back to step one through{" "}
-        <code>resolve()</code>. <Kbd>esc</Kbd> abandons them instead.
+        <code>resolve()</code>.
       </p>
 
       <Label text="Display name">
@@ -112,7 +128,7 @@ function ProfileForm() {
 
       <button
         type="button"
-        onClick={() => resolve({ name: name || "Unnamed", role, bio })}
+        onClick={saveProfile}
         className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
       >
         <Icon path={ICONS.check} className="size-3.5" />
@@ -137,6 +153,35 @@ function AccountForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [profile, setProfile] = useState<Profile | null>(null)
+
+  const createAccount = () => {
+    logActivity(
+      `signed up “${email || "no email"}”${
+        profile ? ` as ${profile.role}` : " with no profile"
+      }`
+    )
+    nav.popToRoot()
+  }
+
+  usePageFooter({
+    actions: [
+      {
+        id: "create-account",
+        title: "Create account",
+        shortcut: ["\u2318", "\u21b5"],
+        icon: <Icon path={ICONS.check} />,
+        run: createAccount,
+      },
+      {
+        id: "add-profile",
+        title: profile ? "Edit the profile" : "Add a profile…",
+        subtitle: "step two, pushed from here",
+        icon: <Icon path={ICONS.user} />,
+        run: () => void addProfile(),
+      },
+    ],
+    hints: [{ keys: ["esc"], label: "discards everything" }],
+  })
 
   const addProfile = async () => {
     const result = await nav.push(profilePage)
@@ -191,26 +236,14 @@ function AccountForm() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            logActivity(
-              `signed up “${email || "no email"}”${
-                profile ? ` as ${profile.role}` : " with no profile"
-              }`
-            )
-            nav.popToRoot()
-          }}
-          className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          <Icon path={ICONS.check} className="size-3.5" />
-          Create account
-        </button>
-        <p className="text-xs text-muted-foreground">
-          <Kbd>esc</Kbd> discards everything
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={createAccount}
+        className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+      >
+        <Icon path={ICONS.check} className="size-3.5" />
+        Create account
+      </button>
     </div>
   )
 }

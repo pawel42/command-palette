@@ -13,7 +13,7 @@ export const level3Page = listPage({
   title: "Level 3",
   placeholder: "Bottom of the chain…",
   escape: "root",
-  header: () => (
+  note: () => (
     <p className="px-2 py-2 text-xs text-muted-foreground">
       This page declares <code>escape: &quot;root&quot;</code> — one esc goes
       all the way home instead of walking back up.

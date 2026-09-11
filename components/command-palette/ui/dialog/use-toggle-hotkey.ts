@@ -2,13 +2,10 @@
 
 import { useEffect, useRef } from "react"
 
-import { matchesShortcut } from "../../core"
+import { TOGGLE_SHORTCUT, matchesAny } from "../../core"
 
 /** ⌘K on a Mac, ctrl+K everywhere else. The first is what the UI displays. */
-export const TOGGLE_SHORTCUT: readonly (readonly string[])[] = [
-  ["⌘", "K"],
-  ["⌃", "K"],
-]
+export { TOGGLE_SHORTCUT }
 
 /**
  * Global toggle. It listens on the window so it works whether the palette is
@@ -32,10 +29,7 @@ export function useToggleHotkey(
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const hit = shortcutsRef.current.some((shortcut) =>
-        matchesShortcut(shortcut, event)
-      )
-      if (!hit) return
+      if (!matchesAny(shortcutsRef.current, event)) return
 
       // Still swallow the browser's own ⌘K on repeats, just don't act on them.
       event.preventDefault()

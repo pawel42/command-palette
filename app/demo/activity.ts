@@ -16,6 +16,11 @@ export function logActivity(message: string) {
   for (const listener of listeners) listener()
 }
 
+export function clearActivity() {
+  entries = []
+  for (const listener of listeners) listener()
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener)
   return () => listeners.delete(listener)

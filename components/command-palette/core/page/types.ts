@@ -1,9 +1,14 @@
+import type { FooterInput } from "./footer"
+
 /**
  * What the palette's single input means on a given page:
  *  - "filter"   — editable; the query filters what the page renders
  *  - "input"    — editable; the page owns the text (async search, "create X")
  *  - "disabled" — rendered, but greyed out and not editable
- *  - "hidden"   — not rendered at all
+ *  - "hidden"   — no input; the row carries the page's title instead
+ *
+ * None of them take the row away: the header row is the frame's, it is always
+ * there, and every page below the root shows the same back button in it.
  *
  * The last two have no query to clear, so esc unwinds on the first press.
  *
@@ -44,9 +49,35 @@ export type PageContext<Props = unknown, Result = unknown> = {
   nav: Navigation
 }
 
-export type PageDefinition<Props = void, Result = void, Component = unknown> = {
+/**
+ * The chrome a page is not allowed to have, spelled out so the compiler can
+ * say so. The header row — the back button, the icon, the input — is the
+ * frame's on every page, because a palette whose chrome moves between pages is
+ * a palette the user has to re-read on every push. The footer is the one place
+ * a page adds anything of its own.
+ *
+ * `never` rather than leaving the fields out: an absent field only trips the
+ * excess-property check on an object literal, and a config built by spreading
+ * would walk straight past it.
+ */
+export type NoHeader = {
+  icon?: never
+  backIcon?: never
+  back?: never
+  header?: never
+  headerRight?: never
+  trailing?: never
+  /** Actions go in the footer, under `footer.actions`. */
+  actions?: never
+}
+
+export type PageDefinition<
+  Props = void,
+  Result = void,
+  Component = unknown,
+> = NoHeader & {
   readonly id: string
-  /** Breadcrumb label. */
+  /** Breadcrumb label, and what the header row shows when there is no input. */
   readonly title?: string
   readonly search: SearchMode
   readonly placeholder?: string
@@ -58,6 +89,15 @@ export type PageDefinition<Props = void, Result = void, Component = unknown> = {
    * would flicker on first paint.
    */
   readonly list?: boolean
+  /**
+   * The page's half of the footer: the actions behind ⌘⇧K, and the key hints
+   * beside them. Static like `list`, and read during render for the same
+   * reason — a footer known at definition time paints with the page instead of
+   * arriving an effect later. The function form covers everything reachable
+   * from the context; a footer that depends on the page's own React state
+   * cannot be known here, and that page calls `usePageFooter` instead.
+   */
+  readonly footer?: FooterInput<Props, Result>
   /** Opaque to the engine — the React layer decides what a component is. */
   readonly component: Component
   /**

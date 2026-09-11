@@ -9,6 +9,10 @@
  *
  * plus `store.ts`, which is the only stateful thing here and ties the last
  * two together. Nothing in this folder imports React at runtime.
+ *
+ * `page/` and `command/` are the one pair that name each other: a command
+ * targets a page, and a page declares a footer of commands. Type-only in both
+ * directions, so the dependency order above still holds at runtime.
  */
 
 export * from "./command"

@@ -2,18 +2,16 @@
 
 import type { ComponentType } from "react"
 
-import {
-  definePage,
-  Icon,
-  ICONS,
-  Kbd,
-  useNavigation,
-} from "@/components/command-palette"
+import { definePage } from "@/components/command-palette"
 import type { PageDefinition, SearchMode } from "@/components/command-palette"
 
 /**
  * A hand-written page kind, to show that pages are free-form: no list, no
  * items, no config — just a component with the frame's input switched off.
+ *
+ * It draws no chrome of its own, and could not if it wanted to. The title and
+ * the way back are in the frame's header row on every page, whatever the
+ * search mode, and "esc back" is already spelled out in the footer.
  */
 export function notePage(
   id: string,
@@ -23,26 +21,9 @@ export function notePage(
   search: SearchMode = "disabled"
 ): PageDefinition<void, void, ComponentType> {
   function Note() {
-    const nav = useNavigation()
-
     return (
-      <div className="space-y-3 p-4 text-sm">
-        <h2 className="flex items-center gap-2 font-medium">
-          <Icon path={ICONS.dot} className="size-4 text-muted-foreground" />
-          {title}
-        </h2>
-
-        <div className="space-y-2 leading-relaxed text-muted-foreground">
-          {body}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => nav.pop()}
-          className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <Kbd>esc</Kbd> go back
-        </button>
+      <div className="space-y-2 p-4 text-sm leading-relaxed text-muted-foreground">
+        {body}
       </div>
     )
   }

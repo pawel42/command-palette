@@ -3,7 +3,7 @@
 import { Icon, ICONS, listPage } from "@/components/command-palette"
 import type { Command } from "@/components/command-palette"
 
-import { logActivity } from "./activity"
+import { clearActivity, logActivity } from "./activity"
 import { branchPage } from "./pages/branch"
 import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
@@ -118,4 +118,26 @@ export const rootPage = listPage({
   title: "Root",
   placeholder: "Search for a page or an action…",
   items: commands,
+
+  // The declarative half of the footer: no page state behind it, so it is
+  // known at definition time and paints with the first frame.
+  footer: {
+    actions: [
+      {
+        id: "clear-activity",
+        title: "Clear the activity log",
+        subtitle: "the list under the palette",
+        shortcut: ["⌘", "⇧", "L"],
+        icon: <Icon path={ICONS.close} />,
+        run: () => clearActivity(),
+      },
+      {
+        id: "whats-new",
+        title: "What's new",
+        subtitle: "an action can open a page",
+        icon: <Icon path={ICONS.clock} />,
+        page: releaseNotesPage,
+      },
+    ],
+  },
 })

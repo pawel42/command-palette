@@ -7,8 +7,7 @@ import {
   definePage,
   Icon,
   ICONS,
-  Kbd,
-  useNavigation,
+  usePageFooter,
 } from "@/components/command-palette"
 
 type Release = {
@@ -148,6 +147,10 @@ const RELEASES: Release[] = [
  * held by the engine: `detailed` below is a plain `useState`, and the scroll
  * offset is the browser's own. Close the palette halfway down the list and
  * reopen it — both come back, because the page is hidden rather than unmounted.
+ *
+ * It is also the page that shows why a footer can be published from inside a
+ * component: the Compact/Detailed toggle is named after state the definition
+ * cannot see, so it goes through `usePageFooter` rather than `footer` here.
  */
 export const releaseNotesPage = definePage<void, void, ComponentType>({
   id: "release-notes",
@@ -157,56 +160,46 @@ export const releaseNotesPage = definePage<void, void, ComponentType>({
 })
 
 function ReleaseNotes() {
-  const nav = useNavigation()
   const [detailed, setDetailed] = useState(true)
 
+  usePageFooter({
+    actions: [
+      {
+        id: "density",
+        title: detailed ? "Compact view" : "Detailed view",
+        subtitle: "how much each release says",
+        section: "View",
+        shortcut: ["⌘", "⇧", "D"],
+        icon: <Icon path={ICONS.layers} />,
+        run: () => setDetailed((previous) => !previous),
+      },
+    ],
+  })
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-3.5 py-2.5">
-        <Icon path={ICONS.clock} className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-medium">Release Notes</h2>
+    // Its own scroll box, not the frame's: an offset survives being covered
+    // because the page keeps the box it belongs to.
+    <div className="h-full space-y-4 overflow-y-auto overscroll-contain p-4 text-sm">
+      {RELEASES.map((release) => (
+        <article key={release.version} className="space-y-1.5">
+          <h3 className="flex items-baseline gap-2">
+            <span className="font-medium tabular-nums">{release.version}</span>
+            <span className="text-xs text-muted-foreground">
+              {release.date}
+            </span>
+          </h3>
 
-        <button
-          type="button"
-          onClick={() => setDetailed((previous) => !previous)}
-          className="ml-auto rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          {detailed ? "Compact" : "Detailed"}
-        </button>
-      </div>
+          <p className="text-muted-foreground">{release.headline}</p>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 text-sm">
-        {RELEASES.map((release) => (
-          <article key={release.version} className="space-y-1.5">
-            <h3 className="flex items-baseline gap-2">
-              <span className="font-medium tabular-nums">
-                {release.version}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {release.date}
-              </span>
-            </h3>
-
-            <p className="text-muted-foreground">{release.headline}</p>
-
-            {detailed && (
-              <ul className="space-y-1 border-l border-border pl-3 text-xs text-muted-foreground">
-                {release.notes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            )}
-          </article>
-        ))}
-
-        <button
-          type="button"
-          onClick={() => nav.pop()}
-          className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <Kbd>esc</Kbd> go back
-        </button>
-      </div>
+          {detailed && (
+            <ul className="space-y-1 border-l border-border pl-3 text-xs text-muted-foreground">
+              {release.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          )}
+        </article>
+      ))}
     </div>
   )
 }
