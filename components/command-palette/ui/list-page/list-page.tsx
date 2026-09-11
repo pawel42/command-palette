@@ -53,6 +53,8 @@ function ListPageView({ config }: { config: AnyListConfig }) {
         isEmpty={isEmpty}
         emptyMessage={emptyMessage}
         listProps={listProps}
+        // A page's rows say what section they are in, not what keys run them.
+        trailing="label"
       />
     </div>
   )

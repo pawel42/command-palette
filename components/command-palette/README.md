@@ -76,6 +76,13 @@ if the user escaped out of it.
 Hand-written pages use `definePage` plus the hooks in `react/`; `listPage` is
 built from those same public hooks and does nothing they can't.
 
+A list page's rows carry their section on the right; the footer's action panel
+carries the keys instead, which are the point of it. Nothing else rides along —
+a row that opens a page draws no chevron, and there is no option to ask for one.
+Either way the shortcut still runs the command: it is matched off the item, not
+off what was drawn. A row grouped under a heading of its own ("Recent",
+"Results") can set `label` to keep saying where it really lives.
+
 The palette is one fixed height, whatever page is on top and however far the
 filter has cut the list down, so nothing reflows under the user mid-keystroke.
 Pages get the space the input row and footer leave, and a page taller than that

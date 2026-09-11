@@ -13,6 +13,12 @@ export type ItemMeta = {
   title: string
   subtitle?: string
   section?: string
+  /**
+   * The trailing label on a row that shows one, defaulting to `section`. Worth
+   * setting only when the two differ: a row regrouped under a heading of its
+   * own — "Recent", "Results" — can still say where it actually lives.
+   */
+  label?: string
   keywords?: readonly string[]
   shortcut?: readonly string[]
   icon?: ReactNode

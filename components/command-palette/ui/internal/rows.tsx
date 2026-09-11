@@ -2,7 +2,7 @@
 
 import type { Command } from "../../core"
 import type { ItemProps } from "../../react"
-import { Highlight, ICONS, Icon, Kbd } from "../primitives"
+import { Highlight, Kbd } from "../primitives"
 
 /** One rendered row: everything the markup needs, nothing it has to derive. */
 export type ListRow = {
@@ -11,6 +11,17 @@ export type ListRow = {
   isActive: boolean
   props: ItemProps
 }
+
+/**
+ * What the right edge of a row carries: the keys that run it, or the section
+ * it belongs to. A list page labels — where the rows are grouped under their
+ * headings anyway, the keys are noise on a row about to be taken with ↵ — and
+ * the action panel keeps the keys, which are the whole point of it.
+ *
+ * Either way the shortcut still *works*: it is matched off the item, not off
+ * what was drawn — see `useListController`'s key handler.
+ */
+export type Trailing = "shortcut" | "label"
 
 export type ListSection = {
   key: string
@@ -35,11 +46,14 @@ export function CommandRows({
   isEmpty,
   emptyMessage,
   listProps,
+  trailing = "shortcut",
 }: {
   sections: ListSection[]
   isEmpty: boolean
   emptyMessage: string
   listProps: { id: string; role: "listbox"; "aria-label"?: string }
+  /** What the right edge of a row carries — see `CommandRow`. */
+  trailing?: Trailing
 }) {
   return (
     <div {...listProps}>
@@ -65,7 +79,7 @@ export function CommandRows({
             )}
 
             {section.rows.map((row) => (
-              <CommandRow key={row.item.id} row={row} />
+              <CommandRow key={row.item.id} row={row} trailing={trailing} />
             ))}
           </div>
         ))
@@ -74,8 +88,15 @@ export function CommandRows({
   )
 }
 
-export function CommandRow({ row }: { row: ListRow }) {
+export function CommandRow({
+  row,
+  trailing = "shortcut",
+}: {
+  row: ListRow
+  trailing?: Trailing
+}) {
   const { item, indices, isActive } = row
+  const label = item.label ?? item.section
 
   return (
     <div
@@ -108,7 +129,7 @@ export function CommandRow({ row }: { row: ListRow }) {
         )}
       </span>
 
-      {item.shortcut && (
+      {trailing === "shortcut" && item.shortcut && (
         <span className="flex shrink-0 items-center gap-1">
           {item.shortcut.map((key) => (
             <Kbd key={key}>{key}</Kbd>
@@ -116,11 +137,8 @@ export function CommandRow({ row }: { row: ListRow }) {
         </span>
       )}
 
-      {item.page && (
-        <Icon
-          path={ICONS.chevronRight}
-          className="size-3.5 shrink-0 text-muted-foreground"
-        />
+      {trailing === "label" && label && (
+        <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
       )}
     </div>
   )
