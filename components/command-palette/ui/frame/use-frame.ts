@@ -571,6 +571,11 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
         : {
             ref: triggerRef,
             type: "button" as const,
+            // Out of the tab order, for the reason the "go back" button is:
+            // it repeats a chord it is itself spelling out, and on a page of
+            // form fields it would sit in the middle of the run of tab stops
+            // the user is actually filling in.
+            tabIndex: -1,
             onClick: togglePanel,
             "aria-haspopup": "dialog" as const,
             "aria-expanded": panelOpen,

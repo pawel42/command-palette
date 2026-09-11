@@ -147,7 +147,7 @@ export function PaletteFrame({
           <div className="relative ml-auto shrink-0">
             <button
               {...triggerProps}
-              className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               Actions
               <Kbd>⌘</Kbd>
