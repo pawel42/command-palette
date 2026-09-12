@@ -1,75 +1,61 @@
-import { definePage } from "../components/command-palette/core/page/define"
 import { createPaletteStore } from "../components/command-palette/core/store"
+import { bind } from "../components/command-palette/core/page/target"
 import type {
   Command,
+  Page,
   PaletteStore,
 } from "../components/command-palette/core/index"
 
 /**
- * Stub pages for the headless tests and the walkthrough script. `component` is
- * opaque to the engine, so null is a perfectly good page here.
+ * Stub pages for the headless tests and the walkthrough script. Nothing here
+ * is ever rendered, so the bodies are as empty as the engine lets them be —
+ * a page is data, and what the stack does with it is all these exercise.
  */
 
-export const rootPage = definePage<{ commands: Command[] }, void, null>({
+export const rootPage: Page<{ commands: Command[] }> = {
   id: "root",
   title: "Root",
   placeholder: "Search commands…",
-  component: null,
-})
+  items: ({ props }) => props.commands,
+}
 
-export const page1 = definePage<void, void, null>({
+export const page1: Page = {
   id: "page1",
   title: "Page 1",
   placeholder: "Where to?",
-  component: null,
-})
+  items: [],
+}
 
-export const page2 = definePage<void, void, null>({
-  id: "page2",
-  title: "Page 2",
-  component: null,
-})
+export const page2: Page = { id: "page2", title: "Page 2", items: [] }
 
-export const page3 = definePage<void, void, null>({
-  id: "page3",
-  title: "Page 3",
-  component: null,
-})
+export const page3: Page = { id: "page3", title: "Page 3", items: [] }
 
-export const page4 = definePage<void, void, null>({
-  id: "page4",
-  title: "Page 4",
-  component: null,
-})
+export const page4: Page = { id: "page4", title: "Page 4", items: [] }
 
-export const page41 = definePage<void, void, null>({
-  id: "page4.1",
-  title: "Page 4.1",
-  component: null,
-})
+export const page41: Page = { id: "page4.1", title: "Page 4.1", items: [] }
 
 /** A form: the input is inert, so esc pops on the first press. */
-export const formPage = definePage<void, void, null>({
+export const formPage: Page = {
   id: "form",
   title: "Form",
   search: "disabled",
-  component: null,
-})
+  render: () => null,
+}
 
 /** Deep page that jumps straight home on esc. */
-export const confirmPage = definePage<void, void, null>({
+export const confirmPage: Page = {
   id: "confirm",
   title: "Confirm",
   escape: "root",
-  component: null,
-})
+  items: [],
+}
 
 /** Takes props and returns a value — the picker shape. */
-export const projectsPage = definePage<{ archived: boolean }, string, null>({
+export const projectsPage: Page<{ archived: boolean }, string> = {
   id: "projects",
   title: "Projects",
-  component: null,
-})
+  items: [],
+}
 
 /**
  * Work that takes a beat, so a walkthrough can watch the bar come and go —
@@ -96,7 +82,7 @@ export function createCommands(log: string[]): Command[] {
       title: "Search Projects",
       section: "Pages",
       keywords: ["client", "work"],
-      page: projectsPage.with({ archived: false }),
+      page: bind(projectsPage, { archived: false }),
     },
     {
       id: "log",
@@ -172,7 +158,7 @@ export function createTestStore(
   const log: string[] = []
   const commands = createCommands(log)
   const store = createPaletteStore({
-    rootPage: rootPage.with({ commands }),
+    rootPage: bind(rootPage, { commands }),
     onDismiss,
     revealMs: options.revealMs,
   })

@@ -1,14 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import type { ComponentType } from "react"
 
-import {
-  definePage,
-  Icon,
-  ICONS,
-  usePageFooter,
-} from "@/components/command-palette"
+import { Icon, ICONS, usePageFooter } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 
 type Release = {
   version: string
@@ -152,12 +147,12 @@ const RELEASES: Release[] = [
  * component: the Compact/Detailed toggle is named after state the definition
  * cannot see, so it goes through `usePageFooter` rather than `footer` here.
  */
-export const releaseNotesPage = definePage<void, void, ComponentType>({
+export const releaseNotesPage: Page = {
   id: "release-notes",
   title: "Release Notes",
   search: "hidden",
-  component: ReleaseNotes,
-})
+  render: () => <ReleaseNotes />,
+}
 
 function ReleaseNotes() {
   const [detailed, setDetailed] = useState(true)

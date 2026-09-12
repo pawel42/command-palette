@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 
-import type { Command, PageContext, PageTarget } from "../core"
-import { listPage } from "./list-page"
-import type { AnyListConfig } from "./list-page"
+import { bind } from "../core"
+import type { Command, ListPage, PageContext, PageTarget } from "../core"
 
 /**
  * What a host says about the page the palette opens on. There is no root page
@@ -18,8 +17,8 @@ import type { AnyListConfig } from "./list-page"
  * empty input closes the palette rather than going anywhere.
  */
 export type RootConfig = Omit<
-  AnyListConfig,
-  "id" | "title" | "search" | "escape" | "items"
+  ListPage<unknown, unknown>,
+  "id" | "title" | "search" | "escape" | "items" | "render" | "__props"
 > & {
   /**
    * Every command the palette opens on: a plain array, or a function of the
@@ -46,15 +45,17 @@ export function useRootPage(config: RootConfig): PageTarget {
   const [page] = useState(() => {
     const { commands, ...list } = config
 
-    return listPage<unknown, unknown>({
+    const root: ListPage<unknown, unknown> = {
       ...list,
       id: "root",
       search: "filter",
       items: (ctx) =>
         typeof commands === "function" ? commands(ctx) : commands,
-      // Bound, so a root that takes no props is still a reference the store
-      // can be handed.
-    }).with(undefined)
+    }
+
+    // Bound, so a root that takes no props is still a reference the store can
+    // be handed.
+    return bind(root, undefined)
   })
 
   return page

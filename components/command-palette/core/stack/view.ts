@@ -1,3 +1,4 @@
+import { searchModeOf } from "../page/search-mode"
 import type { SearchMode } from "../page/types"
 import type { PageInstance, PaletteState } from "./types"
 
@@ -31,7 +32,7 @@ export function selectView(state: PaletteState): PaletteView {
       instanceId: entry.instanceId,
       title: entry.page.title ?? entry.page.id,
     })),
-    search: instance.page.search,
+    search: searchModeOf(instance.page),
     placeholder: instance.page.placeholder,
     query: instance.query,
   }

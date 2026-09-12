@@ -7,7 +7,7 @@ import { usePublishFooter } from "../internal/bridge"
  * Publish this page's footer from inside it — the hints beside the frame's
  * own, and the actions behind ⌘⇧K.
  *
- * The same value `PageDefinition.footer` takes, handed over at a later moment:
+ * The same value a page's own `footer` takes, handed over at a later moment:
  * this is the form for a footer that depends on the page's own React state, a
  * view toggle or a Save that reads a draft, which the definition cannot see.
  * Later costs a render — the frame has already painted by the time an effect

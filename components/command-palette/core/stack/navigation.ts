@@ -1,5 +1,5 @@
 import { untracked } from "../async"
-import { resolveTarget } from "../page/define"
+import { resolveTarget } from "../page/target"
 import type {
   AnyPage,
   Navigation,

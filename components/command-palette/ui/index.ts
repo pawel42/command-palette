@@ -4,7 +4,7 @@
  *
  *   palette.tsx   the two halves a host composes: state, and the visible surface
  *   frame/        the chrome around every page — the one input and the footer
- *   list-page/    the one prebuilt page kind: a filtered, navigable list
+ *   list-page/    the body the palette draws for a page that declared items
  *   dialog/       the opinionated ⌘K host, and the only place radix-ui appears
  *   root-page.ts  the root every host builds from the commands it is handed
  *   internal/     the frame↔page channel; not part of the public surface

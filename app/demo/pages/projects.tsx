@@ -1,8 +1,8 @@
 "use client"
 
 import { logActivity } from "../activity"
-import { Icon, ICONS, listPage } from "@/components/command-palette"
-import type { PageFooter } from "@/components/command-palette"
+import { bind, Icon, ICONS } from "@/components/command-palette"
+import type { Page, PageFooter } from "@/components/command-palette"
 
 export type Project = {
   id: string
@@ -24,7 +24,7 @@ const ALL_PROJECTS: Project[] = [
  * lists, and `resolve(project)` settles the promise from whichever `push`
  * opened it — then closes the page.
  */
-export const projectsPage = listPage<{ archived: boolean }, Project>({
+export const projectsPage: Page<{ archived: boolean }, Project> = {
   id: "projects",
   title: "Projects",
   placeholder: "Search projects…",
@@ -43,7 +43,7 @@ export const projectsPage = listPage<{ archived: boolean }, Project>({
             subtitle: "the same page, other props",
             section: "View",
             icon: <Icon path={ICONS.clock} />,
-            page: projectsPage.with({ archived: true }),
+            page: bind(projectsPage, { archived: true }),
           },
         ],
   }),
@@ -63,4 +63,4 @@ export const projectsPage = listPage<{ archived: boolean }, Project>({
         },
       })
     ),
-})
+}

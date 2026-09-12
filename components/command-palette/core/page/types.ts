@@ -1,4 +1,7 @@
+import type { ReactNode } from "react"
+
 import type { RunAsync, ToastInput } from "../async"
+import type { Command } from "../command/types"
 import type { FooterInput } from "./footer"
 
 /**
@@ -18,6 +21,10 @@ import type { FooterInput } from "./footer"
  * list is driven from its key handler. A page with fields of its own is
  * therefore a page whose search is off: pick "disabled" for a form, so the row
  * stays put and nothing shifts on the way in, or "hidden" to drop it.
+ *
+ * Left out, it follows the kind of page: a list filters, and a page with a
+ * body of its own gets "disabled", because a live input that filters nothing
+ * is an invitation to type into nothing.
  */
 export type SearchMode = "filter" | "input" | "disabled" | "hidden"
 
@@ -83,58 +90,96 @@ export type NoHeader = {
   actions?: never
 }
 
-export type PageDefinition<
-  Props = void,
-  Result = void,
-  Component = unknown,
-> = NoHeader & {
+/** The `useSyncExternalStore` pair, named so a page can carry it. */
+export type ExternalStore = {
+  subscribe: (onChange: () => void) => () => void
+  getSnapshot: () => unknown
+}
+
+/** What both kinds of page carry. A page is a plain object; see `Page`. */
+type PageBase<Props, Result> = NoHeader & {
   readonly id: string
   /** Breadcrumb label, and what the header row shows when there is no input. */
   readonly title?: string
-  readonly search: SearchMode
+  /** Defaults to the kind of page — see `SearchMode` and `searchModeOf`. */
+  readonly search?: SearchMode
   readonly placeholder?: string
   readonly escape?: EscapeRoute
   /**
-   * Renders a keyboard-navigable list. The frame reads this to decide whether
-   * "↑↓ navigate" applies, and it has to be known at definition time —
-   * deriving it from the mounted page would mean an effect, and the footer
-   * would flicker on first paint.
-   */
-  readonly list?: boolean
-  /**
    * The page's half of the footer: the actions behind ⌘⇧K, and the key hints
-   * beside them. Static like `list`, and read during render for the same
-   * reason — a footer known at definition time paints with the page instead of
-   * arriving an effect later. The function form covers everything reachable
-   * from the context; a footer that depends on the page's own React state
-   * cannot be known here, and that page calls `usePageFooter` instead.
+   * beside them. Read during render, so a footer known here paints with the
+   * page instead of arriving an effect later. The function form covers
+   * everything reachable from the context; a footer that depends on the page's
+   * own React state cannot be known here, and that page calls `usePageFooter`
+   * instead.
    */
   readonly footer?: FooterInput<Props, Result>
-  /** Opaque to the engine — the React layer decides what a component is. */
-  readonly component: Component
   /**
    * Phantom field. Keeps `Props` in a contravariant position so a page that
    * needs props cannot be used where a propless page is expected.
    */
   readonly __props?: (props: Props) => void
-  /** Binds props so the page can be referenced from a plain object literal. */
-  with(props: Props): BoundPage<Props, Result, Component>
 }
+
+/**
+ * A page that is a list of commands: filtered by the input, navigable with the
+ * arrows, each row opening a page or running an action. The palette renders it
+ * — there is no component to write.
+ */
+export type ListPage<Props = void, Result = void> = PageBase<Props, Result> & {
+  /** Static, or derived from the query and the page's props. */
+  readonly items: Command[] | ((ctx: PageContext<Props, Result>) => Command[])
+  readonly emptyMessage?: string
+  /**
+   * A line of prose above the rows. Part of the list, not the chrome: it sits
+   * inside the list's own scroll box and scrolls with the rows. The header is
+   * the frame's on every page — see `NoHeader`.
+   */
+  readonly note?: (ctx: PageContext<Props, Result>) => ReactNode
+  /**
+   * For items that come from a store outside React — a recents list, a cache.
+   * The page only subscribes to the palette's own state, so without this a
+   * write out there would not reach the rows until the next keystroke did.
+   */
+  readonly watch?: ExternalStore
+  readonly render?: never
+}
+
+/**
+ * A page with a body of its own. `render` is mounted as a component and handed
+ * the page's context, so `props`, `resolve` and `nav` arrive as its props —
+ * and anything nested deeper reaches the same context through the hooks.
+ */
+export type RenderPage<Props = void, Result = void> = PageBase<
+  Props,
+  Result
+> & {
+  readonly render: (ctx: PageContext<Props, Result>) => ReactNode
+  readonly items?: never
+  readonly emptyMessage?: never
+  readonly note?: never
+  readonly watch?: never
+}
+
+/**
+ * A page: a plain object, either a list of commands or a body of your own.
+ * Nothing builds it and nothing registers it — it is data, like the commands
+ * that open it, and the palette reads what it needs off it.
+ *
+ *   const notes: Page = { id: "notes", title: "Notes", render: () => <Notes /> }
+ *   const menu: Page = { id: "menu", items: [ … ] }
+ *
+ * `Props` is what the caller has to supply and `Result` what the page hands
+ * back through `resolve` — both default to nothing, which is most pages.
+ */
+export type Page<Props = void, Result = void> =
+  ListPage<Props, Result> | RenderPage<Props, Result>
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- variance placeholders: these
    types are containers, and narrowing them to `unknown` makes every concrete page
    unassignable to them. */
 
-export type AnyPage = PageDefinition<any, any, any>
-
-export type BoundPage<Props = any, Result = any, Component = any> = {
-  readonly page: PageDefinition<Props, Result, Component>
-  readonly props: Props
-}
-
-/** A page reference that needs nothing else: propless, or already bound. */
-export type PageTarget<Result = any> =
-  PageDefinition<void, Result, any> | BoundPage<any, Result, any>
+export type AnyPage = Page<any, any>
 
 /**
  * What a command does. The return value is the handler's own business, with
@@ -143,14 +188,24 @@ export type PageTarget<Result = any> =
  */
 export type ActionHandler = (ctx: PageContext<any, any>) => unknown
 
+/** A page and the props it was given — what `bind` returns. */
+export type BoundPage<Props = any, Result = any> = {
+  readonly page: Page<Props, Result>
+  readonly props: Props
+}
+
+/** A page reference that needs nothing else: propless, or already bound. */
+export type PageTarget<Result = any> =
+  Page<void, Result> | BoundPage<any, Result>
+
 export type Navigation = {
   push<Result>(
-    page: PageDefinition<void, Result, any>,
+    page: Page<void, Result>,
     props?: void,
     options?: PushOptions
   ): Promise<Result | undefined>
   push<Props, Result>(
-    page: PageDefinition<Props, Result, any>,
+    page: Page<Props, Result>,
     props: Props,
     options?: PushOptions
   ): Promise<Result | undefined>

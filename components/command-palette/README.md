@@ -31,13 +31,14 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 ## Using it
 
 ```tsx
-import { CommandPaletteDialog, listPage } from "@/components/command-palette"
+import { CommandPaletteDialog } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 
-const settingsPage = listPage({
+const settingsPage: Page = {
   id: "settings",
   title: "Settings",
   items: [{ id: "theme", title: "Toggle Dark Mode", run: () => toggleTheme() }],
-})
+}
 
 // Commands, not a root page. The root is always the same page — one list over
 // whatever it was handed — so the palette builds it and the host never writes
@@ -83,12 +84,61 @@ change — so the timer is free in the case it fires in most often. Pass
 `idleResetMs` to change the delay, or `0` to keep the stack forever.
 
 A command either opens a page or runs an action, never both. Pages that need
-props bind them at the call site with `page.with({ … })`, and `nav.push`
+props bind them at the call site with `bind(page, { … })`, and `nav.push`
 returns a promise that settles with whatever the page resolves — or `undefined`
 if the user escaped out of it.
 
-Hand-written pages use `definePage` plus the hooks in `react/`; `listPage` is
-built from those same public hooks and does nothing they can't.
+## Pages are objects
+
+There is nothing to call. A page is a plain object with an `id` and one of two
+bodies — `items`, a list of commands the palette renders itself, or `render`,
+a body of your own:
+
+```tsx
+const menuPage: Page = {
+  id: "menu",
+  title: "Menu",
+  items: ({ query }) => (query ? search(query) : recent()),
+}
+
+const notesPage: Page = {
+  id: "notes",
+  title: "Notes",
+  render: () => <Notes />,
+}
+```
+
+`render` is **mounted** as a component, never called, so it keeps its own
+hooks, its own state and its own effects — and it is handed the page's context
+as props, which is why a body can be a plain function of it:
+
+```tsx
+const projectsPage: Page<{ archived: boolean }, Project> = {
+  id: "projects",
+  placeholder: "Search projects…",
+  render: ({ props, resolve }) => (
+    <Projects archived={props.archived} onPick={resolve} />
+  ),
+}
+
+// opening it, from a command or from code
+{ id: "projects", title: "Projects", page: bind(projectsPage, { archived: false }) }
+const project = await nav.push(projectsPage, { archived: false })
+```
+
+The two type parameters are what the caller must supply and what the page hands
+back through `resolve`; both default to nothing, which is most pages. A page
+that declares `Props` cannot be passed as a bare page target — `bind` is how it
+gets opened, and the compiler will not let it be opened without one.
+
+Anything nested deeper inside a body reaches the same context through the
+hooks: `usePage(page)` for this instance's `props`, `query` and `resolve`, plus
+`useNavigation`, `useSearch`, `useRunAsync`, `usePageFooter`.
+
+`search` left out follows the kind of page: a list filters, and a body gets
+`"disabled"` — the same row, inert — because an input that filters nothing is
+an invitation to type into nothing. Say `search: "hidden"` to drop the input
+and let the title take its place, or `"input"` for a body that owns the text.
 
 A list page's rows carry their section on the right; the footer's action panel
 carries the keys instead, which are the point of it. Nothing else rides along —
@@ -146,16 +196,16 @@ a time and nothing else. Ctrl stands in for ⌘ off the Mac, as it does for the
 
 The input row is the same on every page: the search glyph at the root, the back
 chevron everywhere else, then the one input. A page cannot change it, and that
-is enforced rather than implied — `definePage` and `listPage` type `icon`,
-`backIcon`, `header` and friends as `never`, so a config that tries fails to
-compile whether it was written as a literal or built by spreading. `search:
+is enforced rather than implied — `Page` types `icon`, `backIcon`, `header` and
+friends as `never`, so a page that tries fails to compile whether it was
+written as a literal or built by spreading. `search:
 "hidden"` hides the _input_, not the row: the title takes its place and the way
 back stays where the user left it.
 
 What a page does get is the footer:
 
 ```tsx
-const notesPage = definePage({
+const notesPage: Page = {
   id: "notes",
   title: "Notes",
   search: "hidden",
@@ -166,8 +216,8 @@ const notesPage = definePage({
       { id: "archive", title: "Open the archive", page: archivePage },
     ],
   },
-  component: Notes,
-})
+  render: () => <Notes />,
+}
 ```
 
 `hints` are key legends with nothing behind them, drawn beside the frame's own.
@@ -339,9 +389,8 @@ delete `ui/dialog/` and compose the two halves directly:
 ```
 
 `PaletteRoot` takes the root exactly as the dialog does — it is where the
-dialog passes it on to. A host that wants a root which is _not_ a list of
-commands has one layer further down: `PaletteProvider`, from `react/`, takes
-the page the stack starts on and nothing else.
+dialog passes it on to. Either way the root is one list over the commands: it
+is the single page a host does not write.
 
 `PaletteRoot` holds all the state and renders nothing, so keeping it mounted
 while the surface comes and goes is what makes the stack outlive a close. Drop

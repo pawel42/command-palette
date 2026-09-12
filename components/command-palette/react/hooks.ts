@@ -12,7 +12,7 @@ import {
   step,
 } from "../core/list"
 import type { FilteredGroup, MatchedItem } from "../core/list"
-import type { Navigation, PageContext, PageDefinition } from "../core/page"
+import type { Navigation, Page, PageContext } from "../core/page"
 import { useInstanceId, usePaletteState, usePaletteStore } from "./context"
 
 export function useNavigation(): Navigation {
@@ -23,9 +23,9 @@ export function useNavigation(): Navigation {
  * Typed context for the page a component lives in. The `page` argument is only
  * there to carry types — nothing is read from it at runtime.
  */
-export function usePage<Props, Result, Component>(
+export function usePage<Props, Result>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- inference only
-  page: PageDefinition<Props, Result, Component>
+  page: Page<Props, Result>
 ): PageContext<Props, Result> & { isTop: boolean } {
   const store = usePaletteStore()
   const instanceId = useInstanceId()

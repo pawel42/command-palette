@@ -1,14 +1,15 @@
 "use client"
 
 import { logActivity } from "../activity"
-import { Icon, ICONS, listPage } from "@/components/command-palette"
+import { bind, Icon, ICONS } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 import { projectsPage } from "./projects"
 
 /**
  * Three levels deep, where the last one sets `escape: "root"` on the page
  * itself — one press unwinds all three and drops their state.
  */
-export const level3Page = listPage({
+export const level3Page: Page = {
   id: "level-3",
   title: "Level 3",
   placeholder: "Bottom of the chain…",
@@ -31,9 +32,9 @@ export const level3Page = listPage({
       },
     },
   ],
-})
+}
 
-export const level2Page = listPage({
+export const level2Page: Page = {
   id: "level-2",
   title: "Level 2",
   placeholder: "Keep going…",
@@ -47,9 +48,9 @@ export const level2Page = listPage({
       page: level3Page,
     },
   ],
-})
+}
 
-export const level1Page = listPage({
+export const level1Page: Page = {
   id: "level-1",
   title: "Level 1",
   placeholder: "Go deeper…",
@@ -67,7 +68,7 @@ export const level1Page = listPage({
       subtitle: "same page, different parent",
       section: "Navigate",
       icon: <Icon path={ICONS.folder} />,
-      page: projectsPage.with({ archived: true }),
+      page: bind(projectsPage, { archived: true }),
     },
   ],
-})
+}

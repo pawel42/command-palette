@@ -1,4 +1,4 @@
-import { resolveTarget } from "../page/define"
+import { resolveTarget } from "../page/target"
 import type { AnyPage, EscapeRoute, PageTarget } from "../page/types"
 import type { PageInstance, PaletteAction, PaletteState } from "./types"
 

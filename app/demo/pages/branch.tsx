@@ -1,7 +1,8 @@
 "use client"
 
 import { logActivity } from "../activity"
-import { Icon, ICONS, listPage } from "@/components/command-palette"
+import { Icon, ICONS } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 import { notePage } from "./note"
 
 const pageA = notePage(
@@ -33,7 +34,7 @@ const pageC = notePage(
 )
 
 /** Three destinations from one page, plus an action that doesn't navigate. */
-export const branchPage = listPage({
+export const branchPage: Page = {
   id: "branch",
   title: "Branch Out",
   placeholder: "Pick a destination…",
@@ -72,4 +73,4 @@ export const branchPage = listPage({
       run: ({ query }) => logActivity(`branch page query: “${query}”`),
     },
   ],
-})
+}

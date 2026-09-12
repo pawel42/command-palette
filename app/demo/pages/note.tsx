@@ -1,13 +1,10 @@
 "use client"
 
-import type { ComponentType } from "react"
-
-import { definePage } from "@/components/command-palette"
-import type { PageDefinition, SearchMode } from "@/components/command-palette"
+import type { Page, SearchMode } from "@/components/command-palette"
 
 /**
  * A hand-written page kind, to show that pages are free-form: no list, no
- * items, no config — just a component with the frame's input switched off.
+ * items, no config — just a body with the frame's input switched off.
  *
  * It draws no chrome of its own, and could not if it wanted to. The title and
  * the way back are in the frame's header row on every page, whatever the
@@ -19,7 +16,7 @@ export function notePage(
   body: React.ReactNode,
   /** "disabled" keeps the frame's input in place but greyed out. */
   search: SearchMode = "disabled"
-): PageDefinition<void, void, ComponentType> {
+): Page {
   function Note() {
     return (
       <div className="space-y-2 p-4 text-sm leading-relaxed text-muted-foreground">
@@ -29,10 +26,7 @@ export function notePage(
   }
   Note.displayName = `NotePage(${id})`
 
-  return definePage<void, void, ComponentType>({
-    id,
-    title,
-    search,
-    component: Note,
-  })
+  // `render` is mounted as a component, so this is a real component with a
+  // name — not a call made during someone else's render.
+  return { id, title, search, render: Note }
 }

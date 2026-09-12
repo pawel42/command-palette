@@ -1,6 +1,6 @@
 "use client"
 
-import { Icon, ICONS } from "@/components/command-palette"
+import { bind, Icon, ICONS } from "@/components/command-palette"
 import type {
   Command,
   PageContext,
@@ -59,7 +59,7 @@ export const commands: Command[] = [
     keywords: ["client", "work", "picker"],
     icon: <Icon path={ICONS.folder} />,
     // Props are bound here, so the page can't be opened without them.
-    page: projectsPage.with({ archived: false }),
+    page: bind(projectsPage, { archived: false }),
   },
   {
     id: "deep",

@@ -1,18 +1,20 @@
-export { definePage, isBoundPage, resolveTarget } from "./define"
-export type { PageInput } from "./define"
 export { NO_FOOTER, resolveFooter } from "./footer"
 export type { FooterHint, FooterInput, PageFooter } from "./footer"
-export { isEditable } from "./search-mode"
+export { isEditable, searchModeOf } from "./search-mode"
+export { bind, isBoundPage, isListPage, resolveTarget } from "./target"
 export type {
   ActionHandler,
   AnyPage,
   BoundPage,
   EscapeRoute,
+  ExternalStore,
+  ListPage,
   Navigation,
   NoHeader,
+  Page,
   PageContext,
-  PageDefinition,
   PageTarget,
   PushOptions,
+  RenderPage,
   SearchMode,
 } from "./types"

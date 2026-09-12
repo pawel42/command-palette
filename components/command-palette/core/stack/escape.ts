@@ -1,4 +1,4 @@
-import { isEditable } from "../page/search-mode"
+import { isEditable, searchModeOf } from "../page/search-mode"
 import type { EscapeRoute } from "../page/types"
 import type { PageInstance, PaletteState } from "./types"
 
@@ -25,7 +25,7 @@ export function escapeRouteOf(instance: PageInstance): EscapeRoute {
 export function resolveEscape(state: PaletteState): EscapeOutcome {
   const top = state.stack[state.stack.length - 1]
 
-  if (isEditable(top.page.search) && top.query !== "") {
+  if (isEditable(searchModeOf(top.page)) && top.query !== "") {
     return { type: "clearQuery", instanceId: top.instanceId }
   }
 

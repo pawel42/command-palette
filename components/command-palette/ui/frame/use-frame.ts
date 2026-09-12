@@ -7,6 +7,7 @@ import {
   RESERVED_SHORTCUTS,
   claimEscape,
   isEditable,
+  isListPage,
   matchesAny,
   matchesShortcut,
   resolveBackspace,
@@ -228,7 +229,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const panelId = useId()
 
   const editable = isEditable(view.search)
-  const hasList = view.instance.page.list === true
+  const hasList = isListPage(view.instance.page)
   const actions = footer.actions ?? []
 
   /**

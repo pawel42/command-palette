@@ -1,14 +1,14 @@
 "use client"
 
 import { Activity } from "react"
-import type { ComponentType } from "react"
 
-import { resolveFooter } from "../core"
-import type { AnyPage } from "../core"
+import { isListPage, resolveFooter } from "../core"
+import type { AnyPage, RenderPage } from "../core"
 import { PageProvider, useInstanceId, usePaletteStore } from "../react"
 import { usePaletteState } from "../react"
 
 import { usePublishFooter } from "./internal/bridge"
+import { ListPageView } from "./list-page"
 
 /**
  * Renders the whole stack, with everything below the top hidden.
@@ -45,23 +45,48 @@ function ConfigFooter({ page }: { page: AnyPage }) {
   return null
 }
 
+/**
+ * The body of a page that wrote its own: `render` is mounted as a component —
+ * never called — so its hooks are its own, its state is kept by the `Activity`
+ * above, and the footer it publishes leaves when it does. The context goes in
+ * as props, which is why a page body can be a plain function of it; anything
+ * nested deeper reaches the same context through the hooks.
+ */
+function RenderedPage({ page }: { page: RenderPage<unknown, unknown> }) {
+  const store = usePaletteStore()
+  const instanceId = useInstanceId()
+  // Subscribed, so a body built from the query or the props is rebuilt.
+  usePaletteState()
+
+  const ctx = store.contextFor(instanceId)
+  if (!ctx) return null
+
+  const Body = page.render
+  return <Body {...ctx} />
+}
+
+/** Whichever kind of page this is — the palette's list, or the page's own. */
+function PageBody({ page }: { page: AnyPage }) {
+  return isListPage(page) ? (
+    <ListPageView page={page} />
+  ) : (
+    <RenderedPage page={page as RenderPage<unknown, unknown>} />
+  )
+}
+
 export function PageHost() {
   const state = usePaletteState()
   const topId = state.stack[state.stack.length - 1].instanceId
 
-  return state.stack.map((instance) => {
-    const Page = instance.page.component as ComponentType
-
-    return (
-      <Activity
-        key={instance.instanceId}
-        mode={instance.instanceId === topId ? "visible" : "hidden"}
-      >
-        <PageProvider instanceId={instance.instanceId}>
-          <ConfigFooter page={instance.page} />
-          <Page />
-        </PageProvider>
-      </Activity>
-    )
-  })
+  return state.stack.map((instance) => (
+    <Activity
+      key={instance.instanceId}
+      mode={instance.instanceId === topId ? "visible" : "hidden"}
+    >
+      <PageProvider instanceId={instance.instanceId}>
+        <ConfigFooter page={instance.page} />
+        <PageBody page={instance.page} />
+      </PageProvider>
+    </Activity>
+  ))
 }

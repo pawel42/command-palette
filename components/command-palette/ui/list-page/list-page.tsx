@@ -1,44 +1,18 @@
 "use client"
 
-import type { ComponentType } from "react"
-
-import { definePage } from "../../core"
-import type { PageDefinition } from "../../core"
 import { CommandRows } from "../internal/rows"
 import { useListPage } from "./use-list-page"
-import type { AnyListConfig, ListPageConfig } from "./use-list-page"
-
-export type { ListPageConfig }
+import type { AnyListPage } from "./use-list-page"
 
 /**
- * The one prebuilt page kind: a filtered, keyboard-navigable list whose items
- * either open a page or run an action. It is assembled from the public hooks
- * only — a hand-written page can do everything this does.
+ * The body of a page that declared `items`: a filtered, keyboard-navigable
+ * list whose rows either open a page or run an action. The host writes no
+ * component for it — `PageHost` renders this one — and it is assembled from
+ * the public hooks only, so a page with a body of its own can do everything
+ * this does.
  */
-export function listPage<Props = void, Result = void>(
-  config: ListPageConfig<Props, Result>
-): PageDefinition<Props, Result, ComponentType> {
-  function ListPage() {
-    return <ListPageView config={config as unknown as AnyListConfig} />
-  }
-  ListPage.displayName = `ListPage(${config.id})`
-
-  return definePage<Props, Result, ComponentType>({
-    id: config.id,
-    title: config.title,
-    search: config.search ?? "filter",
-    placeholder: config.placeholder,
-    escape: config.escape,
-    // Tells the frame to offer the "↑↓ navigate / ↵ select" hints.
-    list: true,
-    footer: config.footer,
-    component: ListPage,
-  })
-}
-
-function ListPageView({ config }: { config: AnyListConfig }) {
-  const { sections, isEmpty, emptyMessage, note, listProps } =
-    useListPage(config)
+export function ListPageView({ page }: { page: AnyListPage }) {
+  const { sections, isEmpty, emptyMessage, note, listProps } = useListPage(page)
 
   return (
     // --list-gap is the list's breathing room: its own padding, and the margin

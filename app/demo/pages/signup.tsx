@@ -1,16 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import type { ComponentType } from "react"
 
 import {
-  definePage,
   Icon,
   ICONS,
   useNavigation,
-  usePage,
   usePageFooter,
 } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 
 import { logActivity } from "../activity"
 
@@ -55,16 +53,17 @@ function Label({
 
 /* ---------------------------------------------------------------- step two */
 
-export const profilePage = definePage<void, Profile, ComponentType>({
+export const profilePage: Page<void, Profile> = {
   id: "profile",
   title: "Profile",
   search: "disabled",
   placeholder: "Profile — step 2 of 2",
-  component: ProfileForm,
-})
+  // The body is handed the page's context, so `resolve` arrives as a prop.
+  // A component further down would reach the same thing with `usePage`.
+  render: ({ resolve }) => <ProfileForm resolve={resolve} />,
+}
 
-function ProfileForm() {
-  const { resolve } = usePage(profilePage)
+function ProfileForm({ resolve }: { resolve: (profile: Profile) => void }) {
   const [name, setName] = useState("")
   const [role, setRole] = useState(ROLES[0])
   const [bio, setBio] = useState("")
@@ -140,13 +139,13 @@ function ProfileForm() {
 
 /* ---------------------------------------------------------------- step one */
 
-export const accountPage = definePage<void, void, ComponentType>({
+export const accountPage: Page = {
   id: "account",
   title: "New Account",
   search: "disabled",
   placeholder: "New account — step 1 of 2",
-  component: AccountForm,
-})
+  render: () => <AccountForm />,
+}
 
 function AccountForm() {
   const nav = useNavigation()

@@ -1,13 +1,7 @@
 "use client"
 
-import type { ComponentType } from "react"
-
-import {
-  definePage,
-  Icon,
-  ICONS,
-  usePageFooter,
-} from "@/components/command-palette"
+import { Icon, ICONS, usePageFooter } from "@/components/command-palette"
+import type { Page } from "@/components/command-palette"
 
 import { useTaskDraft } from "./use-task-draft"
 
@@ -18,13 +12,13 @@ import { useTaskDraft } from "./use-task-draft"
  * draft survives navigating away and closing the palette. Behavior is in
  * `useTaskDraft`.
  */
-export const createTaskPage = definePage<void, void, ComponentType>({
+export const createTaskPage: Page = {
   id: "create-task",
   title: "Create Task",
   search: "disabled",
   placeholder: "Create Task — no search on this page",
-  component: CreateTaskForm,
-})
+  render: () => <CreateTaskForm />,
+}
 
 function CreateTaskForm() {
   const { draft, setTitle, setNotes, save } = useTaskDraft()
