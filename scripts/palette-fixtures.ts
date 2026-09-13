@@ -138,16 +138,6 @@ export function createCommands(log: string[]): Command[] {
       section: "Actions",
       run: ({ toast }) => toast({ title: "Copied" }),
     },
-    {
-      id: "blocked",
-      title: "Push to Remote",
-      section: "Actions",
-      description: "nothing to push",
-      disabled: true,
-      run: () => {
-        log.push("should not run")
-      },
-    },
   ]
 }
 

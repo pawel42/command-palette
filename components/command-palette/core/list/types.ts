@@ -6,7 +6,6 @@ export type ListItemLike = {
   /** The heading to file this item under, when it is not its section. */
   group?: string
   keywords?: readonly string[]
-  disabled?: boolean
 }
 
 export type Match = {

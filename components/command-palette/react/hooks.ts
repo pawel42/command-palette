@@ -69,7 +69,6 @@ export type ItemProps = {
   id: string
   role: "option"
   "aria-selected": boolean
-  "aria-disabled": true | undefined
   "data-index": number
   /** Only the active row gets one: it scrolls itself back into view. */
   ref?: (node: HTMLElement | null) => void
@@ -105,11 +104,11 @@ export type ListControl<T> = {
 }
 
 /**
- * The list controller: filtering, wraparound keyboard nav that skips disabled
- * rows, item shortcuts, and the aria wiring. Where the query and the selection
- * are kept is the caller's business — `useCommandList` below keeps them in the
- * store, and the action panel keeps its own in React state, because its text
- * is not the page's text.
+ * The list controller: filtering, wraparound keyboard nav, item shortcuts,
+ * and the aria wiring. Where the query and the selection are kept is the
+ * caller's business — `useCommandList` below keeps them in the store, and the
+ * action panel keeps its own in React state, because its text is not the
+ * page's text.
  */
 export function useListController<T extends ItemMeta>(
   items: readonly T[],
@@ -156,7 +155,7 @@ export function useListController<T extends ItemMeta>(
 
   const select = (index: number) => {
     const entry = entries[index]
-    if (!entry || entry.item.disabled) return
+    if (!entry) return
 
     const ctx = store.contextFor(instanceId)
     if (!ctx) return
@@ -169,7 +168,6 @@ export function useListController<T extends ItemMeta>(
     // palette is waiting for one specific key, and ↵ or an arrow may well be
     // the key it is waiting for.
     const outcome = resolveShortcut(items, event, {
-      eligible: (item) => !item.disabled,
       // The frame sees this press after we do, and its footer may hold the
       // other half of the sequence — so a miss here is not a cancel.
       final: false,
@@ -218,7 +216,6 @@ export function useListController<T extends ItemMeta>(
     id: optionId(item),
     role: "option",
     "aria-selected": index === activeIndex,
-    "aria-disabled": item.disabled || undefined,
     "data-index": index,
     ref: index === activeIndex ? reveal : undefined,
     // The pointer never moves the selection: hovering only paints a row (see

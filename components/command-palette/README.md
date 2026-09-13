@@ -177,9 +177,8 @@ are a recents section:
   // The root only subscribes to the palette's own state, so say what else to
   // watch — without this a write out there waits for the next keystroke.
   watch={{ subscribe: subscribeRecent, getSnapshot: recentIds }}
-  // Every command the palette runs, as it runs, and never a disabled one. The
-  // host's window on what was used: a command that opens a page has nowhere of
-  // its own to put that.
+  // Every command the palette runs, as it runs. The host's window on what was
+  // used: a command that opens a page has nowhere of its own to put that.
   onCommand={(c) => remember(c.id)}
 />
 ```
@@ -422,8 +421,7 @@ running over a page that never asked for one, and an outcome landing three
 pages later where it means nothing.
 
 Typing and moving the selection are not commands and not navigation — a run
-survives the user searching around it, and a disabled or display-only row that
-does nothing when picked leaves it alone too.
+survives the user searching around it.
 
 Closing the palette is not navigation either: the work carries on, and the bar
 is still there on the next ⌘K. What a closed palette does stop is the clock on

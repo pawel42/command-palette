@@ -22,7 +22,6 @@ export type CommandItem = {
    */
   shortcut?: Shortcut
   icon?: ReactNode
-  disabled?: boolean
 }
 
 /**
@@ -51,13 +50,6 @@ export type Command =
        * declares the same thing there, next to the messages.
        */
       onError?: (error: unknown) => void
-    })
-  /** Display-only row: a loading placeholder, a hint, a separator label. */
-  | (CommandItem & {
-      page?: never
-      run?: never
-      options?: never
-      onError?: never
     })
 
 export type CommandContext = PageContext<unknown, unknown>

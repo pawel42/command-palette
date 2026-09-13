@@ -314,10 +314,9 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
     if (typing && !waiting && !(event.metaKey || event.ctrlKey)) return false
 
     const outcome = resolveShortcut(getFooter().actions ?? [], event, {
+      // The lead press has to survive a form field, so it must carry a
+      // modifier there. The type says so for sequences; this is the rest.
       eligible: (action: Command) =>
-        !action.disabled &&
-        // The lead press has to survive a form field, so it must carry a
-        // modifier there. The type says so for sequences; this is the rest.
         !(typing && !waiting && !hasCommandModifier(action.shortcut!)),
     })
 

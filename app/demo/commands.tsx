@@ -166,15 +166,6 @@ export const commands: Command[] = [
     icon: <Icon path={ICONS.dot} />,
     run: ({ query }) => logActivity(`root query: “${query}”`),
   },
-  {
-    id: "blocked",
-    title: "Push to Remote",
-    description: "nothing to push",
-    section: "Actions",
-    disabled: true,
-    icon: <Icon path={ICONS.upload} />,
-    run: () => logActivity("this should never run"),
-  },
 ]
 
 /**

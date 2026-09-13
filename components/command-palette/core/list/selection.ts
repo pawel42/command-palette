@@ -1,6 +1,6 @@
 import type { FilteredGroup, MatchedItem } from "./types"
 
-type NavEntry = { item: { id: string; disabled?: boolean } }
+type NavEntry = { item: { id: string } }
 
 export function flatten<T>(
   groups: readonly FilteredGroup<T>[]
@@ -8,59 +8,41 @@ export function flatten<T>(
   return groups.flatMap((group) => group.items)
 }
 
-export function isSelectable(entry: NavEntry): boolean {
-  return !entry.item.disabled
-}
-
-/** Index of the first selectable entry, or -1. */
-export function firstSelectable(entries: readonly NavEntry[]): number {
-  return entries.findIndex(isSelectable)
-}
-
 /**
- * Active entry for a stored id. Falls back to the first selectable entry, so
- * an item that filters out never leaves the list without a selection.
+ * Active entry for a stored id. Falls back to the first entry, so an item
+ * that filters out never leaves the list without a selection.
  */
 export function resolveActiveIndex(
   entries: readonly NavEntry[],
   activeItemId: string | null
 ): number {
   if (activeItemId !== null) {
-    const index = entries.findIndex(
-      (entry) => entry.item.id === activeItemId && isSelectable(entry)
-    )
+    const index = entries.findIndex((entry) => entry.item.id === activeItemId)
     if (index !== -1) return index
   }
 
-  return Math.max(firstSelectable(entries), 0)
+  return 0
 }
 
-/** Next selectable index in `direction`, wrapping around; disabled skipped. */
+/** Next index in `direction`, wrapping around. */
 export function step(
-  entries: readonly NavEntry[],
+  entries: readonly unknown[],
   from: number,
   direction: 1 | -1
 ): number {
   const total = entries.length
-  if (total === 0 || !entries.some(isSelectable)) return from
+  if (total === 0) return from
 
-  for (let offset = 1; offset <= total; offset++) {
-    const next = (((from + direction * offset) % total) + total) % total
-    if (isSelectable(entries[next])) return next
-  }
-
-  return from
+  return (((from + direction) % total) + total) % total
 }
 
-/** First or last selectable index; `from` is returned when there is none. */
+/** First or last index; `from` is returned when there are no entries. */
 export function edge(
-  entries: readonly NavEntry[],
+  entries: readonly unknown[],
   which: "first" | "last",
   from = 0
 ): number {
-  const indices = entries.map((_, index) => index)
-  if (which === "last") indices.reverse()
+  if (entries.length === 0) return from
 
-  const found = indices.find((index) => isSelectable(entries[index]))
-  return found ?? from
+  return which === "first" ? 0 : entries.length - 1
 }

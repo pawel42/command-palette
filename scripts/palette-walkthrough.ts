@@ -30,9 +30,6 @@ show(store, "start")
 store.runCommand(commands.find((command) => command.id === "log")!)
 show(store, "run action command")
 
-store.runCommand(commands.find((command) => command.id === "blocked")!)
-show(store, "run disabled command")
-
 store.runCommand(commands.find((command) => command.id === "page-1")!)
 show(store, "open page1")
 

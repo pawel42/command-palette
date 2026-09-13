@@ -127,7 +127,7 @@ export type ShortcutOutcome<T> =
   | { type: "none" }
 
 export type ResolveOptions<T> = {
-  /** Which items may fire at all — the disabled ones never do. */
+  /** Which items may fire at all, beyond simply carrying a shortcut. */
   eligible?: (item: T) => boolean
   /**
    * Whether this caller is the last one to see the press. Only the last may

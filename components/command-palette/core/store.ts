@@ -12,10 +12,10 @@ export type PaletteStoreOptions = {
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
   /**
-   * Called with every command the palette runs, just before it runs, and never
-   * for a disabled one. The host's window on what was used — a recents list,
-   * an analytics ping — without wrapping each command's own handler, which a
-   * command that opens a page has nowhere to put.
+   * Called with every command the palette runs, just before it runs. The
+   * host's window on what was used — a recents list, an analytics ping —
+   * without wrapping each command's own handler, which a command that opens a
+   * page has nowhere to put.
    */
   onCommand?: (command: Command) => void
   /**
@@ -193,19 +193,14 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       const ctx = contextFor(target)
       if (!ctx) return
 
-      // Announced before it runs, and only for a command that will do
-      // something — `resolveCommand` drops a disabled one on the floor.
-      if (!command.disabled) onCommand?.(command)
+      // Announced before it runs.
+      onCommand?.(command)
 
       // What the palette was saying before this command touched anything.
       const runBefore = tasks.currentRun()
       const toastBefore = tasks.getSnapshot().toast?.id
 
       const result = resolveCommand(command, ctx)
-
-      // Neither ran: a disabled row, or a display-only one. The user picked
-      // nothing, so nothing about what is in flight changes.
-      if (command.disabled || (!command.run && !command.page)) return result
 
       // The run in flight is no longer the one we started with, so this
       // command has already dealt with it — by starting a run of its own

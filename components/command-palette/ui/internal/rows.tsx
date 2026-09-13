@@ -120,7 +120,6 @@ export function CommandRow({
         isActive
           ? "bg-accent text-accent-foreground"
           : "text-foreground hover:bg-accent/60",
-        item.disabled ? "pointer-events-none opacity-40" : "",
       ].join(" ")}
     >
       {item.icon && (
