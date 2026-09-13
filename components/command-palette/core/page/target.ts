@@ -1,4 +1,4 @@
-import type { AnyPage, BoundPage, ListPage, Page, PageTarget } from "./types"
+import type { AnyPage, BoundPage, Page, PageTarget } from "./types"
 
 /**
  * Staples a page to the props it needs, so the pair fits where one value goes.
@@ -18,11 +18,6 @@ export function bind<Props, Result>(
 
 export function isBoundPage(target: PageTarget): target is BoundPage {
   return "page" in target
-}
-
-/** Which kind of page this is — the one the palette renders itself. */
-export function isListPage(page: AnyPage): page is ListPage<unknown, unknown> {
-  return page.items !== undefined
 }
 
 /** Flattens a page reference into the pair the reducer needs. */

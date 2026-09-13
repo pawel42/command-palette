@@ -2,13 +2,12 @@
 
 import { Activity } from "react"
 
-import { isListPage, resolveFooter } from "../core"
-import type { AnyPage, RenderPage } from "../core"
+import { resolveFooter } from "../core"
+import type { AnyPage } from "../core"
 import { PageProvider, useInstanceId, usePaletteStore } from "../react"
 import { usePaletteState } from "../react"
 
 import { usePublishFooter } from "./internal/bridge"
-import { ListPageView } from "./list-page"
 
 /**
  * Renders the whole stack, with everything below the top hidden.
@@ -46,13 +45,13 @@ function ConfigFooter({ page }: { page: AnyPage }) {
 }
 
 /**
- * The body of a page that wrote its own: `render` is mounted as a component —
- * never called — so its hooks are its own, its state is kept by the `Activity`
- * above, and the footer it publishes leaves when it does. The context goes in
- * as props, which is why a page body can be a plain function of it; anything
- * nested deeper reaches the same context through the hooks.
+ * The page's body: `render` is mounted as a component — never called — so its
+ * hooks are its own, its state is kept by the `Activity` above, and anything
+ * it publishes (a footer, a list's key handler) leaves when it does. The
+ * context goes in as props, which is why a page body can be a plain function
+ * of it; anything nested deeper reaches the same context through the hooks.
  */
-function RenderedPage({ page }: { page: RenderPage<unknown, unknown> }) {
+function RenderedPage({ page }: { page: AnyPage }) {
   const store = usePaletteStore()
   const instanceId = useInstanceId()
   // Subscribed, so a body built from the query or the props is rebuilt.
@@ -63,15 +62,6 @@ function RenderedPage({ page }: { page: RenderPage<unknown, unknown> }) {
 
   const Body = page.render
   return <Body {...ctx} />
-}
-
-/** Whichever kind of page this is — the palette's list, or the page's own. */
-function PageBody({ page }: { page: AnyPage }) {
-  return isListPage(page) ? (
-    <ListPageView page={page} />
-  ) : (
-    <RenderedPage page={page as RenderPage<unknown, unknown>} />
-  )
 }
 
 export function PageHost() {
@@ -85,7 +75,7 @@ export function PageHost() {
     >
       <PageProvider instanceId={instance.instanceId}>
         <ConfigFooter page={instance.page} />
-        <PageBody page={instance.page} />
+        <RenderedPage page={instance.page} />
       </PageProvider>
     </Activity>
   ))

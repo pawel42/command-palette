@@ -7,7 +7,6 @@ import {
   RESERVED_SHORTCUTS,
   claimEscape,
   isEditable,
-  isListPage,
   matchesAny,
   matchesShortcut,
   resolveBackspace,
@@ -229,7 +228,10 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const panelId = useId()
 
   const editable = isEditable(view.search)
-  const hasList = isListPage(view.instance.page)
+  // A list is a component inside the page's body, so the page object cannot
+  // say whether one is there — but a mounted list publishes its ids through
+  // the bridge, and takes them with it when it goes.
+  const hasList = listId !== undefined
   const actions = footer.actions ?? []
 
   /**

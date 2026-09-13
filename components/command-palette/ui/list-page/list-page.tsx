@@ -2,17 +2,22 @@
 
 import { CommandRows } from "../internal/rows"
 import { useListPage } from "./use-list-page"
-import type { AnyListPage } from "./use-list-page"
+import type { ListPageProps } from "./use-list-page"
 
 /**
- * The body of a page that declared `items`: a filtered, keyboard-navigable
- * list whose rows either open a page or run an action. The host writes no
- * component for it — `PageHost` renders this one — and it is assembled from
- * the public hooks only, so a page with a body of its own can do everything
- * this does.
+ * The list of commands as a component: filtered by the input, keyboard-
+ * navigable, each row opening a page or running an action. A list is not a
+ * kind of page — this is configured inside a page's `render` like any other
+ * body:
+ *
+ *   const menu: Page = { id: "menu", render: () => <ListPage items={…} /> }
+ *
+ * It is assembled from the public hooks only, so a page that wants more than
+ * this can do everything it does.
  */
-export function ListPageView({ page }: { page: AnyListPage }) {
-  const { sections, isEmpty, emptyMessage, note, listProps } = useListPage(page)
+export function ListPage(props: ListPageProps) {
+  const { sections, isEmpty, emptyMessage, note, listProps } =
+    useListPage(props)
 
   return (
     // --list-gap is the list's breathing room: its own padding, and the margin

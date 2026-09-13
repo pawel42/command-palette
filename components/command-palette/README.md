@@ -31,13 +31,17 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 ## Using it
 
 ```tsx
-import { CommandPaletteDialog } from "@/components/command-palette"
+import { CommandPaletteDialog, ListPage } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 
 const settingsPage: Page = {
   id: "settings",
   title: "Settings",
-  items: [{ id: "theme", title: "Toggle Dark Mode", run: () => toggleTheme() }],
+  render: () => (
+    <ListPage
+      items={[{ id: "theme", title: "Toggle Dark Mode", run: () => toggleTheme() }]}
+    />
+  ),
 }
 
 // Commands, not a root page. The root is always the same page — one list over
@@ -63,7 +67,7 @@ export function App() {
 }
 ```
 
-The root takes the rest of a list page's config the same way, as props:
+The root takes the rest of its `ListPage`'s config the same way, as props:
 `placeholder`, `emptyMessage`, `footer`, `note` and `watch`. The four it does
 not take are the four that are not the host's at the root — `id` and `title`
 are its own, `search` is the filter it opens on, and `escape` is `onDismiss`.
@@ -90,15 +94,16 @@ if the user escaped out of it.
 
 ## Pages are objects
 
-There is nothing to call. A page is a plain object with an `id` and one of two
-bodies — `items`, a list of commands the palette renders itself, or `render`,
-a body of your own:
+There is nothing to call. A page is a plain object with an `id` and a `render`
+— a body of your own. A list is not a kind of page but a component: `ListPage`
+is the filtered, keyboard-navigable list of commands, configured inside
+`render` like any other body:
 
 ```tsx
 const menuPage: Page = {
   id: "menu",
   title: "Menu",
-  items: ({ query }) => (query ? search(query) : recent()),
+  render: () => <ListPage items={({ query }) => (query ? search(query) : recent())} />,
 }
 
 const notesPage: Page = {
@@ -107,6 +112,10 @@ const notesPage: Page = {
   render: () => <Notes />,
 }
 ```
+
+`ListPage` takes the rest of the list's config the same way: `emptyMessage`, a
+`note` rendered above the rows inside their scroll box, and `watch` for items
+built from a store outside React.
 
 `render` is **mounted** as a component, never called, so it keeps its own
 hooks, its own state and its own effects — and it is handed the page's context
@@ -135,12 +144,14 @@ Anything nested deeper inside a body reaches the same context through the
 hooks: `usePage(page)` for this instance's `props`, `query` and `resolve`, plus
 `useNavigation`, `useSearch`, `useRunAsync`, `usePageFooter`.
 
-`search` left out follows the kind of page: a list filters, and a body gets
-`"disabled"` — the same row, inert — because an input that filters nothing is
-an invitation to type into nothing. Say `search: "hidden"` to drop the input
-and let the title take its place, or `"input"` for a body that owns the text.
+`search` left out means `"filter"`: a palette page is a list unless it says
+otherwise, and the frame cannot see inside `render` to tell. A page with
+fields of its own says `search: "disabled"` — the same row, inert — because an
+input that filters nothing is an invitation to type into nothing. Say
+`search: "hidden"` to drop the input and let the title take its place, or
+`"input"` for a body that owns the text.
 
-A list page's rows carry their section on the right; the footer's action panel
+A `ListPage`'s rows carry their section on the right; the footer's action panel
 carries the keys instead, which are the point of it. Nothing else rides along —
 a row that opens a page draws no chevron, and there is no option to ask for one.
 Either way the shortcut still runs the command: it is matched off the item, not

@@ -1,8 +1,8 @@
 "use client"
 
 import { logActivity } from "../activity"
-import { Icon, ICONS } from "@/components/command-palette"
-import type { Page } from "@/components/command-palette"
+import { Icon, ICONS, ListPage } from "@/components/command-palette"
+import type { Command, Page } from "@/components/command-palette"
 import { notePage } from "./note"
 
 const pageA = notePage(
@@ -33,44 +33,46 @@ const pageC = notePage(
   </p>
 )
 
+const destinations: Command[] = [
+  {
+    id: "page-a",
+    title: "Page A",
+    subtitle: "esc → back here",
+    section: "Destinations",
+    icon: <Icon path={ICONS.chevronRight} />,
+    page: pageA,
+  },
+  {
+    id: "page-b",
+    title: "Page B",
+    subtitle: "esc → back here",
+    section: "Destinations",
+    icon: <Icon path={ICONS.chevronRight} />,
+    page: pageB,
+  },
+  {
+    id: "page-c",
+    title: "Page C",
+    subtitle: "esc → straight to root",
+    section: "Destinations",
+    icon: <Icon path={ICONS.chevronRight} />,
+    page: pageC,
+    options: { escape: "root" as const },
+  },
+  {
+    id: "note",
+    title: "Log what I typed",
+    subtitle: "runs an action, stays put",
+    section: "Actions",
+    icon: <Icon path={ICONS.dot} />,
+    run: ({ query }) => logActivity(`branch page query: “${query}”`),
+  },
+]
+
 /** Three destinations from one page, plus an action that doesn't navigate. */
 export const branchPage: Page = {
   id: "branch",
   title: "Branch Out",
   placeholder: "Pick a destination…",
-  items: [
-    {
-      id: "page-a",
-      title: "Page A",
-      subtitle: "esc → back here",
-      section: "Destinations",
-      icon: <Icon path={ICONS.chevronRight} />,
-      page: pageA,
-    },
-    {
-      id: "page-b",
-      title: "Page B",
-      subtitle: "esc → back here",
-      section: "Destinations",
-      icon: <Icon path={ICONS.chevronRight} />,
-      page: pageB,
-    },
-    {
-      id: "page-c",
-      title: "Page C",
-      subtitle: "esc → straight to root",
-      section: "Destinations",
-      icon: <Icon path={ICONS.chevronRight} />,
-      page: pageC,
-      options: { escape: "root" as const },
-    },
-    {
-      id: "note",
-      title: "Log what I typed",
-      subtitle: "runs an action, stays put",
-      section: "Actions",
-      icon: <Icon path={ICONS.dot} />,
-      run: ({ query }) => logActivity(`branch page query: “${query}”`),
-    },
-  ],
+  render: () => <ListPage items={destinations} />,
 }

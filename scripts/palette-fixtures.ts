@@ -16,23 +16,23 @@ export const rootPage: Page<{ commands: Command[] }> = {
   id: "root",
   title: "Root",
   placeholder: "Search commands…",
-  items: ({ props }) => props.commands,
+  render: () => null,
 }
 
 export const page1: Page = {
   id: "page1",
   title: "Page 1",
   placeholder: "Where to?",
-  items: [],
+  render: () => null,
 }
 
-export const page2: Page = { id: "page2", title: "Page 2", items: [] }
+export const page2: Page = { id: "page2", title: "Page 2", render: () => null }
 
-export const page3: Page = { id: "page3", title: "Page 3", items: [] }
+export const page3: Page = { id: "page3", title: "Page 3", render: () => null }
 
-export const page4: Page = { id: "page4", title: "Page 4", items: [] }
+export const page4: Page = { id: "page4", title: "Page 4", render: () => null }
 
-export const page41: Page = { id: "page4.1", title: "Page 4.1", items: [] }
+export const page41: Page = { id: "page4.1", title: "Page 4.1", render: () => null }
 
 /** A form: the input is inert, so esc pops on the first press. */
 export const formPage: Page = {
@@ -47,14 +47,14 @@ export const confirmPage: Page = {
   id: "confirm",
   title: "Confirm",
   escape: "root",
-  items: [],
+  render: () => null,
 }
 
 /** Takes props and returns a value — the picker shape. */
 export const projectsPage: Page<{ archived: boolean }, string> = {
   id: "projects",
   title: "Projects",
-  items: [],
+  render: () => null,
 }
 
 /**

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 
 import type { RunAsync, ToastInput } from "../async"
-import type { Command } from "../command/types"
 import type { FooterInput } from "./footer"
 
 /**
@@ -22,9 +21,10 @@ import type { FooterInput } from "./footer"
  * therefore a page whose search is off: pick "disabled" for a form, so the row
  * stays put and nothing shifts on the way in, or "hidden" to drop it.
  *
- * Left out, it follows the kind of page: a list filters, and a page with a
- * body of its own gets "disabled", because a live input that filters nothing
- * is an invitation to type into nothing.
+ * Left out, it defaults to "filter": a palette page is a list unless it says
+ * otherwise, and the frame cannot see inside `render` to tell. The exceptions
+ * declare themselves — a form says "disabled" or "hidden", because a live
+ * input that filters nothing is an invitation to type into nothing.
  */
 export type SearchMode = "filter" | "input" | "disabled" | "hidden"
 
@@ -90,7 +90,7 @@ export type NoHeader = {
   actions?: never
 }
 
-/** The `useSyncExternalStore` pair, named so a page can carry it. */
+/** The `useSyncExternalStore` pair, named so a config can carry it — what the `ListPage` component's `watch` takes. */
 export type ExternalStore = {
   subscribe: (onChange: () => void) => () => void
   getSnapshot: () => unknown
@@ -101,7 +101,7 @@ type PageBase<Props, Result> = NoHeader & {
   readonly id: string
   /** Breadcrumb label, and what the header row shows when there is no input. */
   readonly title?: string
-  /** Defaults to the kind of page — see `SearchMode` and `searchModeOf`. */
+  /** Defaults to "filter" — see `SearchMode` and `searchModeOf`. */
   readonly search?: SearchMode
   readonly placeholder?: string
   readonly escape?: EscapeRoute
@@ -122,58 +122,28 @@ type PageBase<Props, Result> = NoHeader & {
 }
 
 /**
- * A page that is a list of commands: filtered by the input, navigable with the
- * arrows, each row opening a page or running an action. The palette renders it
- * — there is no component to write.
- */
-export type ListPage<Props = void, Result = void> = PageBase<Props, Result> & {
-  /** Static, or derived from the query and the page's props. */
-  readonly items: Command[] | ((ctx: PageContext<Props, Result>) => Command[])
-  readonly emptyMessage?: string
-  /**
-   * A line of prose above the rows. Part of the list, not the chrome: it sits
-   * inside the list's own scroll box and scrolls with the rows. The header is
-   * the frame's on every page — see `NoHeader`.
-   */
-  readonly note?: (ctx: PageContext<Props, Result>) => ReactNode
-  /**
-   * For items that come from a store outside React — a recents list, a cache.
-   * The page only subscribes to the palette's own state, so without this a
-   * write out there would not reach the rows until the next keystroke did.
-   */
-  readonly watch?: ExternalStore
-  readonly render?: never
-}
-
-/**
- * A page with a body of its own. `render` is mounted as a component and handed
- * the page's context, so `props`, `resolve` and `nav` arrive as its props —
- * and anything nested deeper reaches the same context through the hooks.
- */
-export type RenderPage<Props = void, Result = void> = PageBase<
-  Props,
-  Result
-> & {
-  readonly render: (ctx: PageContext<Props, Result>) => ReactNode
-  readonly items?: never
-  readonly emptyMessage?: never
-  readonly note?: never
-  readonly watch?: never
-}
-
-/**
- * A page: a plain object, either a list of commands or a body of your own.
- * Nothing builds it and nothing registers it — it is data, like the commands
- * that open it, and the palette reads what it needs off it.
+ * A page: a plain object with an `id` and a body. Nothing builds it and
+ * nothing registers it — it is data, like the commands that open it, and the
+ * palette reads what it needs off it.
  *
+ *   const menu: Page = { id: "menu", render: () => <ListPage items={…} /> }
  *   const notes: Page = { id: "notes", title: "Notes", render: () => <Notes /> }
- *   const menu: Page = { id: "menu", items: [ … ] }
+ *
+ * `render` is mounted as a component, never called, so it keeps its own hooks,
+ * state and effects — and it is handed the page's context as props, so
+ * `props`, `resolve` and `nav` arrive without asking. Anything nested deeper
+ * reaches the same context through the hooks.
+ *
+ * A list is not a kind of page but a component: `ListPage` (in `ui/`) is the
+ * filtered, keyboard-navigable list of commands, configured inside `render`
+ * like any other body.
  *
  * `Props` is what the caller has to supply and `Result` what the page hands
  * back through `resolve` — both default to nothing, which is most pages.
  */
-export type Page<Props = void, Result = void> =
-  ListPage<Props, Result> | RenderPage<Props, Result>
+export type Page<Props = void, Result = void> = PageBase<Props, Result> & {
+  readonly render: (ctx: PageContext<Props, Result>) => ReactNode
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- variance placeholders: these
    types are containers, and narrowing them to `unknown` makes every concrete page

@@ -1,24 +1,33 @@
 "use client"
 
 import { useState } from "react"
+import type { ReactNode } from "react"
 
 import { bind } from "../core"
-import type { Command, ListPage, PageContext, PageTarget } from "../core"
+import type {
+  Command,
+  ExternalStore,
+  Page,
+  PageContext,
+  PageTarget,
+} from "../core"
+
+import { ListPage } from "./list-page"
 
 /**
  * What a host says about the page the palette opens on. There is no root page
- * to write: the root is always one list over the host's commands, so the host
- * hands over the commands and, if it wants them, the few things a list page
+ * to write: the root is always one `ListPage` over the host's commands, so the
+ * host hands over the commands and, if it wants them, the few things that list
  * can vary.
  *
- * Four fields of a list page are missing, because at the root they are not the
+ * Four fields of a page are missing, because at the root they are not the
  * host's to set: `id` and `title` are the root's own, `search` is the filter
  * the palette opens on, and `escape` is `onDismiss` — esc at the root with an
  * empty input closes the palette rather than going anywhere.
  */
 export type RootConfig = Omit<
-  ListPage<unknown, unknown>,
-  "id" | "title" | "search" | "escape" | "items" | "render" | "__props"
+  Page<unknown, unknown>,
+  "id" | "title" | "search" | "escape" | "render" | "__props"
 > & {
   /**
    * Every command the palette opens on: a plain array, or a function of the
@@ -26,6 +35,10 @@ export type RootConfig = Omit<
    * regroups itself as the user types.
    */
   commands: Command[] | ((ctx: PageContext) => Command[])
+  /** The rest of the root's `ListPage` config — see `ListPageProps`. */
+  emptyMessage?: string
+  note?: ReactNode
+  watch?: ExternalStore
 }
 
 /**
@@ -43,14 +56,22 @@ export type RootConfig = Omit<
  */
 export function useRootPage(config: RootConfig): PageTarget {
   const [page] = useState(() => {
-    const { commands, ...list } = config
+    const { commands, emptyMessage, note, watch, ...rest } = config
 
-    const root: ListPage<unknown, unknown> = {
-      ...list,
+    const root: Page<unknown, unknown> = {
+      ...rest,
       id: "root",
       search: "filter",
-      items: (ctx) =>
-        typeof commands === "function" ? commands(ctx) : commands,
+      render: () => (
+        <ListPage
+          items={(ctx) =>
+            typeof commands === "function" ? commands(ctx) : commands
+          }
+          emptyMessage={emptyMessage}
+          note={note}
+          watch={watch}
+        />
+      ),
     }
 
     // Bound, so a root that takes no props is still a reference the store can

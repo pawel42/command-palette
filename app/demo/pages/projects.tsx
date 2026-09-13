@@ -1,7 +1,7 @@
 "use client"
 
 import { logActivity } from "../activity"
-import { bind, Icon, ICONS } from "@/components/command-palette"
+import { bind, Icon, ICONS, ListPage } from "@/components/command-palette"
 import type { Page, PageFooter } from "@/components/command-palette"
 
 export type Project = {
@@ -20,15 +20,15 @@ const ALL_PROJECTS: Project[] = [
 ]
 
 /**
- * A list page that takes props and returns a value: `archived` decides what it
+ * A list that takes props and returns a value: `archived` decides what it
  * lists, and `resolve(project)` settles the promise from whichever `push`
- * opened it — then closes the page.
+ * opened it — then closes the page. The context arrives as `render`'s props,
+ * so the list's rows are built from it directly.
  */
 export const projectsPage: Page<{ archived: boolean }, Project> = {
   id: "projects",
   title: "Projects",
   placeholder: "Search projects…",
-  emptyMessage: "No project matches that.",
 
   // The declarative half of the footer, and the reason it takes a function:
   // this one is built from the page's own props, and it has to be built late
@@ -48,9 +48,12 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
         ],
   }),
 
-  items: ({ props, resolve }) =>
-    ALL_PROJECTS.filter((project) => props.archived || !project.archived).map(
-      (project) => ({
+  render: ({ props, resolve }) => (
+    <ListPage
+      emptyMessage="No project matches that."
+      items={ALL_PROJECTS.filter(
+        (project) => props.archived || !project.archived
+      ).map((project) => ({
         id: project.id,
         title: project.name,
         subtitle: `${project.tasks} open`,
@@ -61,6 +64,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
           logActivity(`picked project “${project.name}”`)
           resolve(project)
         },
-      })
-    ),
+      }))}
+    />
+  ),
 }
