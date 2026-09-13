@@ -140,13 +140,6 @@ export const commands: Command[] = [
     keywords: ["ship", "build", "error", "async"],
     icon: <Icon path={ICONS.upload} />,
     run: () => deployPreview(),
-    // The failure, after the user has been shown it. Nothing happens to a
-    // caught error unless the command says so — this one writes it to the log
-    // under the palette; yours might be `console.error` or a reporter.
-    onError: (error) =>
-      logActivity(
-        `deploy failed: ${error instanceof Error ? error.message : error}`
-      ),
   },
   {
     // No work behind it at all: the same footer line, said directly.

@@ -34,22 +34,11 @@ export type Command =
       page: PageTarget
       options?: PushOptions
       run?: never
-      onError?: never
     })
   | (CommandItem & {
       run: ActionHandler
       page?: never
       options?: never
-      /**
-       * What to do when this command's work fails, beyond the toast the user
-       * is shown: log it, report it, undo something. Called with the error.
-       *
-       * Nothing happens to a caught failure without this — see
-       * `RunAsyncOptions.onError`, which is where it ends up. It applies to a
-       * handler that returns its promise; one that calls `runAsync` itself
-       * declares the same thing there, next to the messages.
-       */
-      onError?: (error: unknown) => void
     })
 
 export type CommandContext = PageContext<unknown, unknown>

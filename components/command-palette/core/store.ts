@@ -218,13 +218,7 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       // work out of it — a page push, and a handler that already called
       // `runAsync` itself. See `async.ts`.
       if (result instanceof Promise && !isUntracked(result)) {
-        return tasks.run(result, {
-          loading: progressLabel(command.title),
-          // The command's own say in how its failure is handled. Only reached
-          // on this path: a handler that called `runAsync` itself passed its
-          // options there, and they are the ones that count.
-          onError: command.onError,
-        })
+        return tasks.run(result, { loading: progressLabel(command.title) })
       }
 
       // A command that did its work there and then. It is still the thing the

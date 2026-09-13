@@ -117,18 +117,25 @@ export function createCommands(log: string[]): Command[] {
         ),
     },
     {
-      // The zero-config form: a bare async handler that throws. The store
-      // tracks it because it returned a promise, and nothing else was said.
+      // A failure with a side effect beyond the toast: `onError` lives on
+      // `runAsync`'s own options, next to the messages, not on the command.
       id: "deploy",
       title: "Deploy a Preview",
       section: "Actions",
-      run: async () => {
-        await wait(20)
-        throw new Error("The preview build failed")
-      },
-      // Nothing is logged for you: the command says what its failure deserves.
-      onError: (error) =>
-        log.push(`caught:${error instanceof Error ? error.message : error}`),
+      run: ({ runAsync }) =>
+        runAsync(
+          async () => {
+            await wait(20)
+            throw new Error("The preview build failed")
+          },
+          {
+            loading: "Deploying…",
+            onError: (error) =>
+              log.push(
+                `caught:${error instanceof Error ? error.message : error}`
+              ),
+          }
+        ),
     },
     {
       // Instant, and it has something to say: the pair of cases that broke
