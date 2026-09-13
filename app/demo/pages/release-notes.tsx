@@ -162,9 +162,9 @@ function ReleaseNotes() {
       {
         id: "density",
         title: detailed ? "Compact view" : "Detailed view",
-        subtitle: "how much each release says",
+        description: "how much each release says",
         section: "View",
-        shortcut: ["⌘", "⇧", "D"],
+        shortcut: ["Mod", "Shift", "D"],
         icon: <Icon path={ICONS.layers} />,
         run: () => setDetailed((previous) => !previous),
       },

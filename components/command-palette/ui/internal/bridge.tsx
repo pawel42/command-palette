@@ -57,7 +57,7 @@ function footerSignature(footer: PageFooter): string {
     [
       action.id,
       action.title,
-      action.subtitle ?? "",
+      action.description ?? "",
       action.section ?? "",
       action.disabled ? "off" : "",
       (action.shortcut ?? []).join("+"),

@@ -3,9 +3,13 @@
 import { useEffect, useRef } from "react"
 
 import { TOGGLE_SHORTCUT, matchesAny } from "../../core"
+import type { Chord } from "../../core"
 
-/** ⌘K on a Mac, ctrl+K everywhere else. The first is what the UI displays. */
+/** ⌘K on a Mac, ctrl+K everywhere else — one chord, resolved per platform. */
 export { TOGGLE_SHORTCUT }
+
+/** The default, module-level so a host that takes it doesn't get a new array. */
+const DEFAULT_SHORTCUTS: readonly Chord[] = [TOGGLE_SHORTCUT]
 
 /**
  * Global toggle. It listens on the window so it works whether the palette is
@@ -16,7 +20,8 @@ export { TOGGLE_SHORTCUT }
  */
 export function useToggleHotkey(
   toggle: () => void,
-  shortcuts: readonly (readonly string[])[] = TOGGLE_SHORTCUT
+  /** Any of these opens the palette; each is one chord of key names. */
+  shortcuts: readonly Chord[] = DEFAULT_SHORTCUTS
 ) {
   // Read through refs so a fresh callback or array each render doesn't resubscribe.
   const toggleRef = useRef(toggle)

@@ -3,6 +3,7 @@
 import { bind, Icon, ICONS } from "@/components/command-palette"
 import type {
   Command,
+  ListCommand,
   PageContext,
   PageFooter,
 } from "@/components/command-palette"
@@ -27,7 +28,7 @@ export const commands: Command[] = [
   {
     id: "branch",
     title: "Branch Out",
-    subtitle: "three destinations",
+    description: "three destinations",
     section: "Pages",
     icon: <Icon path={ICONS.branch} />,
     page: branchPage,
@@ -35,9 +36,10 @@ export const commands: Command[] = [
   {
     id: "create-task",
     title: "Create Task",
-    subtitle: "a form that keeps its draft",
+    description: "a form that keeps its draft",
     section: "Pages",
-    shortcut: ["⌘", "N"],
+    // Not ⌘N: the browser opens a window on that before the page sees it.
+    shortcut: ["Mod", "E"],
     keywords: ["new", "todo", "form"],
     icon: <Icon path={ICONS.plus} />,
     page: createTaskPage,
@@ -45,7 +47,7 @@ export const commands: Command[] = [
   {
     id: "account",
     title: "New Account",
-    subtitle: "two forms, one pushed from the other",
+    description: "two forms, one pushed from the other",
     section: "Pages",
     keywords: ["signup", "form", "profile", "wizard"],
     icon: <Icon path={ICONS.user} />,
@@ -54,8 +56,11 @@ export const commands: Command[] = [
   {
     id: "projects",
     title: "Browse Projects",
-    subtitle: "takes props, returns a value",
+    description: "takes props, returns a value",
     section: "Pages",
+    // ⌘G, let go, then P. One lead for a family of destinations, which is
+    // what a sequence is for — see "Release Notes" for the other half of it.
+    shortcut: [["Mod", "G"], ["P"]],
     keywords: ["client", "work", "picker"],
     icon: <Icon path={ICONS.folder} />,
     // Props are bound here, so the page can't be opened without them.
@@ -64,7 +69,7 @@ export const commands: Command[] = [
   {
     id: "deep",
     title: "Deep Dive",
-    subtitle: "three levels, one esc home",
+    description: "three levels, one esc home",
     section: "Pages",
     keywords: ["stack", "escape"],
     icon: <Icon path={ICONS.layers} />,
@@ -73,8 +78,9 @@ export const commands: Command[] = [
   {
     id: "release-notes",
     title: "Release Notes",
-    subtitle: "long, scrollable, keeps its place",
+    description: "long, scrollable, keeps its place",
     section: "Pages",
+    shortcut: [["Mod", "G"], ["R"]],
     keywords: ["changelog", "history", "scroll"],
     icon: <Icon path={ICONS.clock} />,
     page: releaseNotesPage,
@@ -91,7 +97,7 @@ export const commands: Command[] = [
     id: "theme",
     title: "Toggle Dark Mode",
     section: "Actions",
-    shortcut: ["⌘", "D"],
+    shortcut: ["Mod", "D"],
     keywords: ["appearance", "light", "theme"],
     icon: <Icon path={ICONS.moon} />,
     run: () => {
@@ -106,7 +112,7 @@ export const commands: Command[] = [
     // navigating away really does call the request off.
     id: "sync",
     title: "Sync with Remote",
-    subtitle: "slow, and says how it went",
+    description: "slow, and says how it went",
     section: "Actions",
     keywords: ["pull", "fetch", "async"],
     icon: <Icon path={ICONS.branch} />,
@@ -129,7 +135,7 @@ export const commands: Command[] = [
     // `runAsync(deployPreview, { loading: "Deploying…" })` — to really abort.
     id: "deploy",
     title: "Deploy a Preview",
-    subtitle: "fails, and says so",
+    description: "fails, and says so",
     section: "Actions",
     keywords: ["ship", "build", "error", "async"],
     icon: <Icon path={ICONS.upload} />,
@@ -155,7 +161,7 @@ export const commands: Command[] = [
   {
     id: "log-query",
     title: "Log What I Typed",
-    subtitle: "actions can read the query",
+    description: "actions can read the query",
     section: "Actions",
     icon: <Icon path={ICONS.dot} />,
     run: ({ query }) => logActivity(`root query: “${query}”`),
@@ -163,7 +169,7 @@ export const commands: Command[] = [
   {
     id: "blocked",
     title: "Push to Remote",
-    subtitle: "nothing to push",
+    description: "nothing to push",
     section: "Actions",
     disabled: true,
     icon: <Icon path={ICONS.upload} />,
@@ -181,16 +187,21 @@ const RECENT_PREFIX = "recent:"
 const byId = new Map(commands.map((command) => [command.id, command]))
 
 /**
- * Regroups a command under a heading it doesn't belong to, keeping its real
- * section as the label on the row — so a row in "Recent" or "Results" still
- * says whether it is a page or an action.
+ * Files a command under a heading it doesn't belong to. Its `section` is left
+ * alone — that is where it lives, and it is what the row goes on saying on its
+ * right edge, so a row in "Recent" or "Results" still says whether it is a
+ * page or an action.
  */
-function regroup(command: Command, section: string, id = command.id): Command {
-  return { ...command, id, section, label: command.section }
+function regroup(
+  command: Command,
+  group: string,
+  id = command.id
+): ListCommand {
+  return { ...command, id, group }
 }
 
 /** The commands last run, in that order, skipping any that have since gone. */
-function recentRows(): Command[] {
+function recentRows(): ListCommand[] {
   return recentIds().flatMap((id) => {
     const command = byId.get(id)
     return command
@@ -214,7 +225,7 @@ export function rememberRootCommand(id: string) {
  * as written; typing throws the headings away, because the sections are how an
  * untouched list is read and a search is one ranked answer to what was typed.
  */
-export function rootCommands({ query }: PageContext): Command[] {
+export function rootCommands({ query }: PageContext): ListCommand[] {
   return query.trim()
     ? commands.map((command) => regroup(command, "Results"))
     : [...recentRows(), ...commands]
@@ -230,15 +241,15 @@ export const rootFooter: PageFooter = {
     {
       id: "clear-activity",
       title: "Clear the activity log",
-      subtitle: "the list under the palette",
-      shortcut: ["⌘", "⇧", "L"],
+      description: "the list under the palette",
+      shortcut: ["Mod", "Shift", "L"],
       icon: <Icon path={ICONS.close} />,
       run: () => clearActivity(),
     },
     {
       id: "whats-new",
       title: "What's new",
-      subtitle: "an action can open a page",
+      description: "an action can open a page",
       icon: <Icon path={ICONS.clock} />,
       page: releaseNotesPage,
     },

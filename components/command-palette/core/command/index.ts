@@ -1,2 +1,7 @@
 export { isPageCommand, resolveCommand } from "./run"
-export type { Command, CommandContext, ItemMeta } from "./types"
+export type {
+  Command,
+  CommandContext,
+  CommandItem as ItemMeta,
+  ListCommand,
+} from "./types"

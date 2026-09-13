@@ -31,12 +31,12 @@ function CreateTaskForm() {
       {
         id: "save",
         title: "Save and go home",
-        shortcut: ["⌘", "↵"],
+        shortcut: ["Mod", "Enter"],
         icon: <Icon path={ICONS.check} />,
         run: save,
       },
     ],
-    hints: [{ keys: ["esc"], label: "discards this draft" }],
+    hints: [{ keys: ["Escape"], label: "discards this draft" }],
   })
 
   return (

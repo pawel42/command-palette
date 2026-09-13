@@ -1,6 +1,10 @@
 "use client"
 
-import { CommandPaletteDialog, Kbd } from "@/components/command-palette"
+import {
+  CommandPaletteDialog,
+  Kbd,
+  TOGGLE_SHORTCUT,
+} from "@/components/command-palette"
 
 import { useActivity } from "./demo/activity"
 import { rememberRootCommand, rootCommands, rootFooter } from "./demo/commands"
@@ -15,8 +19,9 @@ export default function Page() {
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         Press
         <span className="flex items-center gap-1">
-          <Kbd>⌘</Kbd>
-          <Kbd>K</Kbd>
+          {TOGGLE_SHORTCUT.map((key) => (
+            <Kbd key={key}>{key}</Kbd>
+          ))}
         </span>
         to open the command palette
       </p>

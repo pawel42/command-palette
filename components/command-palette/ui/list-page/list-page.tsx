@@ -32,8 +32,7 @@ export function ListPage(props: ListPageProps) {
         isEmpty={isEmpty}
         emptyMessage={emptyMessage}
         listProps={listProps}
-        // A page's rows say what section they are in, not what keys run them.
-        trailing="label"
+        trailing={props.trailing ?? "auto"}
       />
     </div>
   )

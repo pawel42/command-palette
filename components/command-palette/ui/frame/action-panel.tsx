@@ -65,9 +65,9 @@ export function ActionPanel({
   )
 
   const sections: ListSection[] = list.groups.map((group, groupIndex) => ({
-    key: group.section ?? `group-${groupIndex}`,
-    section: group.section,
-    headingId: group.section
+    key: group.heading ?? `group-${groupIndex}`,
+    heading: group.heading,
+    headingId: group.heading
       ? `${list.listProps.id}-group-${groupIndex}`
       : undefined,
     rows: group.items.map(({ item, indices }) => {

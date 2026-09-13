@@ -20,3 +20,5 @@ export {
   useSearch,
 } from "./hooks"
 export type { CommandList, ItemProps, ListControl } from "./hooks"
+export { usePlatform } from "./platform"
+export { usePendingKeys } from "./sequence"

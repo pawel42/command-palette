@@ -3,7 +3,12 @@
 import { useCallback, useId } from "react"
 
 import type { ItemMeta } from "../core/command"
-import { claimEscape, matchesShortcut, resolveKey } from "../core/keys"
+import {
+  claimEscape,
+  resolveKey,
+  resolveShortcut,
+  warnBrowserReserved,
+} from "../core/keys"
 import {
   edge,
   filterItems,
@@ -116,6 +121,10 @@ export function useListController<T extends ItemMeta>(
 
   const { query, activeItemId } = control
 
+  // Development only, once per chord: a shortcut the browser owns is a
+  // shortcut that silently does nothing.
+  warnBrowserReserved(items)
+
   const groups = filterItems(items, query)
   const entries = flatten(groups)
   const activeIndex = resolveActiveIndex(entries, activeItemId)
@@ -156,21 +165,31 @@ export function useListController<T extends ItemMeta>(
   }
 
   const onKeyDown = (event: React.KeyboardEvent) => {
-    const intent = resolveKey(event)
+    // Before the intents, not after: while a sequence is half-pressed the
+    // palette is waiting for one specific key, and ↵ or an arrow may well be
+    // the key it is waiting for.
+    const outcome = resolveShortcut(items, event, {
+      eligible: (item) => !item.disabled,
+      // The frame sees this press after we do, and its footer may hold the
+      // other half of the sequence — so a miss here is not a cancel.
+      final: false,
+    })
 
-    if (!intent) {
-      const shortcutMatch = items.find(
-        (item) =>
-          item.shortcut &&
-          !item.disabled &&
-          matchesShortcut(item.shortcut, event)
-      )
-      if (shortcutMatch) {
-        event.preventDefault()
-        select(entries.findIndex((entry) => entry.item === shortcutMatch))
+    if (outcome.type === "miss") return
+
+    if (outcome.type !== "none") {
+      // Spent here whatever it turned out to mean — a press that opens or
+      // ends a sequence must not also reach the input behind it.
+      event.preventDefault()
+
+      if (outcome.type === "run") {
+        select(entries.findIndex((entry) => entry.item === outcome.item))
       }
       return
     }
+
+    const intent = resolveKey(event)
+    if (!intent) return
 
     switch (intent.type) {
       case "move":

@@ -48,7 +48,7 @@ export const level2Page: Page = {
         {
           id: "next",
           title: "Level 3",
-          subtitle: "esc route: root",
+          description: "esc route: root",
           section: "Navigate",
           icon: <Icon path={ICONS.layers} />,
           page: level3Page,
@@ -75,7 +75,7 @@ export const level1Page: Page = {
         {
           id: "projects-again",
           title: "…or jump to Projects from here",
-          subtitle: "same page, different parent",
+          description: "same page, different parent",
           section: "Navigate",
           icon: <Icon path={ICONS.folder} />,
           page: bind(projectsPage, { archived: true }),

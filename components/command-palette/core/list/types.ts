@@ -3,6 +3,8 @@ export type ListItemLike = {
   id: string
   title: string
   section?: string
+  /** The heading to file this item under, when it is not its section. */
+  group?: string
   keywords?: readonly string[]
   disabled?: boolean
 }
@@ -19,4 +21,6 @@ export type MatchedItem<T> = {
   indices: readonly number[]
 }
 
-export type FilteredGroup<T> = { section?: string; items: MatchedItem<T>[] }
+/** One heading and the items under it. The heading may be a `group`, so it is
+ *  not called a section: see `ItemMeta.group`. */
+export type FilteredGroup<T> = { heading?: string; items: MatchedItem<T>[] }

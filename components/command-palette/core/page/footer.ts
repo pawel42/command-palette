@@ -1,16 +1,18 @@
+import type { KeyToken } from "../keys/tokens"
 import type { Command } from "../command/types"
 import type { PageContext } from "./types"
 
 /**
  * A key legend with nothing behind it: "esc discards this draft".
  *
- * Strings, deliberately. `label` is not a `ReactNode` and `keys` are not
- * elements, so a hint can never quietly become a slot the page draws chrome
- * into. A key that *does* something is an action instead, and shows its own
+ * Key names and a string, deliberately. `label` is not a `ReactNode` and
+ * `keys` are names rather than elements, so a hint can never quietly become a
+ * slot the page draws chrome into — and the names are drawn per platform, so
+ * a hint written once reads right on every keyboard. A key that *does* something is an action instead, and shows its own
  * chord in the panel.
  */
 export type FooterHint = {
-  keys: readonly string[]
+  keys: readonly KeyToken[]
   label: string
 }
 

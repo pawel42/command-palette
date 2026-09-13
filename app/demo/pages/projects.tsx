@@ -40,7 +40,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
           {
             id: "archived",
             title: "Browse archived projects",
-            subtitle: "the same page, other props",
+            description: "the same page, other props",
             section: "View",
             icon: <Icon path={ICONS.clock} />,
             page: bind(projectsPage, { archived: true }),

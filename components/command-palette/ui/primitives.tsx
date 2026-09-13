@@ -1,4 +1,9 @@
+"use client"
+
 /** Presentational pieces shared by the frame and the built-in pages. */
+
+import { formatKey } from "../core"
+import { usePlatform } from "../react"
 
 /**
  * How anything arriving in the footer's left half comes in: the toast, and the
@@ -8,10 +13,20 @@
  */
 export const FOOTER_ENTER = "animate-in fade-in-0 slide-in-from-bottom-1"
 
+/**
+ * One key, drawn the way the keyboard under the user prints it.
+ *
+ * Keys are declared by name — `["Mod", "Shift", "K"]`, the tokens in a footer
+ * hint — and turned into something printable here and only here: ⌘⇧K on a Mac,
+ * Ctrl Shift K on Windows and Linux. A string that is not a key name is drawn
+ * as given, so this is still the box to put any small legend in.
+ */
 export function Kbd({ children }: { children: React.ReactNode }) {
+  const platform = usePlatform()
+
   return (
     <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
-      {children}
+      {typeof children === "string" ? formatKey(children, platform) : children}
     </kbd>
   )
 }

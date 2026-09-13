@@ -2,8 +2,9 @@ import { normalizeQuery, scoreItem } from "./fuzzy"
 import type { FilteredGroup, ListItemLike } from "./types"
 
 /**
- * Groups items by section, keeping sections in first-appearance order. With a
- * query present, items are re-ranked inside their section; without one they
+ * Groups items under their headings — a row's `group` where it has one, and
+ * its `section` otherwise — keeping headings in first-appearance order. With a
+ * query present, items are re-ranked inside their heading; without one they
  * stay in source order.
  */
 export function filterItems<T extends ListItemLike>(
@@ -12,16 +13,18 @@ export function filterItems<T extends ListItemLike>(
 ): FilteredGroup<T>[] {
   const normalized = normalizeQuery(query)
   const groups: FilteredGroup<T>[] = []
-  const bySection = new Map<string | undefined, FilteredGroup<T>>()
+  const byHeading = new Map<string | undefined, FilteredGroup<T>>()
 
   items.forEach((item, order) => {
     const match = scoreItem(item, normalized)
     if (!match) return
 
-    let group = bySection.get(item.section)
+    const heading = item.group ?? item.section
+
+    let group = byHeading.get(heading)
     if (!group) {
-      group = { section: item.section, items: [] }
-      bySection.set(item.section, group)
+      group = { heading, items: [] }
+      byHeading.set(heading, group)
       groups.push(group)
     }
 

@@ -37,7 +37,7 @@ const destinations: Command[] = [
   {
     id: "page-a",
     title: "Page A",
-    subtitle: "esc → back here",
+    description: "esc → back here",
     section: "Destinations",
     icon: <Icon path={ICONS.chevronRight} />,
     page: pageA,
@@ -45,7 +45,7 @@ const destinations: Command[] = [
   {
     id: "page-b",
     title: "Page B",
-    subtitle: "esc → back here",
+    description: "esc → back here",
     section: "Destinations",
     icon: <Icon path={ICONS.chevronRight} />,
     page: pageB,
@@ -53,7 +53,7 @@ const destinations: Command[] = [
   {
     id: "page-c",
     title: "Page C",
-    subtitle: "esc → straight to root",
+    description: "esc → straight to root",
     section: "Destinations",
     icon: <Icon path={ICONS.chevronRight} />,
     page: pageC,
@@ -62,7 +62,7 @@ const destinations: Command[] = [
   {
     id: "note",
     title: "Log what I typed",
-    subtitle: "runs an action, stays put",
+    description: "runs an action, stays put",
     section: "Actions",
     icon: <Icon path={ICONS.dot} />,
     run: ({ query }) => logActivity(`branch page query: “${query}”`),

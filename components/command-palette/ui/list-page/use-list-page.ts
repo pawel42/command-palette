@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 
-import type { Command, ExternalStore, PageContext } from "../../core"
+import type { ExternalStore, ListCommand, PageContext } from "../../core"
 import {
   useCommandList,
   useInstanceId,
@@ -12,7 +12,7 @@ import {
 } from "../../react"
 
 import { usePublishBridge } from "../internal/bridge"
-import type { ListRow, ListSection } from "../internal/rows"
+import type { ListRow, ListSection, Trailing } from "../internal/rows"
 
 /** What a `ListPage` is configured with, inside a page's `render`. */
 export type ListPageProps = {
@@ -22,7 +22,7 @@ export type ListPageProps = {
    * so it may read anything outside React; `watch` is what tells the list
    * when that moved.
    */
-  items: Command[] | ((ctx: PageContext) => Command[])
+  items: ListCommand[] | ((ctx: PageContext) => ListCommand[])
   emptyMessage?: string
   /**
    * A line of prose above the rows. Part of the list, not the chrome: it sits
@@ -38,6 +38,11 @@ export type ListPageProps = {
   watch?: ExternalStore
   /** What a screen reader calls the list. Defaults to the page's title. */
   label?: string
+  /**
+   * What the right edge of each row carries. Defaults to `"auto"`: the keys on
+   * the rows that have them, the section on the rest — see `Trailing`.
+   */
+  trailing?: Trailing
 }
 
 // Module constants, so the no-watch case hands `useSyncExternalStore` the same
@@ -45,8 +50,8 @@ export type ListPageProps = {
 const NEVER = () => () => {}
 const NOTHING = () => null
 
-/** Both shapes are the shared renderer's — re-exported for the list's API. */
-export type { ListRow, ListSection }
+/** All three are the shared renderer's — re-exported for the list's API. */
+export type { ListRow, ListSection, Trailing }
 
 /**
  * Turns the list's config into a view model: the filtered sections with their
@@ -94,9 +99,9 @@ export function useListPage({
   )
 
   const sections: ListSection[] = list.groups.map((group, groupIndex) => ({
-    key: group.section ?? `group-${groupIndex}`,
-    section: group.section,
-    headingId: group.section
+    key: group.heading ?? `group-${groupIndex}`,
+    heading: group.heading,
+    headingId: group.heading
       ? `${list.listProps.id}-group-${groupIndex}`
       : undefined,
     rows: group.items.map(({ item, indices }) => {

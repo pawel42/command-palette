@@ -1,7 +1,9 @@
 "use client"
 
+import { formatChords } from "../../core"
 import type { Command } from "../../core"
 import type { ItemProps } from "../../react"
+import { usePlatform } from "../../react"
 import { Highlight, Kbd } from "../primitives"
 
 /** One rendered row: everything the markup needs, nothing it has to derive. */
@@ -14,18 +16,23 @@ export type ListRow = {
 
 /**
  * What the right edge of a row carries: the keys that run it, or the section
- * it belongs to. A list page labels — where the rows are grouped under their
- * headings anyway, the keys are noise on a row about to be taken with ↵ — and
- * the action panel keeps the keys, which are the whole point of it.
+ * it belongs to.
  *
- * Either way the shortcut still *works*: it is matched off the item, not off
- * what was drawn — see `useListController`'s key handler.
+ * `"auto"` is what a list page wants and is its default — the keys on the rows
+ * that have keys, and the section on the rest. A row with a shortcut has
+ * something to teach; a row without one only has somewhere it lives, and under
+ * a heading that already says so, repeating it is the noise. The action panel
+ * forces `"shortcut"`, which is the whole point of it.
+ *
+ * Whatever is drawn, the shortcut still *works*: it is matched off the item,
+ * not off what was drawn — see `useListController`'s key handler.
  */
-export type Trailing = "shortcut" | "label"
+export type Trailing = "shortcut" | "label" | "auto"
 
 export type ListSection = {
   key: string
-  section?: string
+  /** What the heading says — a row's `group` where it has one, else its section. */
+  heading?: string
   headingId?: string
   rows: ListRow[]
 }
@@ -69,12 +76,12 @@ export function CommandRows({
             aria-labelledby={section.headingId}
             className="mb-1 last:mb-0"
           >
-            {section.section && (
+            {section.heading && (
               <div
                 id={section.headingId}
                 className="scroll-mt-(--list-gap) px-2 pt-2 pb-1.5 text-xs font-medium text-muted-foreground"
               >
-                {section.section}
+                {section.heading}
               </div>
             )}
 
@@ -96,7 +103,9 @@ export function CommandRow({
   trailing?: Trailing
 }) {
   const { item, indices, isActive } = row
-  const label = item.label ?? item.section
+  const platform = usePlatform()
+  // "auto" is the one that decides per row: keys where there are keys.
+  const shows = trailing === "auto" ? (item.shortcut ? "shortcut" : "label") : trailing
 
   return (
     <div
@@ -122,23 +131,33 @@ export function CommandRow({
 
       <span className="min-w-0 flex-1 truncate">
         <Highlight text={item.title} indices={indices} />
-        {item.subtitle && (
+        {item.description && (
           <span className="ml-2 text-xs text-muted-foreground">
-            {item.subtitle}
+            {item.description}
           </span>
         )}
       </span>
 
-      {trailing === "shortcut" && item.shortcut && (
-        <span className="flex shrink-0 items-center gap-1">
-          {item.shortcut.map((key) => (
-            <Kbd key={key}>{key}</Kbd>
+      {/* One group per press: ⌘D then L reads as two presses, with air
+          between them, not as four keys held at once. */}
+      {shows === "shortcut" && item.shortcut && (
+        <span className="flex shrink-0 items-center gap-2">
+          {formatChords(item.shortcut, platform).map((chord, index) => (
+            <span key={index} className="flex items-center gap-1">
+              {chord.map((key) => (
+                <Kbd key={key}>{key}</Kbd>
+              ))}
+            </span>
           ))}
         </span>
       )}
 
-      {trailing === "label" && label && (
-        <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
+      {/* Where the row lives, which is not always the heading it is under: a
+          row copied into "Recent" still says "Pages" here. */}
+      {shows === "label" && item.section && (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {item.section}
+        </span>
       )}
     </div>
   )

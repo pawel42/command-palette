@@ -5,17 +5,23 @@ import { useEffect, useId, useRef, useState } from "react"
 import {
   ACTIONS_SHORTCUT,
   RESERVED_SHORTCUTS,
+  ariaKeyShortcut,
   claimEscape,
+  clearPending,
   isEditable,
+  isSequence,
   matchesAny,
   matchesShortcut,
   resolveBackspace,
+  resolveShortcut,
 } from "../../core"
-import type { Command, FooterHint } from "../../core"
+import type { Chord, Command, FooterHint, Shortcut } from "../../core"
 import {
   usePaletteStore,
   usePaletteTasks,
   usePaletteView,
+  usePendingKeys,
+  usePlatform,
   useSearch,
 } from "../../react"
 
@@ -189,11 +195,14 @@ function scrollByKey(event: React.KeyboardEvent, slot: HTMLElement | null) {
 }
 
 /**
- * Inside a field the user is typing in, only a ⌘ or ⌃ chord may fire: a bare
- * letter would be taken out of the middle of a word.
+ * Inside a field the user is typing in, only a command chord may fire: a bare
+ * letter would be taken out of the middle of a word. `Mod` is whichever key
+ * that is here — ctrl off the Mac — and `Ctrl` is the literal one.
  */
-function hasCommandModifier(shortcut: readonly string[]): boolean {
-  return shortcut.some((part) => part === "⌘" || part === "⌃")
+function hasCommandModifier(shortcut: Shortcut): boolean {
+  const lead = (isSequence(shortcut) ? shortcut[0] : shortcut) as Chord
+
+  return lead.some((part) => part === "Mod" || part === "Ctrl")
 }
 
 /**
@@ -204,6 +213,9 @@ function hasCommandModifier(shortcut: readonly string[]): boolean {
 export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const view = usePaletteView()
   const store = usePaletteStore()
+  const platform = usePlatform()
+  // The presses a half-finished sequence is holding — see `core/keys/sequence`.
+  const pending = usePendingKeys()
   const [query, setQuery] = useSearch()
   const { getKeyHandler, activeOptionId, listId } = useFrameBridge()
   const { footer, getFooter } = useFrameFooter()
@@ -280,31 +292,39 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   }
 
   /**
-   * Runs a page's own chord with the panel closed. Looked up in the live
+   * Runs a page's own shortcut with the panel closed. Looked up in the live
    * footer rather than the drawn one, because the drawn one's handlers are as
    * old as its signature — see the bridge.
+   *
+   * Returns true when the press was spent, which a sequence spends two of:
+   * the one that opens it and the one that finishes or abandons it.
    */
   const runActionShortcut = (event: React.KeyboardEvent) => {
     // Held, not pressed: one chord is one action.
     if (event.repeat) return false
-    // ⌘K and ⌘⇧K stay the palette's, whatever a page declares.
+    // The toggle and the panel stay the palette's, whatever a page declares.
     if (matchesAny(RESERVED_SHORTCUTS, event)) return false
 
     const typing = isTypingTarget(event.target)
-    if (typing && !(event.metaKey || event.ctrlKey)) return false
+    const waiting = pending.length > 0
 
-    const hit = (getFooter().actions ?? []).find(
-      (action: Command) =>
-        action.shortcut &&
+    // A bare press is never taken out of a field the user is typing in —
+    // unless the palette is already holding a sequence, in which case the
+    // user is finishing a chord, not typing a word.
+    if (typing && !waiting && !(event.metaKey || event.ctrlKey)) return false
+
+    const outcome = resolveShortcut(getFooter().actions ?? [], event, {
+      eligible: (action: Command) =>
         !action.disabled &&
-        // A bare letter would be taken out of the middle of a word.
-        !(typing && !hasCommandModifier(action.shortcut)) &&
-        matchesShortcut(action.shortcut, event)
-    )
-    if (!hit) return false
+        // The lead press has to survive a form field, so it must carry a
+        // modifier there. The type says so for sequences; this is the rest.
+        !(typing && !waiting && !hasCommandModifier(action.shortcut!)),
+    })
+
+    if (outcome.type === "none") return false
 
     event.preventDefault()
-    store.runCommand(hit)
+    if (outcome.type === "run") store.runCommand(outcome.item)
     return true
   }
 
@@ -349,6 +369,9 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
     }
 
     consumedByDelete.current = false
+    // A half-pressed sequence does not survive the page it was started on,
+    // nor the palette being closed and opened again.
+    clearPending()
   }, [view.instance.instanceId, view.depth, editable, revealId])
 
   // Esc has to work even when focus is not in the palette. Keys reach the
@@ -445,6 +468,15 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
       if (event.key === "Escape") {
         event.preventDefault()
 
+        // A way out of a sequence that was started by mistake. Before the
+        // panel and before the stack: while the palette is holding a press,
+        // esc is about that press and nothing else.
+        if (pending.length > 0) {
+          claimEscape(event)
+          clearPending()
+          return
+        }
+
         if (panelOpen) {
           // The return value is ignored, but the call is the whole mechanism:
           // spending the press here is what stops the frame's own rule — and
@@ -461,7 +493,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
       }
 
       // The palette's own chord, before the page gets a say in it.
-      if (matchesAny(ACTIONS_SHORTCUT, event)) {
+      if (matchesShortcut(ACTIONS_SHORTCUT, event)) {
         event.preventDefault()
         if (!event.repeat) togglePanel()
         return
@@ -527,16 +559,18 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
 
   const hints: FooterHint[] = [
     ...(hasList
-      ? [
-          { keys: ["↑", "↓"], label: "navigate" },
-          { keys: ["↵"], label: "select" },
-        ]
+      ? ([
+          { keys: ["ArrowUp", "ArrowDown"], label: "navigate" },
+          { keys: ["Enter"], label: "select" },
+        ] satisfies FooterHint[])
       : []),
     {
-      keys: ["esc"],
+      keys: ["Escape"],
       label: editable && query ? "clear" : view.isRoot ? "clear" : "back",
     },
-    ...(!view.isRoot && !query ? [{ keys: ["⌫"], label: "back" }] : []),
+    ...(!view.isRoot && !query
+      ? ([{ keys: ["Backspace"], label: "back" }] satisfies FooterHint[])
+      : []),
     // The page's own, last: the frame's keys are the ones that are true
     // everywhere, and they should not move as pages come and go.
     ...(footer.hints ?? []),
@@ -545,6 +579,8 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   return {
     view,
     editable,
+    /** The presses a sequence is still waiting on — see `usePendingKeys`. */
+    pending,
     /** Something is running, and has been for long enough to say so. */
     busy,
     /** The one outcome the footer is showing, if any. */
@@ -583,7 +619,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
             "aria-haspopup": "dialog" as const,
             "aria-expanded": panelOpen,
             "aria-controls": panelOpen ? panelId : undefined,
-            "aria-keyshortcuts": "Meta+Shift+K Control+Shift+K",
+            "aria-keyshortcuts": ariaKeyShortcut(ACTIONS_SHORTCUT, platform),
           },
   }
 }

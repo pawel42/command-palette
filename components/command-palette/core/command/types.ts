@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 
+import type { Shortcut } from "../keys/tokens"
 import type {
   ActionHandler,
   PageContext,
@@ -8,19 +9,18 @@ import type {
 } from "../page/types"
 
 /** Shared shape of anything the palette can list and filter. */
-export type ItemMeta = {
+export type CommandItem = {
   id: string
   title: string
-  subtitle?: string
+  description?: string
+  /** Where this row lives: its heading, and what a list prints on its right edge. */
   section?: string
-  /**
-   * The trailing label on a row that shows one, defaulting to `section`. Worth
-   * setting only when the two differ: a row regrouped under a heading of its
-   * own — "Recent", "Results" — can still say where it actually lives.
-   */
-  label?: string
   keywords?: readonly string[]
-  shortcut?: readonly string[]
+  /**
+   * The chord that runs this row from anywhere the list has focus, declared by
+   * key name — `["Mod", "N"]` is ⌘N on a Mac and ctrl+N everywhere else.
+   */
+  shortcut?: Shortcut
   icon?: ReactNode
   disabled?: boolean
 }
@@ -31,13 +31,13 @@ export type ItemMeta = {
  * registry is just the one place that is *only* commands.
  */
 export type Command =
-  | (ItemMeta & {
+  | (CommandItem & {
       page: PageTarget
       options?: PushOptions
       run?: never
       onError?: never
     })
-  | (ItemMeta & {
+  | (CommandItem & {
       run: ActionHandler
       page?: never
       options?: never
@@ -53,7 +53,7 @@ export type Command =
       onError?: (error: unknown) => void
     })
   /** Display-only row: a loading placeholder, a hint, a separator label. */
-  | (ItemMeta & {
+  | (CommandItem & {
       page?: never
       run?: never
       options?: never
@@ -61,3 +61,16 @@ export type Command =
     })
 
 export type CommandContext = PageContext<unknown, unknown>
+
+/**
+ * A command as a *list* holds one, which is a command plus where that list has
+ * decided to file it. `group` is the heading to draw it under when that is not
+ * its section — a row copied into "Recent", or every row under "Results" while
+ * the user types — and `section` is left alone, so a regrouped row goes on
+ * saying on its right edge whether it is a page or an action.
+ *
+ * Deliberately not part of `Command`: nobody writes `group` on a command they
+ * are declaring. It is set by whatever does the regrouping, on its way into a
+ * list, which is why it appears here and on nothing a registry is typed as.
+ */
+export type ListCommand = Command & { group?: string }

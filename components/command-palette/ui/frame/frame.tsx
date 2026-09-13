@@ -1,6 +1,8 @@
 "use client"
 
+import { ACTIONS_SHORTCUT, formatShortcut } from "../../core"
 import { FOOTER_ENTER, ICONS, Icon, Kbd, SearchIcon } from "../primitives"
+import { usePlatform } from "../../react"
 import { ActionPanel } from "./action-panel"
 import { FrameToast, ProgressBar, Spinner } from "./async-status"
 import { usePaletteFrame } from "./use-frame"
@@ -35,7 +37,9 @@ export function PaletteFrame({
     triggerProps,
     busy,
     toast,
+    pending,
   } = usePaletteFrame({ revealId })
+  const platform = usePlatform()
 
   return (
     // The height is the whole point of a fixed palette: one height for every
@@ -104,17 +108,35 @@ export function PaletteFrame({
             that something is running, what the last thing that ran did, or —
             only when neither is true — the keys. */}
 
+        {/* Ahead of all of it: the palette is holding a press and the next
+            key is not the user's to spend elsewhere. It says which press, and
+            it is gone within `SEQUENCE_MS` whatever happens next. */}
+        {pending.length > 0 && (
+          <span className={`flex items-center gap-1.5 ${FOOTER_ENTER}`}>
+            {pending.map((chord, index) => (
+              <span key={index} className="flex items-center gap-1">
+                {formatShortcut(chord, platform).map((key) => (
+                  <Kbd key={key}>{key}</Kbd>
+                ))}
+              </span>
+            ))}
+            waiting for the next key…
+          </span>
+        )}
+
         {/* Every run says so here. The loading message draws the spinner as
             part of itself, and one is required of every run — so this is the
             fallback for the one thing that slips past that: a message handed
             over empty. The spinner turns either way. */}
-        {busy && toast?.kind !== "loading" && (
+        {!pending.length && busy && toast?.kind !== "loading" && (
           <Spinner className="size-3.5 shrink-0" />
         )}
 
         {/* Keyed on the toast, so a second outcome animates in as its own
             line rather than sliding its text into the first one's. */}
-        {toast && <FrameToast key={toast.id} toast={toast} />}
+        {!pending.length && toast && (
+          <FrameToast key={toast.id} toast={toast} />
+        )}
 
         {/* The hints stand down for the duration. They are always true and can
             be read at any other moment, and a row that keeps them beside a
@@ -124,14 +146,14 @@ export function PaletteFrame({
             Wrapped, so they come back the way the toast arrived: they are
             unmounted while it is up, and mounting is what runs the animation
             again. No key needed for the same reason. */}
-        {!busy && !toast && (
+        {!pending.length && !busy && !toast && (
           <div className={`flex items-center gap-4 ${FOOTER_ENTER}`}>
             {hints.map((hint) => (
               <span
                 key={hint.label + hint.keys.join()}
                 className="flex items-center gap-1.5"
               >
-                {hint.keys.map((key) => (
+                {formatShortcut(hint.keys, platform).map((key) => (
                   <Kbd key={key}>{key}</Kbd>
                 ))}
                 {hint.label}
@@ -150,9 +172,11 @@ export function PaletteFrame({
               className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               Actions
-              <Kbd>⌘</Kbd>
-              <Kbd>⇧</Kbd>
-              <Kbd>K</Kbd>
+              {/* Drawn off the chord that fires it, so the two cannot drift
+                  — and so it says Ctrl Shift K where that is the chord. */}
+              {formatShortcut(ACTIONS_SHORTCUT, platform).map((key) => (
+                <Kbd key={key}>{key}</Kbd>
+              ))}
             </button>
 
             {panel.open && (

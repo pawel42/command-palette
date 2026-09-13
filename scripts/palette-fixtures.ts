@@ -32,7 +32,11 @@ export const page3: Page = { id: "page3", title: "Page 3", render: () => null }
 
 export const page4: Page = { id: "page4", title: "Page 4", render: () => null }
 
-export const page41: Page = { id: "page4.1", title: "Page 4.1", render: () => null }
+export const page41: Page = {
+  id: "page4.1",
+  title: "Page 4.1",
+  render: () => null,
+}
 
 /** A form: the input is inert, so esc pops on the first press. */
 export const formPage: Page = {
@@ -88,7 +92,7 @@ export function createCommands(log: string[]): Command[] {
       id: "log",
       title: "Log The Query",
       section: "Actions",
-      shortcut: ["⌘", "L"],
+      shortcut: ["Mod", "L"],
       run: ({ query }) => {
         log.push(`log:${query}`)
       },
@@ -138,7 +142,7 @@ export function createCommands(log: string[]): Command[] {
       id: "blocked",
       title: "Push to Remote",
       section: "Actions",
-      subtitle: "nothing to push",
+      description: "nothing to push",
       disabled: true,
       run: () => {
         log.push("should not run")

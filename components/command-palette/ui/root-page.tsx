@@ -5,14 +5,15 @@ import type { ReactNode } from "react"
 
 import { bind } from "../core"
 import type {
-  Command,
   ExternalStore,
+  ListCommand,
   Page,
   PageContext,
   PageTarget,
 } from "../core"
 
 import { ListPage } from "./list-page"
+import type { Trailing } from "./list-page"
 
 /**
  * What a host says about the page the palette opens on. There is no root page
@@ -34,11 +35,12 @@ export type RootConfig = Omit<
    * palette's context — the query, most of all — for a root that reorders or
    * regroups itself as the user types.
    */
-  commands: Command[] | ((ctx: PageContext) => Command[])
+  commands: ListCommand[] | ((ctx: PageContext) => ListCommand[])
   /** The rest of the root's `ListPage` config — see `ListPageProps`. */
   emptyMessage?: string
   note?: ReactNode
   watch?: ExternalStore
+  trailing?: Trailing
 }
 
 /**
@@ -56,7 +58,7 @@ export type RootConfig = Omit<
  */
 export function useRootPage(config: RootConfig): PageTarget {
   const [page] = useState(() => {
-    const { commands, emptyMessage, note, watch, ...rest } = config
+    const { commands, emptyMessage, note, watch, trailing, ...rest } = config
 
     const root: Page<unknown, unknown> = {
       ...rest,
@@ -70,6 +72,7 @@ export function useRootPage(config: RootConfig): PageTarget {
           emptyMessage={emptyMessage}
           note={note}
           watch={watch}
+          trailing={trailing}
         />
       ),
     }

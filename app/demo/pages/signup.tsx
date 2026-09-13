@@ -75,13 +75,13 @@ function ProfileForm({ resolve }: { resolve: (profile: Profile) => void }) {
       {
         id: "save-profile",
         title: "Save profile",
-        subtitle: "hands the values back to step one",
-        shortcut: ["\u2318", "\u21b5"],
+        description: "hands the values back to step one",
+        shortcut: ["Mod", "Enter"],
         icon: <Icon path={ICONS.check} />,
         run: saveProfile,
       },
     ],
-    hints: [{ keys: ["esc"], label: "abandons this step" }],
+    hints: [{ keys: ["Escape"], label: "abandons this step" }],
   })
 
   return (
@@ -167,19 +167,19 @@ function AccountForm() {
       {
         id: "create-account",
         title: "Create account",
-        shortcut: ["\u2318", "\u21b5"],
+        shortcut: ["Mod", "Enter"],
         icon: <Icon path={ICONS.check} />,
         run: createAccount,
       },
       {
         id: "add-profile",
         title: profile ? "Edit the profile" : "Add a profile…",
-        subtitle: "step two, pushed from here",
+        description: "step two, pushed from here",
         icon: <Icon path={ICONS.user} />,
         run: () => void addProfile(),
       },
     ],
-    hints: [{ keys: ["esc"], label: "discards everything" }],
+    hints: [{ keys: ["Escape"], label: "discards everything" }],
   })
 
   const addProfile = async () => {

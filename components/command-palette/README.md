@@ -155,8 +155,15 @@ A `ListPage`'s rows carry their section on the right; the footer's action panel
 carries the keys instead, which are the point of it. Nothing else rides along —
 a row that opens a page draws no chevron, and there is no option to ask for one.
 Either way the shortcut still runs the command: it is matched off the item, not
-off what was drawn. A row grouped under a heading of its own ("Recent",
-"Results") can set `label` to keep saying where it really lives.
+off what was drawn.
+
+A row is filed under its `section`, which is also what the right edge says.
+A list can file one somewhere else — under "Recent", or all of them under
+"Results" while the user types — by setting `group` on its way in. That is the
+one field a `Command` does not have: the type a list takes is `ListCommand`,
+which is a command plus the heading the list chose for it, so a registry is
+never written with a `group` in it and a regrouped row keeps saying on its
+right edge where it really lives.
 
 Two seams exist for a list the host keeps outside React, and between them they
 are a recents section:
@@ -203,6 +210,60 @@ screenful, and belongs to scrolling only — in a list the arrows move one row a
 a time and nothing else. Ctrl stands in for ⌘ off the Mac, as it does for the
 ⌘K that opens the palette.
 
+## Keys are declared by name
+
+A chord is written as key names, never as glyphs or as one platform's spelling:
+
+```ts
+shortcut: ["Mod", "Shift", "K"]
+```
+
+`Mod` is the key the platform runs commands with — ⌘ on a Mac, ctrl on Windows
+and Linux — which is what lets one declaration match on both. `Shift`, `Alt`
+and `Ctrl` mean exactly themselves everywhere, `Ctrl` included: reach for it
+only when a chord really means control even on a Mac. The key itself is
+`KeyboardEvent.key`'s own name, so `"K"`, `"Enter"`, `"ArrowUp"`, `"F2"`,
+`"."` — with `"Space"` as the one exception, because a literal space is
+unreadable in an array.
+
+The type is `readonly [...Modifier[], KeyName]`: any number of modifiers, then
+exactly one key. `["Mod", "Shift"]` is not a chord and `["K", "Mod"]` is
+backwards, and both fail to compile rather than failing to fire. Modifier order
+among themselves is free — `["Shift", "Mod", "K"]` is the same chord, and is
+drawn the same way, because reading order is applied when it is drawn: ⇧⌘K on a
+Mac, Ctrl Shift K everywhere else.
+
+Nothing else has to be said anywhere. `Kbd` turns a name into whatever the
+keyboard under the user prints on it, the footer hints take the same names
+(`keys: ["Escape"]`), and `aria-keyshortcuts` is written from the same chord.
+
+### More than one press
+
+A shortcut can also be a run of presses — ⌘G, let go, then P:
+
+```ts
+shortcut: [["Mod", "G"], ["P"]]
+```
+
+Nesting is what tells the two apart: a flat list is one press, a list of lists
+is several. At least two, because a sequence of one is a chord. The first press
+must carry a modifier — the type insists — because opening a sequence swallows
+the press after it, and a bare letter that did that would eat a character out
+of every other word. After the lead, the keys are free: they are only read
+while the palette is already waiting for them.
+
+While it waits, the footer says which press it is holding and the next key
+belongs to the palette rather than to whatever has focus. Esc gets out of it,
+pressing the lead again starts it over, anything else abandons it, and it
+expires on its own after `SEQUENCE_MS` — as it does when the page changes or
+the palette closes, because a half-pressed sequence is not a thing to come
+back to.
+
+One rule worth knowing: a plain chord beats a sequence that starts with it. If
+`["Mod", "G"]` runs something on its own, nothing beginning `[["Mod", "G"], …]`
+will ever fire, because the chord has already run by the time the second press
+arrives. Pick a lead that does nothing by itself.
+
 ## The header is the frame's; the footer is the page's
 
 The input row is the same on every page: the search glyph at the root, the back
@@ -221,9 +282,9 @@ const notesPage: Page = {
   title: "Notes",
   search: "hidden",
   footer: {
-    hints: [{ keys: ["esc"], label: "discards this draft" }],
+    hints: [{ keys: ["Escape"], label: "discards this draft" }],
     actions: [
-      { id: "save", title: "Save", shortcut: ["⌘", "↵"], run: () => save() },
+      { id: "save", title: "Save", shortcut: ["Mod", "Enter"], run: () => save() },
       { id: "archive", title: "Open the archive", page: archivePage },
     ],
   },
@@ -236,8 +297,8 @@ const notesPage: Page = {
 group by `section` and open pages just as rows do. They live behind **⌘⇧K**,
 which opens a searchable panel at the footer's right; any that carry a
 `shortcut` also fire straight from the page. A shortcut that is meant to work
-while a form field has focus has to include ⌘ or ⌃, or it would be taken out of
-the middle of a word — and ⌘K and ⌘⇧K stay the palette's.
+while a form field has focus has to include `Mod` or `Ctrl`, or it would be
+taken out of the middle of a word — and ⌘K and ⌘⇧K stay the palette's.
 
 A footer that depends on the page's own React state cannot be declared on the
 definition, so that page publishes it from inside instead:
