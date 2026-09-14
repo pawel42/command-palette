@@ -26,6 +26,7 @@ import { EVERYWHERE } from "../../paths"
 
 import {
   ASSIGNEES,
+  COMPONENTS,
   LABELS,
   PRIORITIES,
   VISIBILITY,
@@ -38,10 +39,12 @@ import {
   RadioField,
   SelectField,
 } from "./fields"
+import { MultiSelectField } from "./multi-select"
 
 /**
- * The full form: text, two portalled selects, a checkbox group, radios, a
- * single checkbox and a textarea, validated by zod and submitted on ⌘↵.
+ * The full form: text, two portalled selects, a checkbox group, a searchable
+ * multi-select, radios, a single checkbox and a textarea, validated by zod and
+ * submitted on ⌘↵.
  *
  * There is no button in it, and that is the whole shape of a palette form.
  * The submit is a footer action, so it is drawn with its chord, searchable in
@@ -72,6 +75,7 @@ function NewIssueForm() {
       priority: "normal",
       assignee: "unassigned",
       labels: [],
+      components: [],
       visibility: "team",
       notify: true,
       description: "",
@@ -143,6 +147,14 @@ function NewIssueForm() {
         label="Labels"
         description="Tab to a box, space to toggle. One array, one rule."
         options={LABELS}
+      />
+
+      <MultiSelectField
+        control={form.control}
+        name="components"
+        label="Components"
+        options={COMPONENTS}
+        description="A select that opens a filter: type to narrow it, ↵ ticks, esc closes the menu and nothing else."
       />
 
       <RadioField

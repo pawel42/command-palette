@@ -13,6 +13,7 @@
  *  T5  ⌘↵ submits from anywhere in the form, checkboxes and radios included
  *  T7  an invalid form refuses: the fields say why, the palette shakes
  *  T8  a form that resolves hands its values back to the command that pushed it
+ *  T9  the searchable multi-select: type, ↵ ticks, esc closes the menu and no more
  */
 import { chromium } from "playwright"
 
@@ -337,6 +338,47 @@ await page.waitForTimeout(300)
 {
   const log = await page.locator('[aria-label="Recent palette activity"]').textContent()
   check("T8 the resolved values reached the host", /filtered:/.test(log ?? ""), (log ?? "").slice(0, 90))
+}
+
+/* T9 — the searchable multi-select: a select that takes more than one answer */
+await openPalette()
+await runRow("New Issue")
+await page.waitForTimeout(200)
+{
+  const trigger = palette().locator('[data-slot="popover-trigger"]')
+  const menu = page.locator('[data-slot="popover-content"]')
+
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await page.waitForTimeout(250)
+  check("T9 the menu opened on the keyboard", (await menu.count()) > 0)
+  {
+    const a = await activeInfo()
+    check("T9 the caret went to the search box, not the list", a?.tag === "INPUT", JSON.stringify(a))
+  }
+
+  await page.keyboard.type("keyh")
+  await page.waitForTimeout(200)
+  const narrowed = await menu.locator('[role="option"]').allTextContents()
+  check("T9 typing filters the options", narrowed.length === 1 && /Key handling/.test(narrowed[0]), JSON.stringify(narrowed))
+
+  await page.keyboard.press("Enter")
+  await page.waitForTimeout(200)
+  check(
+    "T9 ↵ ticks the highlighted option",
+    (await menu.locator('[role="option"][aria-selected="true"]').count()) === 1
+  )
+
+  // esc belongs to the menu first — the same rule the select follows.
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(250)
+  check("T9 esc closed the menu", (await menu.count()) === 0)
+  check("T9 esc did NOT also unwind the page", (await where())?.includes("New issue"), await where())
+  check(
+    "T9 the trigger says what was chosen",
+    /Key handling/.test((await trigger.textContent()) ?? ""),
+    (await trigger.textContent())?.trim()
+  )
 }
 
 } catch (error) {

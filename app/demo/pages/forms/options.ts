@@ -29,6 +29,29 @@ export const LABELS = [
   { value: "perf", label: "Performance" },
 ] as const
 
+/**
+ * Long enough to be worth searching, which is the whole reason the field that
+ * draws it is a menu with a box in it rather than a column of checkboxes:
+ * five labels are a list the eye reads, fourteen components are a wall the
+ * user has to scroll a form to get past.
+ */
+export const COMPONENTS = [
+  { value: "palette", label: "Command palette" },
+  { value: "frame", label: "Frame and footer" },
+  { value: "stack", label: "Page stack" },
+  { value: "routing", label: "Routing" },
+  { value: "keys", label: "Key handling" },
+  { value: "shortcuts", label: "Shortcuts" },
+  { value: "search", label: "Search and ranking" },
+  { value: "forms", label: "Forms" },
+  { value: "async", label: "Async and toasts" },
+  { value: "theming", label: "Theming" },
+  { value: "i18n", label: "Internationalization" },
+  { value: "docs", label: "Documentation" },
+  { value: "build", label: "Build and tooling" },
+  { value: "tests", label: "Walkthroughs" },
+] as const
+
 export const VISIBILITY = [
   { value: "team", label: "Team", hint: "everyone in the workspace" },
   { value: "private", label: "Private", hint: "you and the assignee" },
@@ -43,6 +66,7 @@ export const issueSchema = z.object({
   }),
   assignee: z.string(),
   labels: z.array(z.string()).min(1, "Pick at least one label"),
+  components: z.array(z.string()),
   visibility: z.enum(["team", "private"]),
   notify: z.boolean(),
   description: z.string().max(180, "Keep the description under 180 characters"),
@@ -73,7 +97,9 @@ export const SORTS = [
 ] as const
 
 export const filterSchema = z.object({
-  statuses: z.array(z.string()).min(1, "A filter with nothing in it shows nothing"),
+  statuses: z
+    .array(z.string())
+    .min(1, "A filter with nothing in it shows nothing"),
   range: z.enum(["today", "week", "month", "all"]),
   sort: z.enum(["updated", "created", "priority", "title"]),
   onlyMine: z.boolean(),
