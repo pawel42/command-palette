@@ -127,6 +127,7 @@ export function CommandPalette({
   routing,
   path,
   roles,
+  local,
   onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
@@ -153,6 +154,15 @@ export function CommandPalette({
    * shortcuts follow. See `PaletteRolesProvider`.
    */
   roles?: RoleInput
+  /**
+   * Whether the app is running on the developer's own machine. Commands marked
+   * `local: true` are drawn only when it is; everything else is drawn either
+   * way. Left off, the palette reads the host name — `localhost` and the rest
+   * of the loopback names — which is the answer unless the host has a reason
+   * to say otherwise: a dev server reached over the LAN, a tunnel with a public
+   * URL on the front of it. See `PaletteLocalProvider`.
+   */
+  local?: boolean
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
@@ -182,6 +192,7 @@ export function CommandPalette({
       routing={routing}
       path={path}
       roles={roles}
+      local={local}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}
       revealMs={revealMs}

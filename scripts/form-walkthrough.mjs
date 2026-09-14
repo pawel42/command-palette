@@ -15,10 +15,32 @@
  *  T8  a form that resolves hands its values back to the command that pushed it
  *  T9  the searchable multi-select: type, ↵ ticks, esc closes the menu and no more
  *  T10 roles: a row the user is not for is absent, and its shortcut is dead
+ *  T11 local: a `local: true` row is here on localhost and gone on a deployment
  */
 import { chromium } from "playwright"
 
 const BASE = process.env.BASE ?? "http://localhost:3000"
+/**
+ * Whether the app is being driven as a deployment rather than as localhost.
+ * Only T11 reads it, and only because the thing it is checking *is* the host
+ * name. Chromium is told to resolve any name to the loopback address, so the
+ * same server answers under a name that is not local and nothing has to be
+ * deployed to check what a deployment does:
+ *
+ *   node scripts/form-walkthrough.mjs                        # the local half
+ *
+ *   npm run build && PORT=3100 npm start
+ *   DEPLOYED=1 BASE=http://staging.example.test:3100 \
+ *     node scripts/form-walkthrough.mjs                      # the other
+ *
+ * A build for the second half, not out of principle but because `next dev`
+ * will not hydrate under a host it was not started on — its HMR socket is
+ * refused and the app never comes alive, which would make every check below
+ * pass for the wrong reason. Which build it is makes no difference to what is
+ * being checked: `npm start` on this machine is still this machine, and the
+ * local-only rows are still there under `localhost:3100`.
+ */
+const DEPLOYED = process.env.DEPLOYED === "1"
 const results = []
 let page
 
@@ -105,7 +127,12 @@ async function runRow(text) {
 
 /* --------------------------------------------------------------- tests */
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({
+  // Nothing is deployed for the other half of T11: Chromium is told to resolve
+  // whatever host `BASE` names to the loopback address, so the same server
+  // answers under a name that is not local.
+  args: DEPLOYED ? [`--host-resolver-rules=MAP * 127.0.0.1`] : [],
+})
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
 page = await context.newPage()
 page.on("pageerror", (e) => console.log("DIAG pageerror:", e.message))
@@ -480,6 +507,76 @@ await page.waitForTimeout(200)
   await page.waitForTimeout(300)
   check("T10 the same chord does nothing for a viewer", (await where()) === before, await where())
   check("T10 and the row is not in the list either", !(await showing(/Invite/i)))
+  await shut()
+}
+
+/* ------------------------------------------------------------------ T11 */
+
+/**
+ * Where the app is running — the one rule a unit test cannot reach on its own,
+ * because the answer is the browser's host name. `isLocalHost` is a table in
+ * `palette-walkthrough.ts`; what is checked here is that the wiring behind it
+ * is real, that a row it rules out is *absent* rather than disabled, and that
+ * its shortcut goes with it.
+ *
+ * Both halves are the same code against the same server, twice: once on
+ * `localhost`, once on a host name that is not — see `DEPLOYED`.
+ */
+{
+  const openPalette = async () => {
+    await page.keyboard.press("Meta+k")
+    await page.waitForTimeout(250)
+  }
+  const shut = async () => {
+    await page.keyboard.press("Escape")
+    await page.waitForTimeout(150)
+  }
+  const rowTitles = async () =>
+    (await page.getByRole("option").allInnerTexts()).map(
+      (text) => text.split("\n")[0].trim()
+    )
+  const showing = async (pattern) =>
+    (await rowTitles()).some((title) => pattern.test(title))
+
+  const expected = DEPLOYED ? "gone on a deployment" : "here on localhost"
+  await page.goto(`${BASE}/`, { waitUntil: "networkidle" })
+
+  await openPalette()
+  const drawn = await showing(/Seed the Activity Log/i)
+  check(`T11 the local-only row is ${expected}`, drawn === !DEPLOYED)
+  check(
+    "T11 and nothing disabled was drawn in its place",
+    (await page.locator('[role="option"][aria-disabled="true"]').count()) === 0
+  )
+
+  // Its shortcut goes with it: ⌘⇧Y seeds three lines into the activity log on
+  // a laptop, and is a chord nothing answers to anywhere else.
+  const lines = () =>
+    page.getByRole("list", { name: "Recent palette activity" }).locator("li").count()
+  const before = await lines()
+  await page.keyboard.press("Meta+Shift+y")
+  await page.waitForTimeout(300)
+  const after = await lines()
+  check(
+    DEPLOYED
+      ? "T11 and ⌘⇧Y does nothing on a deployment"
+      : "T11 and ⌘⇧Y runs it on localhost",
+    DEPLOYED ? after === before : after > before,
+    `${before} → ${after}`
+  )
+  await shut()
+
+  // The panel answers to the host name too — same rule, other surface.
+  await openPalette()
+  await page.keyboard.press("Meta+Shift+k")
+  await page.waitForTimeout(250)
+  // The panel is a dialog of its own inside the palette's, so it is named
+  // rather than taken off `palette()` — which would match both.
+  const inPanel = /Dump the palette's state/i.test(
+    (await page.getByRole("dialog", { name: "Actions" }).innerText()) ?? ""
+  )
+  check(`T11 the local-only action is ${expected} in ⌘⇧K`, inPanel === !DEPLOYED)
+  await shut()
   await shut()
 }
 

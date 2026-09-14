@@ -26,6 +26,7 @@ export function PaletteRoot({
   routing,
   path,
   roles,
+  local,
   onDismiss,
   onCommand,
   revealMs,
@@ -38,6 +39,8 @@ export function PaletteRoot({
   path?: string
   /** Which roles the user holds — see `PaletteProvider`. */
   roles?: RoleInput
+  /** Whether the app is running locally — see `PaletteLocalProvider`. */
+  local?: boolean
   onDismiss?: () => void
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
@@ -53,6 +56,7 @@ export function PaletteRoot({
       routing={routing}
       path={path}
       roles={roles}
+      local={local}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}
@@ -101,6 +105,7 @@ export function InlinePalette({
   routing,
   path,
   roles,
+  local,
   onDismiss,
   onCommand,
   revealMs,
@@ -110,6 +115,7 @@ export function InlinePalette({
   routing?: PaletteRouting
   path?: string
   roles?: RoleInput
+  local?: boolean
   onDismiss?: () => void
   onCommand?: (command: Command) => void
   revealMs?: number
@@ -121,6 +127,7 @@ export function InlinePalette({
       routing={routing}
       path={path}
       roles={roles}
+      local={local}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}

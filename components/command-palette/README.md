@@ -384,6 +384,84 @@ Every command that touches anything still has to be authorized where it runs.
 There is no second check when a command runs — and if there were, it would be a
 check in the one place that cannot check anything.
 
+## Where a command is running
+
+The third question about a row, and the only one with no vocabulary to it: the
+app is on the machine it was written on or it is not, so the whole of a
+command's answer is a boolean.
+
+```ts
+{
+  id: "seed-activity",
+  paths: ["/*"],
+  roles: ["*"],
+  local: true,        // on localhost; not once it is deployed
+  title: "Seed the Activity Log",
+  run: () => seed(),
+}
+```
+
+**It is the one availability field that is optional.** `paths` and `roles` are
+required because a command that names neither is a command whose author was
+never asked the question, and a default would be the asking skipped. There is no
+such gap here: "wherever the app runs" is the honest answer for all but a handful
+of rows, so leaving `local` off is an answer rather than a silence.
+
+Unavailable behaves as it does for the other two — out of the list, out of the
+⌘⇧K panel, shortcut dead. All three are asked together, in one place, as
+`availableHere(items, { path, roles, isLocal })`; a caller that asked two of the
+three would draw a row the third had ruled out.
+
+### Local is the host name, not the build
+
+`location.hostname`, read off the browser the palette is drawn in:
+
+```
+localhost, 127.0.0.1, ::1, 0.0.0.0   the machine itself
+127.0.0.2, localhost:3000, [::1]:80  the rest of 127/8, and any port
+app.localhost, mac-mini.local        names that resolve to a desk
+```
+
+Anything else is a deployment. That is the distinction the rule is actually
+about: a `next build` served from a laptop is still that laptop and still draws
+these rows, while a dev build sitting on a preview URL is a deployment with
+other people looking at it and does not. `NODE_ENV` would answer the question
+next to this one — and would answer it wrongly in both of those cases.
+
+The private IPv4 ranges are deliberately not local. `10.0.4.20` is a
+developer's phone on the office wifi about as often as it is an internal
+staging box half the company can reach, and a host name cannot tell the two
+apart; guessing wrong there puts debugging rows in front of people who are not
+developers, which is the worse of the two ways to be wrong.
+
+### Where it is running, the host can say
+
+`local` is a prop on `CommandPalette`, `InlinePalette` and `PaletteRoot`, for
+the cases the host name cannot settle:
+
+```tsx
+<CommandPalette commands={commands} routing={routing} local={onMyLan} />
+```
+
+A dev server reached over the LAN from a phone, a tunnel with a public URL on
+the front of it, a screenshot run that wants the rows gone. Inside the palette
+it is `useIsLocal()`, which answers the same outside a provider as in — so a
+panel of your own never disagrees with the rows. `isLocalHost(hostname)`,
+`isAvailableLocally(local, isLocal)` and `availableLocally(items, isLocal)` are
+exported for asking any of it over your own list.
+
+The server has no host name worth reading — behind a proxy, the one the request
+arrived on is not the one the browser typed — so it renders as a deployment and
+the browser settles it on hydration, through `useSyncExternalStore`. Nothing is
+seen to move: the palette is shut until somebody presses ⌘K.
+
+### It is not a secret either
+
+The same caveat `roles` carries, for the same reason: a `local` command is in
+the array the host shipped, in the bundle, readable by anyone who looks. What
+changes is that the palette does not offer it. Keep debugging off a deployment
+with this; keep secrets on the other side of the network.
+
 ## Pages are objects
 
 There is nothing to call. A page is a plain object with an `id` and a `render`

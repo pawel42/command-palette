@@ -28,6 +28,13 @@ import { ANYONE } from "./roles"
 import { navigate } from "./router-bridge"
 import { toggleTheme } from "./theme-bridge"
 
+/** What "Seed the Activity Log" writes — a fixture, which is why it is local. */
+const SEEDED = [
+  "opened a project",
+  "renamed it twice",
+  "gave up and made a new one",
+]
+
 /**
  * The command registry — the root, and the only place commands live. Each one
  * either points at a page or runs an action.
@@ -226,6 +233,32 @@ export const commands: Command[] = [
     section: "Actions",
     icon: <Icon path={ICONS.dot} />,
     run: ({ query }) => logActivity(`root query: “${query}”`),
+  },
+
+  /* ---- Where the app is running ----------------------------------------- */
+
+  {
+    // The third rule about a row, and the only one with nothing to write: a
+    // command marked `local` exists on the developer's own machine and nowhere
+    // else. Open the same app on a deployment — any host name that is not
+    // loopback — and this row is gone, out of the list, out of the search, and
+    // ⌘⇧Y does nothing, while everything around it is untouched. Which build it
+    // is has nothing to do with it: `npm run build && npm start` on a laptop is
+    // still that laptop, and the row is still here.
+    id: "seed-activity",
+    paths: EVERYWHERE,
+    roles: ANYONE,
+    local: true,
+    title: "Seed the Activity Log",
+    description: "a local environment only",
+    section: "Dev",
+    shortcut: ["Mod", "Shift", "Y"],
+    keywords: ["fixture", "debug", "fake", "local"],
+    icon: <Icon path={ICONS.dot} />,
+    run: ({ toast }) => {
+      for (const line of SEEDED) logActivity(line)
+      toast({ title: "Seeded", message: `${SEEDED.length} lines of nothing` })
+    },
   },
 
   /* ---- Where a command exists, the interesting cases -------------------- */
@@ -449,6 +482,22 @@ export const rootFooter: PageFooter = {
       description: "an action can open a page",
       icon: <Icon path={ICONS.clock} />,
       page: releaseNotesPage,
+    },
+    {
+      // The panel answers to where the app is running exactly as it answers to
+      // the path and to the user: on localhost this row is in ⌘⇧K, on a
+      // deployment there is no such action and nothing to find.
+      id: "dump-state",
+      paths: EVERYWHERE,
+      roles: ANYONE,
+      local: true,
+      title: "Dump the palette's state",
+      description: "a local environment only",
+      icon: <Icon path={ICONS.book} />,
+      run: ({ query, toast }) => {
+        console.log("palette query:", query)
+        toast({ title: "Dumped", message: "It went to the console" })
+      },
     },
     {
       // The footer answers to the path like everything else: open ⌘⇧K on

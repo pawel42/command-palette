@@ -3,13 +3,14 @@
 import { useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 
-import { availableOn, availableTo } from "../../core"
+import { availableHere } from "../../core"
 import type { ExternalStore, ListCommand, PageContext } from "../../core"
 import {
   useCommandList,
   useCurrentPath,
   useCurrentRoles,
   useInstanceId,
+  useIsLocal,
   usePaletteState,
   usePaletteStore,
 } from "../../react"
@@ -71,6 +72,7 @@ export function useListPage({
   const instanceId = useInstanceId()
   const path = useCurrentPath()
   const roles = useCurrentRoles()
+  const isLocal = useIsLocal()
   // Subscribes this list to the store, so query and selection changes re-render it.
   const state = usePaletteState()
   // And to whatever else the items are built from.
@@ -84,14 +86,15 @@ export function useListPage({
   const resolved =
     ctx === null ? [] : typeof items === "function" ? items(ctx) : items
 
-  // Where the user is and who they are, applied before anything else looks at
-  // the rows — so a command that does not exist here, or is not theirs, is not
-  // filtered, not counted towards "no results", and not reachable by its own
-  // shortcut, which the controller matches off this same array.
+  // Where the user is, who they are, and where the app is running — applied
+  // before anything else looks at the rows, so a command that does not exist
+  // here, is not theirs, or is not for a deployment is not filtered, not
+  // counted towards "no results", and not reachable by its own shortcut, which
+  // the controller matches off this same array.
   //
-  // Both rules or neither: they are two questions about one row, and a command
-  // has to survive being asked both.
-  const here = availableTo(availableOn(resolved, path), roles)
+  // All three rules or none: they are three questions about one row, and a
+  // command has to survive being asked every one — see `availableHere`.
+  const here = availableHere(resolved, { path, roles, isLocal })
 
   const list = useCommandList(here, {
     // Through the store rather than straight to `resolveCommand`: it builds

@@ -16,6 +16,7 @@ import { selectView } from "../core/stack"
 import type { PaletteState, PaletteView } from "../core/stack"
 import { createPaletteStore } from "../core/store"
 import type { PaletteStore } from "../core/store"
+import { PaletteLocalProvider } from "./local"
 import { PalettePathProvider } from "./path"
 import type { PaletteRouting } from "./path"
 import { PaletteRolesProvider } from "./roles"
@@ -28,6 +29,7 @@ export function PaletteProvider({
   routing,
   path,
   roles,
+  local,
   onDismiss,
   onCommand,
   revealMs,
@@ -61,6 +63,12 @@ export function PaletteProvider({
    * fetch already has the state that re-renders this to put the answer in.
    */
   roles?: RoleInput
+  /**
+   * Whether the app is running on the developer's own machine, for the
+   * commands that say `local: true`. Left off, the palette reads the host
+   * name — see `PaletteLocalProvider`.
+   */
+  local?: boolean
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
   /** Called with every command the palette runs. */
@@ -86,7 +94,9 @@ export function PaletteProvider({
   return (
     <StoreContext.Provider value={store}>
       <PalettePathProvider routing={routing} path={path}>
-        <PaletteRolesProvider roles={roles}>{children}</PaletteRolesProvider>
+        <PaletteRolesProvider roles={roles}>
+          <PaletteLocalProvider local={local}>{children}</PaletteLocalProvider>
+        </PaletteRolesProvider>
       </PalettePathProvider>
     </StoreContext.Provider>
   )

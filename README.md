@@ -164,6 +164,48 @@ that already has the whole registry. It shapes what the product offers, not what
 the server permits — every command that touches anything still has to be
 authorized where it runs.
 
+## And a few of them only exist on your own machine
+
+The third rule, and the only optional one: `local: true` is a command for the
+laptop it was written on and nowhere else.
+
+```ts
+{
+  id: "seed-activity",
+  paths: ["/*"],
+  roles: ["*"],
+  local: true,        // on localhost; gone the moment it is deployed
+  title: "Seed the Activity Log",
+  run: () => seed(),
+}
+```
+
+Leave it off and the command exists wherever the app runs, which is why it is
+optional where the other two are required. `paths` and `roles` are required
+because a command that names neither is one whose author was never asked the
+question; here there is no such gap, since "everywhere" is the honest answer for
+all but a handful of rows.
+
+**Local is the host name, not the build.** `localhost`, the rest of 127/8,
+`::1`, `.localhost` and `.local` — the names that can only mean the machine in
+front of you. A production build served from a laptop is still that laptop and
+still shows these rows; a dev build on a preview deployment is a deployment with
+other people looking at it, and does not. `NODE_ENV` answers a question next to
+this one rather than this one.
+
+The private ranges are deliberately left out: `10.0.4.20` is a developer's phone
+on the office wifi about as often as it is an internal staging box half the
+company can reach. So a host that knows better says so, and that is the same
+prop:
+
+```tsx
+<CommandPalette commands={commands} routing={routing} local={onMyLan} />
+```
+
+Hidden is hidden the same way: out of the list, out of the ⌘⇧K panel, shortcut
+dead. **And it is no more a secret than `roles` is** — the command is still in
+the bundle that shipped; what changed is that the palette does not offer it.
+
 ## Search is fuzzy, and it reads more than the title
 
 ![Typing "form": three rows, none of which say "form" anywhere in their title](docs/search.png)
@@ -399,14 +441,15 @@ components/command-palette/   the component — core/ (headless), react/, ui/
 i18n/routing.ts               the routes, localized — the vocabulary every path rule is checked against
 app/demo/roles.ts             the roles — the other vocabulary, declared the same way
 app/[locale]/                 the demo: six routes, four roles and one registry
-app/demo/commands.tsx         the registry, written to show both rules off
+app/demo/commands.tsx         the registry, written to show every rule off
 scripts/                      the walkthroughs, and the README's own pictures
 ```
 
 The demo prints, under every page, which of its commands are available here and
 which are not — the same `isAvailableOn` and `isAvailableTo` the palette runs on
-every row, run over the whole registry so the rules can be read without opening
-⌘K. Three columns rather than two, because a missing row has two possible
+every row, over the whole registry, so the rules can be read without opening ⌘K.
+(The local-only rows are dropped first rather than given a column: on a
+deployment there is no such command to explain.) Three columns rather than two, because a missing row has two possible
 reasons and the palette itself will never tell you which.
 
 |                            |                                                                                          |

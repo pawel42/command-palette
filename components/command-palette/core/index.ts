@@ -9,6 +9,10 @@
  *   command/  what a row is, and what running it does
  *   stack/    the state machine: push, pop, esc, and the derived view
  *
+ * plus `local.ts` — the third question a row is asked, and the only one with
+ * no vocabulary to it: whether the app is running on the machine it was
+ * written on. `command/` asks all three in one place, as `availableHere`.
+ *
  * plus three stateful modules that import none of the above: `async.ts`, which
  * holds what the palette is doing and what it has to say about it,
  * `refusal.ts`, which counts the presses it would not carry out, and
@@ -22,6 +26,7 @@
 
 export * from "./async"
 export * from "./command"
+export * from "./local"
 export * from "./keys"
 export * from "./list"
 export * from "./page"

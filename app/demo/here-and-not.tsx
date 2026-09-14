@@ -1,14 +1,19 @@
 "use client"
 
-import { isAvailableOn, isAvailableTo } from "@/components/command-palette"
+import {
+  availableLocally,
+  isAvailableOn,
+  isAvailableTo,
+  useIsLocal,
+} from "@/components/command-palette"
 import type { Command } from "@/components/command-palette"
 
 import { commands, rootFooter } from "./commands"
 
 /**
- * Not part of the palette — a window onto it. The same two functions the
- * palette runs on every row, run here over the whole registry, so what ⌘K will
- * and will not offer to this user on this path can be read without opening it.
+ * Not part of the palette — a window onto it. The same functions the palette
+ * runs on every row, run here over the whole registry, so what ⌘K will and
+ * will not offer to this user on this path can be read without opening it.
  *
  * Both rules are asked separately rather than together, which is the point of
  * the third column: a row can be missing because of where you are, because of
@@ -27,7 +32,20 @@ export function HereAndNot({
   path: string
   roles: readonly string[]
 }) {
-  const all: Command[] = [...commands, ...(rootFooter.actions ?? [])]
+  // Where the app is running, asked before the columns are worked out rather
+  // than shown as a fourth one: a local-only row on a deployment is not a row
+  // missing for a reason worth explaining — there is no such command there. On
+  // a laptop every one of them is here, which is where they are read anyway.
+  //
+  // `useIsLocal` outside the palette gives the same answer it gives inside it,
+  // which is the point: this panel is mounted above `<CommandPalette>` and
+  // still agrees with it, the way it takes `roles` from the shell to agree
+  // about those.
+  const isLocal = useIsLocal()
+  const all: Command[] = availableLocally(
+    [...commands, ...(rootFooter.actions ?? [])],
+    isLocal
+  )
   const held = new Set(roles)
 
   const on = (command: Command) => isAvailableOn(command.paths, path)

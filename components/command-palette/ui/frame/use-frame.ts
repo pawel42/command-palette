@@ -6,8 +6,7 @@ import {
   ACTIONS_SHORTCUT,
   RESERVED_SHORTCUTS,
   ariaKeyShortcut,
-  availableOn,
-  availableTo,
+  availableHere,
   claimEscape,
   clearPending,
   isEditable,
@@ -21,6 +20,7 @@ import type { Chord, Command, FooterHint, Shortcut } from "../../core"
 import {
   useCurrentPath,
   useCurrentRoles,
+  useIsLocal,
   usePaletteStore,
   usePaletteTasks,
   usePaletteView,
@@ -267,6 +267,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const { footer, getFooter } = useFrameFooter()
   const path = useCurrentPath()
   const roles = useCurrentRoles()
+  const isLocal = useIsLocal()
   // Palette-wide, not per page: a run outlives the row that started it, and it
   // is reported wherever the user has got to by the time it lands.
   const { busy, toast } = usePaletteTasks()
@@ -292,19 +293,19 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   // say whether one is there — but a mounted list publishes its ids through
   // the bridge, and takes them with it when it goes.
   const hasList = listId !== undefined
-  // A footer's actions answer to the path and to the user like any other
-  // command: an action that does not exist here, or is not theirs, is out of
-  // the panel and its shortcut is dead.
-  const actions = availableTo(availableOn(footer.actions ?? [], path), roles)
+  // A footer's actions answer to the path, to the user and to where the app is
+  // running like any other command: an action that does not exist here, is not
+  // theirs, or is not for a deployment is out of the panel, shortcut and all.
+  const actions = availableHere(footer.actions ?? [], { path, roles, isLocal })
 
   /**
    * The same, live — see `runActionShortcut` for why it cannot be the drawn
-   * one. Both filters have to be repeated here rather than only above: this is
+   * one. The filtering has to be repeated here rather than only above: this is
    * what the shortcut matcher reads, and an action that is merely undrawn would
    * otherwise still fire on its keys.
    */
   const liveActions = () =>
-    availableTo(availableOn(getFooter().actions ?? [], path), roles)
+    availableHere(getFooter().actions ?? [], { path, roles, isLocal })
 
   /**
    * The panel is open *for* one page on one showing of the palette — never

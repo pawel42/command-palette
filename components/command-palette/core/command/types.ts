@@ -51,6 +51,26 @@ export type Listable = {
    * itself, on the other side of the network.
    */
   roles: readonly RolePattern[]
+  /**
+   * Mark a command `local: true` and it exists only where the app is running
+   * on the developer's own machine — a seed button, a state dump, a route
+   * that is half-built. Everything else exists wherever the app runs, which is
+   * why this one is optional where `paths` and `roles` are not: "everywhere"
+   * is the honest answer for all but a handful of rows, and there is no
+   * question going unasked in leaving it off.
+   *
+   * Local is the *host name*, not the build — `localhost` and the rest of the
+   * loopback names, `.localhost` and `.local`. A production build served from
+   * a laptop is still that laptop, and a dev build on a preview deployment is
+   * still a deployment with other people looking at it. See `isLocalHost`, and
+   * `useIsLocal` for the one prop that overrides it.
+   *
+   * Unavailable behaves as it does for the other two: out of the list, out of
+   * the action panel, shortcut dead. And as with `roles`, this hides a row
+   * rather than removing it — the command is still in the bundle the host
+   * shipped. Keep debugging off a deployment with it; do not keep secrets.
+   */
+  local?: boolean
   description?: string
   section?: string
   keywords?: readonly string[]

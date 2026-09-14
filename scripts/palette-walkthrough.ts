@@ -12,6 +12,10 @@ import {
 import { isAvailableOn } from "../components/command-palette/core/routes"
 import type { PathPattern } from "../components/command-palette/core/routes"
 import {
+  isAvailableLocally,
+  isLocalHost,
+} from "../components/command-palette/core/local"
+import {
   isAvailableTo,
   normalizeRoles,
 } from "../components/command-palette/core/roles"
@@ -351,4 +355,89 @@ for (const [input, expected] of SHAPES) {
 
 console.log(
   `role shapes: ${SHAPES.length - wrongShapes}/${SHAPES.length} as expected`
+)
+
+/* ------------------------------------------------------------- environment */
+
+/**
+ * Where the app is running. The rule proper is a boolean against a boolean, so
+ * that table is short — but the question it answers is a host name, and *that*
+ * is worth pinning down: it is the whole of the feature, it is read off a
+ * browser the engine cannot see, and every entry below is a string some host
+ * really does serve an app on.
+ */
+const HOSTS: Array<[string, boolean]> = [
+  // The machine itself, however it is spelled.
+  ["localhost", true],
+  ["127.0.0.1", true],
+  ["0.0.0.0", true],
+  ["::1", true],
+  // The rest of 127/8 is loopback too, not just the .1 everyone types.
+  ["127.0.0.2", true],
+  // A port is not part of the name, and an IPv6 address wears brackets.
+  ["localhost:3000", true],
+  ["[::1]:3000", true],
+  // Reserved for exactly this, and mDNS: names no deployment is given.
+  ["app.localhost", true],
+  ["mac-mini.local", true],
+  // `file://`, which has no host at all and is not a deployment either.
+  ["", true],
+
+  // A deployment, however friendly the name looks.
+  ["staging.example.com", false],
+  ["example.com", false],
+  // The private ranges are deliberately not local: a phone on the office wifi
+  // and an internal staging box are the same string, and the wrong guess puts
+  // debugging rows in front of people who are not developers.
+  ["192.168.1.14", false],
+  ["10.0.4.20", false],
+  // Neither is a name that merely has one of the words in it.
+  ["localhost.example.com", false],
+  ["mylocalhost", false],
+  ["127.0.0.1.example.com", false],
+]
+
+let wrongHosts = 0
+for (const [hostname, expected] of HOSTS) {
+  const actual = isLocalHost(hostname)
+  if (actual === expected) continue
+
+  wrongHosts += 1
+  console.log(
+    `  ✗ ${JSON.stringify(hostname).padEnd(26)} expected ${expected}, got ${actual}`
+  )
+}
+
+console.log(`\nlocal hosts: ${HOSTS.length - wrongHosts}/${HOSTS.length} as expected`)
+
+/**
+ * And the rule itself: the third question every row is asked, and the one
+ * whose default is to say yes.
+ */
+const LOCAL: Array<[boolean | undefined, boolean, boolean]> = [
+  // No `local` at all is a command for wherever the app runs — the default,
+  // and the reason this is the one field that may be left off.
+  [undefined, true, true],
+  [undefined, false, true],
+  // `local: false` is the same answer said out loud.
+  [false, false, true],
+  // And `local: true` is the whole of the feature.
+  [true, true, true],
+  [true, false, false],
+]
+
+let wrongLocal = 0
+for (const [local, isLocal, expected] of LOCAL) {
+  const actual = isAvailableLocally(local, isLocal)
+  if (actual === expected) continue
+
+  wrongLocal += 1
+  console.log(
+    `  ✗ local ${String(local).padEnd(10)} on ${isLocal ? "a laptop" : "a deployment"} ` +
+      `expected ${expected}, got ${actual}`
+  )
+}
+
+console.log(
+  `local rules: ${LOCAL.length - wrongLocal}/${LOCAL.length} as expected`
 )
