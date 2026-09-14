@@ -66,7 +66,7 @@ function NewIssueForm() {
   const form = useForm<IssueValues>({
     resolver: zodResolver(issueSchema),
     // Errors appear as the user fixes them rather than only on the next ⌘↵.
-    mode: "onTouched",
+    mode: "onSubmit",
     defaultValues: {
       title: "",
       priority: "normal",
