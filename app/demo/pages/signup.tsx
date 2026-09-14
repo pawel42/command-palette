@@ -13,6 +13,7 @@ import type { Page } from "@/components/command-palette"
 import { logActivity } from "../activity"
 
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 
 /**
  * Two hand-written form pages, one pushed from the other.
@@ -77,6 +78,7 @@ function ProfileForm({ resolve }: { resolve: (profile: Profile) => void }) {
       {
         id: "save-profile",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Save profile",
         description: "hands the values back to step one",
         shortcut: ["Mod", "Enter"],
@@ -161,6 +163,7 @@ function AccountForm() {
       {
         id: "create-account",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Create account",
         shortcut: ["Mod", "Enter"],
         icon: <Icon path={ICONS.check} />,
@@ -169,6 +172,7 @@ function AccountForm() {
       {
         id: "add-profile",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: profile ? "Edit the profile" : "Add a profile…",
         description: "step two, pushed from here",
         icon: <Icon path={ICONS.user} />,

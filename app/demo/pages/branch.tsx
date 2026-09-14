@@ -4,6 +4,7 @@ import { logActivity } from "../activity"
 import { Icon, ICONS, ListPage } from "@/components/command-palette"
 import type { Command, Page } from "@/components/command-palette"
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 import { notePage } from "./note"
 
 const pageA = notePage(
@@ -38,6 +39,7 @@ const destinations: Command[] = [
   {
     id: "page-a",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Page A",
     description: "esc → back here",
     section: "Destinations",
@@ -47,6 +49,7 @@ const destinations: Command[] = [
   {
     id: "page-b",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Page B",
     description: "esc → back here",
     section: "Destinations",
@@ -56,6 +59,7 @@ const destinations: Command[] = [
   {
     id: "page-c",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Page C",
     description: "esc → straight to root",
     section: "Destinations",
@@ -66,6 +70,7 @@ const destinations: Command[] = [
   {
     id: "note",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Log what I typed",
     description: "runs an action, stays put",
     section: "Actions",

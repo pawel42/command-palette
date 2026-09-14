@@ -11,6 +11,14 @@ import {
 } from "./palette-fixtures"
 import { isAvailableOn } from "../components/command-palette/core/routes"
 import type { PathPattern } from "../components/command-palette/core/routes"
+import {
+  isAvailableTo,
+  normalizeRoles,
+} from "../components/command-palette/core/roles"
+import type {
+  RoleInput,
+  RolePattern,
+} from "../components/command-palette/core/roles"
 import type { PaletteStore } from "../components/command-palette/core/store"
 
 const { store, commands, log } = createTestStore(() => log.push("dismissed"))
@@ -254,4 +262,93 @@ for (const [paths, path, expected] of RULES) {
 
 console.log(
   `\nroute rules: ${RULES.length - wrong}/${RULES.length} as expected`
+)
+
+/* ---------------------------------------------------------------- roles */
+
+/**
+ * Who a command is for. Pure `core/` like the rules above, and exercised the
+ * same way: one table of rules against one table of users, and the answer each
+ * pair owes. What the held roles are is a *set*, which is the whole reason the
+ * reading differs from `paths`' — see the last three rows.
+ */
+const ROLES: Array<[readonly string[], readonly string[], boolean]> = [
+  // Nobody at all, however much they are holding.
+  [[], [], false],
+  [[], ["admin"], false],
+
+  // The one rule that means everyone — signed out included, which an
+  // enumerated list of role names would quietly miss.
+  [["*"], [], true],
+  [["*"], ["viewer"], true],
+
+  // Any of these names, held or not.
+  [["admin"], ["admin"], true],
+  [["admin"], ["viewer"], false],
+  [["admin"], [], false],
+  [["admin", "support"], ["support"], true],
+  [["admin", "support"], ["member"], false],
+  // Holding more than the rule asks for is still holding it.
+  [["admin"], ["admin", "viewer"], true],
+
+  // A deny wins wherever it sits, and whatever else is held.
+  [["*", "!viewer"], ["admin"], true],
+  [["*", "!viewer"], ["viewer"], false],
+  [["*", "!viewer"], ["admin", "viewer"], false],
+
+  // ...which is what makes the list a set rather than a sequence: the same two
+  // rules the other way round mean the same thing, unlike `paths`'.
+  [["!viewer", "*"], ["admin"], true],
+  [["!viewer", "*"], ["viewer"], false],
+  [["!viewer", "admin"], ["admin", "viewer"], false],
+]
+
+let wrongRoles = 0
+for (const [roles, held, expected] of ROLES) {
+  const actual = isAvailableTo(roles as readonly RolePattern[], new Set(held))
+  if (actual === expected) continue
+
+  wrongRoles += 1
+  console.log(
+    `  ✗ ${JSON.stringify(roles).padEnd(26)} for ${JSON.stringify(held).padEnd(22)} ` +
+      `expected ${expected}, got ${actual}`
+  )
+}
+
+console.log(
+  `role rules: ${ROLES.length - wrongRoles}/${ROLES.length} as expected`
+)
+
+/**
+ * The shapes a host can hand over. This is the one part of the palette that
+ * meets an app where it already is, so the coercion is worth pinning down —
+ * not least the bare string, which `new Set()` would read as five letters.
+ */
+const SHAPES: Array<[RoleInput, readonly string[]]> = [
+  [undefined, []],
+  [null, []],
+  ["", []],
+  ["admin", ["admin"]],
+  [
+    ["admin", "viewer"],
+    ["admin", "viewer"],
+  ],
+  [[], []],
+  [new Set(["admin"]), ["admin"]],
+]
+
+let wrongShapes = 0
+for (const [input, expected] of SHAPES) {
+  const actual = [...normalizeRoles(input)].sort()
+  if (JSON.stringify(actual) === JSON.stringify([...expected].sort())) continue
+
+  wrongShapes += 1
+  console.log(
+    `  ✗ ${JSON.stringify(input instanceof Set ? [...input] : input).padEnd(26)} ` +
+      `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`
+  )
+}
+
+console.log(
+  `role shapes: ${SHAPES.length - wrongShapes}/${SHAPES.length} as expected`
 )

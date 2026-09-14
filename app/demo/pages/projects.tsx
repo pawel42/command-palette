@@ -8,6 +8,7 @@ import { ALL_PROJECTS } from "../projects"
 import type { Project } from "../projects"
 
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 
 export type { Project }
 
@@ -32,6 +33,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
           {
             id: "archived",
             paths: EVERYWHERE,
+            roles: ANYONE,
             title: "Browse archived projects",
             description: "the same page, other props",
             section: "View",
@@ -49,6 +51,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
       ).map((project) => ({
         id: project.id,
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: project.name,
         subtitle: `${project.tasks} open`,
         section: "Projects",

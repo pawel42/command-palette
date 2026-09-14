@@ -1,10 +1,11 @@
 /**
- * The headless engine. Five concerns, in dependency order:
+ * The headless engine. Six concerns, in dependency order:
  *
  *   keys/     DOM key events -> intents; knows nothing about the palette
  *   list/     a query becomes ranked, grouped rows with one of them active
  *   page/     what a page is — a plain object — and how it is referenced
  *   routes/   where a command exists: the router's pathnames, as a type
+ *   roles/    who a command is for: the host's own roles, the same way
  *   command/  what a row is, and what running it does
  *   stack/    the state machine: push, pop, esc, and the derived view
  *
@@ -25,6 +26,7 @@ export * from "./keys"
 export * from "./list"
 export * from "./page"
 export * from "./refusal"
+export * from "./roles"
 export * from "./routes"
 export * from "./stack"
 export { createPaletteStore } from "./store"

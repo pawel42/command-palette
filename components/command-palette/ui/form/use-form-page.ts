@@ -7,6 +7,7 @@ import type {
   Command,
   FooterHint,
   PathPattern,
+  RolePattern,
   Shortcut,
   ToastMessage,
 } from "../../core"
@@ -41,6 +42,13 @@ import { usePageFooter } from "../frame"
 
 /** Everywhere — a footer action on a page the user is already standing on. */
 const HERE = ["/*"] as const satisfies readonly PathPattern[]
+
+/**
+ * Anyone — for the same reason. Submitting is the form's own affair, and the
+ * question of who may open it was settled by the command that pushed it; a
+ * second answer here could only contradict the first.
+ */
+const ANYONE = ["*"] as const satisfies readonly RolePattern[]
 
 /** ⌘↵ on a Mac, ctrl+↵ everywhere else. */
 const DEFAULT_SHORTCUT: Shortcut = ["Mod", "Enter"]
@@ -244,6 +252,7 @@ export function useFormPage<Values, Result>(
       {
         id: "submit",
         paths: HERE,
+        roles: ANYONE,
         title: options.title ?? "Submit",
         shortcut,
         icon: options.icon,
@@ -263,9 +272,7 @@ export function useFormPage<Values, Result>(
       ...(isSequence(shortcut)
         ? []
         : ([{ keys: shortcut, label: "submits" }] satisfies FooterHint[])),
-      ...(options.hints ?? [
-        { keys: ["Escape"], label: "discards this form" },
-      ]),
+      ...(options.hints ?? [{ keys: ["Escape"], label: "discards this form" }]),
     ],
   })
 

@@ -79,18 +79,21 @@ const wait = (ms: number, signal?: AbortSignal) =>
   })
 
 /**
- * Where these commands exist. The walkthrough drives the engine with no UI
- * attached and the path rules are applied in `ui/`, so nothing here depends on
- * it — but `paths` is required of every command there is, which is the point:
- * a command with nowhere to be is a command nobody can reach.
+ * Where these commands exist, and who they are for. The walkthrough drives the
+ * engine with no UI attached and both rules are applied in `ui/`, so nothing
+ * here depends on them — but both are required of every command there is,
+ * which is the point: a command with nowhere to be, or nobody to be for, is a
+ * command nobody can reach.
  */
 const EVERYWHERE = ["/*"] as const
+const ANYONE = ["*"] as const
 
 export function createCommands(log: string[]): Command[] {
   return [
     {
       id: "page-1",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Page 1",
       section: "Pages",
       page: page1,
@@ -98,6 +101,7 @@ export function createCommands(log: string[]): Command[] {
     {
       id: "projects",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Search Projects",
       section: "Pages",
       keywords: ["client", "work"],
@@ -106,6 +110,7 @@ export function createCommands(log: string[]): Command[] {
     {
       id: "log",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Log The Query",
       section: "Actions",
       shortcut: ["Mod", "L"],
@@ -117,6 +122,7 @@ export function createCommands(log: string[]): Command[] {
       // The declared form: named outcomes, and `runAsync` never rejects.
       id: "sync",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Sync With Remote",
       section: "Actions",
       run: ({ runAsync }) =>
@@ -138,6 +144,7 @@ export function createCommands(log: string[]): Command[] {
       // `runAsync`'s own options, next to the messages, not on the command.
       id: "deploy",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Deploy a Preview",
       section: "Actions",
       run: ({ runAsync }) =>
@@ -160,6 +167,7 @@ export function createCommands(log: string[]): Command[] {
       // once — a toast from a quiet palette, and one that replaces a run.
       id: "copy",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Copy Link",
       section: "Actions",
       run: ({ toast }) => toast({ title: "Copied" }),
@@ -169,6 +177,7 @@ export function createCommands(log: string[]): Command[] {
       // the user somewhere the palette is in the way of.
       id: "go",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Go Somewhere Else",
       section: "Actions",
       run: ({ closePalette }) => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useLocale } from "next-intl"
 import { useParams } from "next/navigation"
 
@@ -18,6 +19,8 @@ import { recentIds, subscribeRecent } from "./demo/recent"
 import { RouterCommandBridge } from "./demo/router-bridge"
 import { ThemeCommandBridge } from "./demo/theme-bridge"
 import { HereAndNot } from "./demo/here-and-not"
+import { DEFAULT_ROLE } from "./demo/roles"
+import type { AppRole } from "./demo/roles"
 import { NAV, NAV_LABELS } from "./nav"
 
 /**
@@ -36,6 +39,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // same thing itself, off `routing`.
   const pathname = usePathname()
   const activity = useActivity()
+  // Who the palette is being shown to. State in the shell, not in the palette:
+  // a real app reads this off its session, and the palette's only interest is
+  // being told. See `SIGNED_OUT` for the empty case.
+  const [roles, setRoles] = useState<readonly AppRole[]>([DEFAULT_ROLE])
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -57,6 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
 
           <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <RoleSwitch roles={roles} onChange={setRoles} />
             <LocaleSwitch />
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
               {pathname}
@@ -72,7 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="mx-auto w-full max-w-3xl px-4 py-10">{children}</main>
 
-      <HereAndNot path={pathname} />
+      <HereAndNot path={pathname} roles={roles} />
 
       <footer className="mx-auto w-full max-w-3xl px-4 pt-2 pb-10">
         <ul
@@ -98,6 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CommandPalette
         commands={rootCommands}
         routing={routing}
+        roles={roles}
         placeholder="Search for a page or an action…"
         footer={rootFooter}
         // The recents live outside React, so say what else the root watches:
@@ -109,6 +118,61 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <RouterCommandBridge />
       </CommandPalette>
     </div>
+  )
+}
+
+/** Signed out: holding nothing, and the reason `"*"` is spelled out. */
+const SIGNED_OUT: readonly AppRole[] = []
+
+/**
+ * Who is looking — the control the roles feature exists to be watched through.
+ *
+ * `LocaleSwitch` below is the precedent: a switch in the chrome whose only job
+ * is to prove a rule holds. Flip this with the palette open and the list, the
+ * ⌘⇧K panel and the live shortcuts all rebuild under you, because the rules
+ * are applied where the rows are rather than once at mount.
+ *
+ * The pair at the end is the one that earns its place. A user holding admin
+ * *and* viewer is what makes `["*", "!viewer"]` a question worth asking, and
+ * the answer — hidden, because a deny wins wherever it sits — is the whole of
+ * why the reading is not `paths`'.
+ */
+const CHOICES: { label: string; roles: readonly AppRole[] }[] = [
+  { label: "out", roles: SIGNED_OUT },
+  { label: "viewer", roles: ["viewer"] },
+  { label: "member", roles: ["member"] },
+  { label: "support", roles: ["support"] },
+  { label: "admin", roles: ["admin"] },
+  { label: "admin+viewer", roles: ["admin", "viewer"] },
+]
+
+function RoleSwitch({
+  roles,
+  onChange,
+}: {
+  roles: readonly AppRole[]
+  onChange: (roles: readonly AppRole[]) => void
+}) {
+  const current = roles.join(",")
+
+  return (
+    <span className="flex items-center gap-1">
+      {CHOICES.map((choice) => (
+        <button
+          key={choice.label}
+          type="button"
+          onClick={() => onChange(choice.roles)}
+          className={cn(
+            "rounded px-1 py-0.5 font-mono",
+            choice.roles.join(",") === current
+              ? "bg-muted text-foreground"
+              : "hover:text-foreground"
+          )}
+        >
+          {choice.label}
+        </button>
+      ))}
+    </span>
   )
 }
 

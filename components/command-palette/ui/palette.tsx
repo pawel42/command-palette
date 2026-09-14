@@ -9,6 +9,7 @@ import { PaletteBridgeProvider } from "./internal/bridge"
 import { PageHost } from "./page-host"
 import { useRootPage } from "./root-page"
 import type { RootConfig } from "./root-page"
+import type { RoleInput } from "../core/roles"
 
 /**
  * Everything stateful: the engine and the frame↔page bridge. It renders no UI
@@ -24,6 +25,7 @@ import type { RootConfig } from "./root-page"
 export function PaletteRoot({
   routing,
   path,
+  roles,
   onDismiss,
   onCommand,
   revealMs,
@@ -34,6 +36,8 @@ export function PaletteRoot({
   routing?: PaletteRouting
   /** Where the user is, said outright — the way out of the above. */
   path?: string
+  /** Which roles the user holds — see `PaletteProvider`. */
+  roles?: RoleInput
   onDismiss?: () => void
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
@@ -48,6 +52,7 @@ export function PaletteRoot({
       rootPage={rootPage}
       routing={routing}
       path={path}
+      roles={roles}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}
@@ -95,6 +100,7 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
 export function InlinePalette({
   routing,
   path,
+  roles,
   onDismiss,
   onCommand,
   revealMs,
@@ -103,6 +109,7 @@ export function InlinePalette({
 }: RootConfig & {
   routing?: PaletteRouting
   path?: string
+  roles?: RoleInput
   onDismiss?: () => void
   onCommand?: (command: Command) => void
   revealMs?: number
@@ -113,6 +120,7 @@ export function InlinePalette({
       {...root}
       routing={routing}
       path={path}
+      roles={roles}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}

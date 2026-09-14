@@ -102,6 +102,68 @@ The rules are applied where the rows are, so they re-apply as the path moves:
 navigate with the palette open and the list rebuilds under you — that is the
 middle of the recording above.
 
+## And every command says who it is for
+
+`roles` is required too, and it reads the same way. Nothing until a rule says
+so, and `"*"` written out rather than implied:
+
+```ts
+roles: ["*"] // everyone there is, signed out included
+roles: ["admin"] // admins only
+roles: ["admin", "support"] // either one
+roles: ["*", "!viewer"] // everyone but viewers
+roles: [] // nobody at all
+```
+
+A hidden row is hidden the same way a row on the wrong path is: **not there**.
+Out of the list, out of the ⌘⇧K panel, shortcut dead. The two rules compose, and
+a command has to survive both.
+
+One difference from `paths`, and it is the subject rather than a change of mind.
+There, the *last* rule that covers the path wins — a user is in one place, and
+`/admin/*` genuinely contains `/admin/users`, so something has to break that
+tie. A user holds a *set* of roles, and the rules covering them contain nothing
+at all, so "last" would invent a priority out of the order two lines sit in:
+for someone holding both admin and viewer, `["admin", "!viewer"]` and
+`["!viewer", "admin"]` would mean opposite things. **A deny wins wherever it
+sits**, so the list stays the set of names it looks like.
+
+Like the pathnames, the roles are the app's own and they are checked:
+
+```ts
+export const ROLES = ["admin", "support", "member", "viewer"] as const
+
+declare global {
+  interface PaletteRoles {
+    role: (typeof ROLES)[number]
+  }
+}
+```
+
+`roles: ["admn"]` is a compile error. Declare nothing and it takes any string.
+
+What the palette is told is whichever shape the app already has:
+
+```tsx
+<CommandPalette commands={commands} routing={routing} roles={session?.user.role} />
+```
+
+One role, an array, a `Set`, or `undefined` for a signed-out visitor — it is
+normalized once, at the edge. Signed out and not-loaded-yet are the same empty
+set on purpose: both hold nothing, and deny-by-default draws both correctly
+without a third state. The palette does not fetch, because a set that arrived
+late would be rows sliding in under the user's hands a beat after the palette
+paints — the greyed-out row this thing refuses to draw, arriving through time
+instead of pixels.
+
+Switch the role in the demo header with ⌘K open and watch the list, the panel
+and the shortcuts all rebuild.
+
+**It is not authorization.** A `roles` rule decides what is drawn, in a browser
+that already has the whole registry. It shapes what the product offers, not what
+the server permits — every command that touches anything still has to be
+authorized where it runs.
+
 ## Search is fuzzy, and it reads more than the title
 
 ![Typing "form": three rows, none of which say "form" anywhere in their title](docs/search.png)
@@ -263,6 +325,8 @@ Copy `components/command-palette/` in. The host provides four things: Tailwind
 v4 with the shadcn color tokens, `data-app-shell` on whatever the palette should
 cover, React 19 (`<Activity>` is what lets a page be hidden rather than
 unmounted), and a next-intl routing config — or, failing that, a `path` string.
+If the app has roles, it provides a fifth: `roles`, in whatever shape it already
+keeps them. If it doesn't, every command says `["*"]` and nothing else changes.
 
 ```tsx
 import { CommandPalette, ListPage } from "@/components/command-palette"
@@ -277,6 +341,7 @@ const settingsPage: Page = {
         {
           id: "theme",
           paths: ["/*"],
+          roles: ["*"],
           title: "Toggle Dark Mode",
           run: toggleTheme,
         },
@@ -289,6 +354,7 @@ const commands: Command[] = [
   {
     id: "settings",
     paths: ["/*"],
+    roles: ["*"],
     title: "Settings",
     section: "Pages",
     page: settingsPage,
@@ -296,6 +362,7 @@ const commands: Command[] = [
   {
     id: "save",
     paths: ["/documents/[id]"],
+    roles: ["*"],
     title: "Save",
     section: "Actions",
     shortcut: ["Mod", "S"],
@@ -329,15 +396,18 @@ every prop, every seam, and the reasoning behind each one.
 
 ```
 components/command-palette/   the component — core/ (headless), react/, ui/
-i18n/routing.ts               the routes, localized — the vocabulary every rule is checked against
-app/[locale]/                 the demo: six routes and one registry
-app/demo/commands.tsx         the registry, written to show the path rules off
+i18n/routing.ts               the routes, localized — the vocabulary every path rule is checked against
+app/demo/roles.ts             the roles — the other vocabulary, declared the same way
+app/[locale]/                 the demo: six routes, four roles and one registry
+app/demo/commands.tsx         the registry, written to show both rules off
 scripts/                      the walkthroughs, and the README's own pictures
 ```
 
 The demo prints, under every page, which of its commands are available here and
-which are not — the same `isAvailableOn` the palette runs on every row, run over
-the whole registry so the rules can be read without opening ⌘K.
+which are not — the same `isAvailableOn` and `isAvailableTo` the palette runs on
+every row, run over the whole registry so the rules can be read without opening
+⌘K. Three columns rather than two, because a missing row has two possible
+reasons and the palette itself will never tell you which.
 
 |                            |                                                                                          |
 | -------------------------- | ---------------------------------------------------------------------------------------- |

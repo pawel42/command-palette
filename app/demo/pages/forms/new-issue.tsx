@@ -23,6 +23,7 @@ import {
 import { logActivity } from "../../activity"
 import { createIssue } from "../../api"
 import { EVERYWHERE } from "../../paths"
+import { ANYONE } from "../../roles"
 
 import {
   ASSIGNEES,
@@ -99,6 +100,7 @@ function NewIssueForm() {
       {
         id: "reset-issue",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Clear the form",
         shortcut: ["Mod", "Shift", "X"],
         icon: <Icon path={ICONS.close} />,

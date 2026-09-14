@@ -8,6 +8,7 @@ import type { Page } from "@/components/command-palette"
 import { FieldGroup, FieldSeparator } from "@/components/ui/field"
 
 import { EVERYWHERE } from "../../paths"
+import { ANYONE } from "../../roles"
 
 import {
   DEFAULT_FILTERS,
@@ -17,7 +18,12 @@ import {
   filterSchema,
 } from "./options"
 import type { FilterValues } from "./options"
-import { CheckboxField, CheckboxGroupField, RadioField, SelectField } from "./fields"
+import {
+  CheckboxField,
+  CheckboxGroupField,
+  RadioField,
+  SelectField,
+} from "./fields"
 
 /**
  * The filter case, and the one that is a form only in the sense that it has
@@ -38,7 +44,9 @@ export const filtersPage: Page<FilterValues, FilterValues> = {
   title: "Filter Issues",
   search: "disabled",
   placeholder: "Filters — ⌘↵ applies them",
-  render: ({ props, resolve }) => <FiltersForm current={props} apply={resolve} />,
+  render: ({ props, resolve }) => (
+    <FiltersForm current={props} apply={resolve} />
+  ),
 }
 
 function FiltersForm({
@@ -62,6 +70,7 @@ function FiltersForm({
       {
         id: "reset-filters",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Back to the defaults",
         shortcut: ["Mod", "Shift", "X"],
         icon: <Icon path={ICONS.close} />,
@@ -70,6 +79,7 @@ function FiltersForm({
       {
         id: "clear-filters",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Clear every status",
         description: "so ⌘↵ has something to refuse",
         icon: <Icon path={ICONS.dot} />,

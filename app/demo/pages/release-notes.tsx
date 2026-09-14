@@ -6,6 +6,7 @@ import { Icon, ICONS, usePageFooter } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 
 type Release = {
   version: string
@@ -164,6 +165,7 @@ function ReleaseNotes() {
       {
         id: "density",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: detailed ? "Compact view" : "Detailed view",
         description: "how much each release says",
         section: "View",

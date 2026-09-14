@@ -4,6 +4,7 @@ import { Icon, ICONS, usePageFooter } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 
 import { useTaskDraft } from "./use-task-draft"
 
@@ -33,6 +34,7 @@ function CreateTaskForm() {
       {
         id: "save",
         paths: EVERYWHERE,
+        roles: ANYONE,
         title: "Save and go home",
         shortcut: ["Mod", "Enter"],
         icon: <Icon path={ICONS.check} />,

@@ -8,6 +8,7 @@ import type { Command } from "../../core"
 import type { PaletteRouting } from "../../react"
 import { PaletteRoot, PaletteSurface } from "../palette"
 import type { RootConfig } from "../root-page"
+import type { RoleInput } from "../../core/roles"
 import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
 import { usePaletteShake } from "./use-palette-shake"
@@ -125,6 +126,7 @@ function Shake({ target }: { target: RefObject<HTMLElement | null> }) {
 export function CommandPalette({
   routing,
   path,
+  roles,
   onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
@@ -144,6 +146,13 @@ export function CommandPalette({
    * Wins over `routing`; one of the two is required.
    */
   path?: string
+  /**
+   * Which roles the current user holds — one, several, a `Set`, or nothing at
+   * all. Every command declares who it is for, and this is what that is read
+   * against. Live: switch the user and the list, the action panel and the
+   * shortcuts follow. See `PaletteRolesProvider`.
+   */
+  roles?: RoleInput
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
@@ -172,6 +181,7 @@ export function CommandPalette({
       {...root}
       routing={routing}
       path={path}
+      roles={roles}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}
       revealMs={revealMs}

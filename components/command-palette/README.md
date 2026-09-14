@@ -33,6 +33,10 @@ The external imports anywhere in it are `react`, `next-intl` inside
    its keys once as the vocabulary rules are checked against. A host without
    next-intl passes `path` instead and gets the runtime half only. See "Where a
    command exists".
+5. **Whatever it calls a role, if it has them.** Every command also says who it
+   is for, so the palette has to be told which roles the current user holds —
+   `roles`, in whatever shape the app already keeps them. An app with no roles
+   passes nothing and writes `["*"]` everywhere. See "Who a command is for".
 
 ## Using it
 
@@ -49,6 +53,7 @@ const settingsPage: Page = {
         {
           id: "theme",
           paths: ["/*"],
+          roles: ["*"],
           title: "Toggle Dark Mode",
           run: () => toggleTheme(),
         },
@@ -65,6 +70,7 @@ const commands = [
     id: "settings",
     // Where it exists. Required of every command — see below.
     paths: ["/*"],
+    roles: ["*"],
     title: "Settings",
     section: "Pages",
     page: settingsPage,
@@ -72,6 +78,7 @@ const commands = [
   {
     id: "save",
     paths: ["/documents/[id]"],
+    roles: ["*"],
     title: "Save",
     section: "Actions",
     run: ({ query }) => save(query),
@@ -124,6 +131,7 @@ everything else:
 {
   id: "go-settings",
   paths: ["/*", "!/settings"],
+  roles: ["*"],
   title: "Go to Settings",
   run: ({ closePalette }) => {
     closePalette()
@@ -179,6 +187,8 @@ the ⌘⇧K panel, and its shortcut does nothing — an unavailable command is o
 the user has no business seeing, not one they should be told they cannot have.
 There is no second check when it runs, because there is nothing left to run it
 from.
+
+The same goes for the other rule below, and a row has to survive both.
 
 ### The pathnames are the router's, and they are checked
 
@@ -254,6 +264,126 @@ does.
 `isAvailableOn(paths, path)` and `availableOn(items, path)` are exported for a
 host that wants to ask the same question itself.
 
+## Who a command is for
+
+The second question about every row, asked in the same words as the first. Every
+command says which roles it is for, and `roles` is required for the same reason
+`paths` is — a default would be the question going unasked:
+
+```ts
+roles: ["*"] // everyone there is, signed out included
+roles: ["admin"] // admins only
+roles: ["admin", "support"] // either one
+roles: ["*", "!viewer"] // everyone but viewers
+roles: [] // nobody at all
+```
+
+Three things to read off that:
+
+**Nothing is available until a rule says so.** An empty list is a command nobody
+can reach, which is why `"*"` is written out rather than implied. It is the one
+token the host does not own, and it covers a signed-out visitor too — an
+enumerated list of role names would quietly miss them.
+
+**A deny wins wherever it sits.** `["*", "!viewer"]` and `["!viewer", "*"]` are
+one rule written twice, and the list stays the set of names it looks like.
+
+**This is where the reading parts company with `paths`', on purpose.** There the
+_last_ rule that covers the path wins, because a user is in one place and
+`/admin/*` genuinely contains `/admin/users` — something has to break a tie the
+syntax really created. A user holds a _set_ of roles, and the rules that cover
+them contain nothing at all, so "last" would not settle an overlap, it would
+invent a priority out of the order two lines happen to sit in. For someone
+holding both admin and viewer, `["admin", "!viewer"]` and `["!viewer", "admin"]`
+would mean opposite things — and half the time a reordered pair of lines would
+hand a viewer a row, which is the wrong direction to fail in.
+
+A host that wants admin to outrank viewer writes `["admin"]` and does not
+mention viewer. Precedence between roles is a hierarchy, and there isn't one
+here — if your app has one, flatten it where you build the set.
+
+There is likewise no token for "anyone signed in", because `"*"` covers a
+signed-out visitor on purpose — it is the rule that asks no questions. An app
+that needs the distinction gives every signed-in user a baseline role and writes
+`["member"]`, which is one line where the set is built rather than an exception
+in every rule that would otherwise have to remember it.
+
+### The roles are the app's, and they are checked
+
+Like the pathnames, and by the same mechanism: a global interface, filled in
+once, derived from whatever list the app already keeps.
+
+```ts
+// app/demo/roles.ts
+export const ROLES = ["admin", "support", "member", "viewer"] as const
+
+declare global {
+  interface PaletteRoles {
+    role: (typeof ROLES)[number]
+  }
+}
+```
+
+`roles: ["admn"]` is then a compile error with a "did you mean", rather than a
+command that quietly never appears. Declare nothing and `roles` takes any
+string: the folder still works, there is simply no vocabulary to check against.
+
+There is no `"!*"`. A deny covers everybody, so it would strike out every other
+rule in the list — and `[]` already says "nobody" without looking like it says
+something else.
+
+### Who the user is, the host says
+
+`roles` is a prop on `CommandPalette`, `InlinePalette` and `PaletteRoot`, and
+like `routing` it is live — a session lands, a user is switched, and the list,
+the panel and the live shortcuts all follow:
+
+```tsx
+<CommandPalette commands={commands} routing={routing} roles={roles} … />
+```
+
+Whatever shape the app already has goes in. It is normalized once, at the
+provider:
+
+```tsx
+roles={session?.user.role}     // "admin" — one role, not five letters
+roles={user.roles}             // ["admin", "support"]
+roles={new Set(claims.roles)}  // a Set, kept as it came
+roles={undefined}              // signed out: holding nothing
+```
+
+`null` and `undefined` are the empty set rather than an error. That is a user who
+is signed out, or a session that has not landed yet, and both hold nothing —
+which deny-by-default already draws correctly, with no third "unknown" state to
+specify and no branch anywhere.
+
+**The palette does not fetch.** It takes a settled value and normalizes its
+shape; it will not take a promise or a fetcher. Availability is worked out while
+the rows are being rendered and has to stay synchronous — and a set that arrived
+late would be a list that grows under the user's hands: rows appearing a beat
+after the palette paints, moving the active row, bringing a dead shortcut back.
+That is the greyed-out row this folder refuses to draw, arriving through time
+instead of through pixels. Where the session comes from is the host's business,
+and the host has already settled it — it renders its own nav off the same answer.
+A host that would rather show nothing until it knows does not mount the palette
+yet.
+
+Inside the palette it is `useCurrentRoles()`, so a page of your own can read who
+opened it without being handed anything. `isAvailableTo(roles, held)` and
+`availableTo(items, held)` are exported for a host that wants to ask the same
+question itself — `app/demo/here-and-not.tsx` uses both halves to say _why_ a row
+is missing, which is the one thing the palette itself will never tell you.
+
+### It is not authorization
+
+A `roles` rule decides what is **drawn**, and drawing happens in the browser,
+over a registry the browser already has. It is the same kind of statement as
+hiding a button: it shapes what the product offers, not what the server permits.
+Every command that touches anything still has to be authorized where it runs.
+
+There is no second check when a command runs — and if there were, it would be a
+check in the one place that cannot check anything.
+
 ## Pages are objects
 
 There is nothing to call. A page is a plain object with an `id` and a `render`
@@ -295,7 +425,7 @@ const projectsPage: Page<{ archived: boolean }, Project> = {
 }
 
 // opening it, from a command or from code
-{ id: "projects", paths: ["/*"], title: "Projects", page: bind(projectsPage, { archived: false }) }
+{ id: "projects", paths: ["/*"], roles: ["*"], title: "Projects", page: bind(projectsPage, { archived: false }) }
 const project = await nav.push(projectsPage, { archived: false })
 ```
 
@@ -477,6 +607,7 @@ const notesPage: Page = {
       {
         id: "save",
         paths: ["/*"],
+        roles: ["*"],
         title: "Save",
         shortcut: ["Mod", "Enter"],
         run: () => save(),
@@ -484,6 +615,7 @@ const notesPage: Page = {
       {
         id: "archive",
         paths: ["/*"],
+        roles: ["*"],
         title: "Open the archive",
         page: archivePage,
       },
@@ -511,6 +643,7 @@ usePageFooter({
     {
       id: "density",
       paths: ["/*"],
+      roles: ["*"],
       title: detailed ? "Compact" : "Detailed",
       run: toggle,
     },
@@ -529,7 +662,7 @@ A command that returns a promise is an async command, and returning it is the
 whole declaration:
 
 ```tsx
-{ id: "deploy", paths: ["/*"], title: "Deploy a Preview", run: () => api.deploy() }
+{ id: "deploy", paths: ["/*"], roles: ["*"], title: "Deploy a Preview", run: () => api.deploy() }
 ```
 
 While it runs, a bar sweeps under the input and the footer says what is

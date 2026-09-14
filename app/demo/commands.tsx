@@ -24,6 +24,7 @@ import { projectsPage } from "./pages/projects"
 import { releaseNotesPage } from "./pages/release-notes"
 import { accountPage } from "./pages/signup"
 import { EVERYWHERE } from "./paths"
+import { ANYONE } from "./roles"
 import { navigate } from "./router-bridge"
 import { toggleTheme } from "./theme-bridge"
 
@@ -35,6 +36,7 @@ export const commands: Command[] = [
   {
     id: "branch",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Branch Out",
     description: "three destinations",
     section: "Pages",
@@ -44,6 +46,7 @@ export const commands: Command[] = [
   {
     id: "create-task",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Create Task",
     description: "a form that keeps its draft",
     section: "Pages",
@@ -56,6 +59,7 @@ export const commands: Command[] = [
   {
     id: "new-issue",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "New Issue",
     description: "shadcn Field + react-hook-form, ⌘↵ to submit",
     section: "Pages",
@@ -70,6 +74,7 @@ export const commands: Command[] = [
     // which is the difference between applying filters and leaving them.
     id: "filters",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Filter Issues",
     description: "checkboxes, radios and a select",
     section: "Pages",
@@ -87,6 +92,7 @@ export const commands: Command[] = [
   {
     id: "account",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "New Account",
     description: "two forms, one pushed from the other",
     section: "Pages",
@@ -97,6 +103,7 @@ export const commands: Command[] = [
   {
     id: "projects",
     paths: ["/*", "!/admin/*"],
+    roles: ANYONE,
     title: "Browse Projects",
     description: "takes props, returns a value",
     section: "Pages",
@@ -111,6 +118,7 @@ export const commands: Command[] = [
   {
     id: "deep",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Deep Dive",
     description: "three levels, one esc home",
     section: "Pages",
@@ -121,6 +129,7 @@ export const commands: Command[] = [
   {
     id: "release-notes",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Release Notes",
     description: "long, scrollable, keeps its place",
     section: "Pages",
@@ -132,6 +141,7 @@ export const commands: Command[] = [
   {
     id: "details",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "How This Works",
     section: "Pages",
     keywords: ["help", "readme", "about"],
@@ -141,6 +151,7 @@ export const commands: Command[] = [
   {
     id: "theme",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Toggle Dark Mode",
     section: "Actions",
     shortcut: ["Mod", "D"],
@@ -158,6 +169,7 @@ export const commands: Command[] = [
     // navigating away really does call the request off.
     id: "sync",
     paths: ["/*", "!/admin/*"],
+    roles: ["*", "!viewer"],
     title: "Sync with Remote",
     description: "slow, and says how it went",
     section: "Actions",
@@ -182,6 +194,7 @@ export const commands: Command[] = [
     // `runAsync(deployPreview, { loading: "Deploying…" })` — to really abort.
     id: "deploy",
     paths: ["/*", "!/admin/*"],
+    roles: ["*", "!viewer"],
     title: "Deploy a Preview",
     description: "fails, and says so",
     section: "Actions",
@@ -193,6 +206,7 @@ export const commands: Command[] = [
     // No work behind it at all: the same footer line, said directly.
     id: "copy-link",
     paths: EVERYWHERE,
+    roles: ANYONE,
     title: "Copy Palette Link",
     section: "Actions",
     keywords: ["share", "url", "toast"],
@@ -206,6 +220,7 @@ export const commands: Command[] = [
     // that writes to it lives there and is not offered anywhere it could not
     // be seen to have worked.
     paths: ["/"],
+    roles: ANYONE,
     title: "Log What I Typed",
     description: "actions can read the query",
     section: "Actions",
@@ -221,6 +236,7 @@ export const commands: Command[] = [
     // the same reading rather than by a special case.
     id: "purge-cdn",
     paths: ["/admin/*"],
+    roles: ["admin"],
     title: "Purge the CDN",
     description: "admin, and everything under it",
     section: "Admin",
@@ -238,6 +254,7 @@ export const commands: Command[] = [
     // that does not follow you in there.
     id: "rotate-keys",
     paths: ["/admin/*", "!/admin/users"],
+    roles: ["admin"],
     title: "Rotate Signing Keys",
     description: "admin, but not the users page",
     section: "Admin",
@@ -249,6 +266,7 @@ export const commands: Command[] = [
   {
     id: "invite",
     paths: ["/admin/users"],
+    roles: ["admin", "support"],
     title: "Invite a Teammate",
     description: "that one page",
     section: "Admin",
@@ -261,6 +279,7 @@ export const commands: Command[] = [
     // The projects area: the index and every project under it.
     id: "new-project",
     paths: ["/projects/*"],
+    roles: ["*", "!viewer"],
     title: "Start a Project",
     description: "the projects area",
     section: "Projects",
@@ -274,6 +293,7 @@ export const commands: Command[] = [
     // be a segment.
     id: "rename-project",
     paths: ["/projects/[id]"],
+    roles: ANYONE,
     title: "Rename This Project",
     description: "one project, not the index",
     section: "Projects",
@@ -287,6 +307,7 @@ export const commands: Command[] = [
     // row — it is a command that is not there to be matched.
     id: "export-data",
     paths: ["/settings"],
+    roles: ["admin", "support"],
     title: "Export Your Data",
     description: "settings only, shortcut and all",
     section: "Settings",
@@ -306,6 +327,7 @@ export const commands: Command[] = [
     id: `go${href}`,
     // A way somewhere is available everywhere except where it already is.
     paths: ["/*", `!${href}`],
+    roles: ANYONE,
     title: `Go to ${NAV_LABELS[href]}`,
     section: "Go to",
     keywords: ["navigate", "route", href],
@@ -328,6 +350,7 @@ export const commands: Command[] = [
   {
     id: "go-project",
     paths: ["/*", "!/projects/[id]"],
+    roles: ANYONE,
     title: "Go to a Project",
     description: "picks one, then routes to it",
     section: "Go to",
@@ -411,6 +434,7 @@ export const rootFooter: PageFooter = {
     {
       id: "clear-activity",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "Clear the activity log",
       description: "the list under the palette",
       shortcut: ["Mod", "Shift", "L"],
@@ -420,6 +444,7 @@ export const rootFooter: PageFooter = {
     {
       id: "whats-new",
       paths: EVERYWHERE,
+      roles: ANYONE,
       title: "What's new",
       description: "an action can open a page",
       icon: <Icon path={ICONS.clock} />,
@@ -431,6 +456,7 @@ export const rootFooter: PageFooter = {
       // where the action itself exists.
       id: "impersonate",
       paths: ["/admin/*"],
+      roles: ["admin"],
       title: "Impersonate a user",
       description: "admin only, panel and shortcut alike",
       shortcut: ["Mod", "Shift", "B"],

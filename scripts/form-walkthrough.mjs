@@ -14,6 +14,7 @@
  *  T7  an invalid form refuses: the fields say why, the palette shakes
  *  T8  a form that resolves hands its values back to the command that pushed it
  *  T9  the searchable multi-select: type, ↵ ticks, esc closes the menu and no more
+ *  T10 roles: a row the user is not for is absent, and its shortcut is dead
  */
 import { chromium } from "playwright"
 
@@ -379,6 +380,107 @@ await page.waitForTimeout(200)
     /Key handling/.test((await trigger.textContent()) ?? ""),
     (await trigger.textContent())?.trim()
   )
+}
+
+/* ------------------------------------------------------------------ T10 */
+
+/**
+ * Who a command is for, in the one place it can be told for certain: a real
+ * palette, on a real path, with the demo's role switch driving it.
+ *
+ * The engine half is a table in `palette-walkthrough.ts`. What can only be
+ * checked here is the doctrine around it — that an unavailable row is *absent*
+ * rather than disabled, and that its shortcut is dead rather than quiet. A
+ * greyed-out row and a chord that silently does nothing would both pass a unit
+ * test of `isAvailableTo` and both be the wrong product.
+ */
+{
+  const role = (label) =>
+    page.getByRole("button", { name: label, exact: true }).click()
+  const openPalette = async () => {
+    await page.keyboard.press("Meta+k")
+    await page.waitForTimeout(250)
+  }
+  const shut = async () => {
+    await page.keyboard.press("Escape")
+    await page.waitForTimeout(150)
+  }
+  const rowTitles = async () =>
+    (await page.getByRole("option").allInnerTexts()).map(
+      (text) => text.split("\n")[0].trim()
+    )
+  const showing = async (pattern) =>
+    (await rowTitles()).some((title) => pattern.test(title))
+
+  await page.goto(`${BASE}/admin`, { waitUntil: "networkidle" })
+
+  await role("admin")
+  await openPalette()
+  check("T10 an admin sees the admin-only row", await showing(/Purge the CDN/i))
+  await shut()
+
+  await role("viewer")
+  await openPalette()
+  check(
+    "T10 a viewer does not — absent, not greyed",
+    !(await showing(/Purge the CDN/i))
+  )
+  check(
+    "T10 and nothing disabled was drawn in its place",
+    (await page.locator('[role="option"][aria-disabled="true"]').count()) === 0
+  )
+  await shut()
+
+  // The rule that is not `paths`': a deny wins wherever it sits, so holding
+  // admin as well does not buy back a row that denies viewers.
+  await page.goto(`${BASE}/`, { waitUntil: "networkidle" })
+  await role("member")
+  await openPalette()
+  check("T10 a member sees a [\"*\",\"!viewer\"] row", await showing(/Deploy a Preview/i))
+  await shut()
+
+  await role("admin+viewer")
+  await openPalette()
+  check(
+    "T10 a deny wins even while admin is held",
+    !(await showing(/Deploy a Preview/i))
+  )
+  await shut()
+
+  await page.goto(`${BASE}/admin`, { waitUntil: "networkidle" })
+  await role("admin+viewer")
+  await openPalette()
+  check(
+    "T10 and a grant it does not cover still stands",
+    await showing(/Purge the CDN/i)
+  )
+  await shut()
+
+  // The half a list cannot show: the chord for a row that is not there.
+  await page.goto(`${BASE}/admin/users`, { waitUntil: "networkidle" })
+
+  // Read off the palette's own body rather than `where()`: this page has no
+  // search box, so the helper falls back to the dialog's heading and would say
+  // the same thing whether or not anything was pushed.
+  const inviteShowing = async () =>
+    /Invite/i.test((await palette().innerText()) ?? "")
+
+  await role("admin")
+  await openPalette()
+  await page.keyboard.press("Meta+Shift+i")
+  await page.waitForTimeout(300)
+  check("T10 ⌘⇧I opens the gated page for an admin", await inviteShowing())
+  await shut()
+  await shut()
+
+  await role("viewer")
+  await openPalette()
+  const before = await where()
+  await page.keyboard.press("Meta+Shift+i")
+  await page.waitForTimeout(300)
+  check("T10 the same chord does nothing for a viewer", (await where()) === before, await where())
+  check("T10 and the row is not in the list either", !(await showing(/Invite/i)))
+  await shut()
 }
 
 } catch (error) {

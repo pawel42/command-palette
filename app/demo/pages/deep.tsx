@@ -4,6 +4,7 @@ import { logActivity } from "../activity"
 import { bind, Icon, ICONS, ListPage } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 import { EVERYWHERE } from "../paths"
+import { ANYONE } from "../roles"
 import { projectsPage } from "./projects"
 
 /**
@@ -27,6 +28,7 @@ export const level3Page: Page = {
         {
           id: "home",
           paths: EVERYWHERE,
+          roles: ANYONE,
           title: "Go home the explicit way",
           section: "Navigate",
           icon: <Icon path={ICONS.chevronLeft} />,
@@ -50,6 +52,7 @@ export const level2Page: Page = {
         {
           id: "next",
           paths: EVERYWHERE,
+          roles: ANYONE,
           title: "Level 3",
           description: "esc route: root",
           section: "Navigate",
@@ -71,6 +74,7 @@ export const level1Page: Page = {
         {
           id: "next",
           paths: EVERYWHERE,
+          roles: ANYONE,
           title: "Level 2",
           section: "Navigate",
           icon: <Icon path={ICONS.layers} />,
@@ -79,6 +83,7 @@ export const level1Page: Page = {
         {
           id: "projects-again",
           paths: EVERYWHERE,
+          roles: ANYONE,
           title: "…or jump to Projects from here",
           description: "same page, different parent",
           section: "Navigate",

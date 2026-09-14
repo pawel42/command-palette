@@ -7,6 +7,7 @@ import {
   RESERVED_SHORTCUTS,
   ariaKeyShortcut,
   availableOn,
+  availableTo,
   claimEscape,
   clearPending,
   isEditable,
@@ -19,6 +20,7 @@ import {
 import type { Chord, Command, FooterHint, Shortcut } from "../../core"
 import {
   useCurrentPath,
+  useCurrentRoles,
   usePaletteStore,
   usePaletteTasks,
   usePaletteView,
@@ -124,7 +126,8 @@ function moveTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
   // focus to that item — a stop that lands somewhere else is a press spent on
   // nothing. Keeping the innermost is what the browser does with the pair too.
   const stops = focusable.filter(
-    (element) => !focusable.some((other) => other !== element && element.contains(other))
+    (element) =>
+      !focusable.some((other) => other !== element && element.contains(other))
   )
 
   // Nowhere to go: hold on to the press rather than hand focus to the page.
@@ -263,6 +266,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const { getKeyHandler, activeOptionId, listId } = useFrameBridge()
   const { footer, getFooter } = useFrameFooter()
   const path = useCurrentPath()
+  const roles = useCurrentRoles()
   // Palette-wide, not per page: a run outlives the row that started it, and it
   // is reported wherever the user has got to by the time it lands.
   const { busy, toast } = usePaletteTasks()
@@ -288,12 +292,19 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   // say whether one is there — but a mounted list publishes its ids through
   // the bridge, and takes them with it when it goes.
   const hasList = listId !== undefined
-  // A footer's actions answer to the path like any other command: an action
-  // that does not exist here is out of the panel and its shortcut is dead.
-  const actions = availableOn(footer.actions ?? [], path)
+  // A footer's actions answer to the path and to the user like any other
+  // command: an action that does not exist here, or is not theirs, is out of
+  // the panel and its shortcut is dead.
+  const actions = availableTo(availableOn(footer.actions ?? [], path), roles)
 
-  /** The same, live — see `runActionShortcut` for why it cannot be the drawn one. */
-  const liveActions = () => availableOn(getFooter().actions ?? [], path)
+  /**
+   * The same, live — see `runActionShortcut` for why it cannot be the drawn
+   * one. Both filters have to be repeated here rather than only above: this is
+   * what the shortcut matcher reads, and an action that is merely undrawn would
+   * otherwise still fire on its keys.
+   */
+  const liveActions = () =>
+    availableTo(availableOn(getFooter().actions ?? [], path), roles)
 
   /**
    * The panel is open *for* one page on one showing of the palette — never
