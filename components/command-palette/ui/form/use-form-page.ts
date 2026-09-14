@@ -10,7 +10,7 @@ import type {
   Shortcut,
   ToastMessage,
 } from "../../core"
-import { useRunAsync } from "../../react"
+import { useRefuse, useRunAsync } from "../../react"
 import { usePageFooter } from "../frame"
 
 /**
@@ -27,9 +27,16 @@ import { usePageFooter } from "../frame"
  *
  * Validation is the form library's, untouched. `handleSubmit` calls the work
  * only when the values are good, so an invalid form cannot submit — and
- * nothing is said about it here, because the fields have already said it
+ * nothing is *said* about it here, because the fields have already said it
  * where the problem is. A toast would be the same sentence in the one place
  * the user is not looking.
+ *
+ * What is owed is an answer to the press itself, which the fields cannot give:
+ * a chord that changes nothing on screen is indistinguishable from a chord
+ * that was never received, and a form that already showed its errors on the
+ * last attempt changes nothing on screen at all. So an invalid submit records
+ * a refusal and the dialog shakes — see `core/refusal.ts` and
+ * `usePaletteShake`. It carries no message because it is not one.
  */
 
 /** Everywhere — a footer action on a page the user is already standing on. */
@@ -50,7 +57,17 @@ const DEFAULT_SHORTCUT: Shortcut = ["Mod", "Enter"]
  * where a form keeps its values; it only needs to be told when they are good.
  */
 export type SubmittableForm<Values> = {
-  handleSubmit: (onValid: (values: Values) => unknown) => () => Promise<unknown>
+  handleSubmit: (
+    onValid: (values: Values) => unknown,
+    /**
+     * The other half of the same call, and the reason it is declared: a form
+     * library knows the values were bad and nothing else here does. What it
+     * is handed — the errors, the event — is the library's own business and
+     * is not read, so the narrower shape fits react-hook-form's
+     * `SubmitErrorHandler` and anything else shaped like it.
+     */
+    onInvalid?: () => unknown
+  ) => () => Promise<unknown>
 }
 
 /** What ⌘↵ does when there is real work behind it. */
@@ -128,6 +145,7 @@ export function useFormPage<Values, Result>(
   options: FormPageOptions<Values, Result>
 ): FormPageHandle {
   const runAsync = useRunAsync()
+  const refuse = useRefuse()
 
   // Read through a ref, not a dependency: the options are an object literal
   // built fresh on every render, and the handlers in it close over this
@@ -172,13 +190,13 @@ export function useFormPage<Values, Result>(
 
       if (!landed) return
       done?.(landed.value)
-    })
+    }, refuse)
 
     // Discarded on purpose: a handler that returned this promise would hand
     // the palette a *second* piece of work to report, on top of the one
     // `runAsync` is already drawing a bar for.
     void run()
-  }, [form, runAsync])
+  }, [form, refuse, runAsync])
 
   /**
    * The submit chord, read on the way *down* to the field the user is in.

@@ -14,6 +14,7 @@ export {
 } from "./context"
 export { PalettePathProvider, useCurrentPath } from "./path"
 export type { PaletteRouting } from "./path"
+export { useRefuse, useRefusals } from "./refusal"
 export {
   useCommandList,
   useListController,

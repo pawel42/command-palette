@@ -3,6 +3,8 @@ import type { AsyncTasks } from "./async"
 import { resolveCommand } from "./command/run"
 import type { Command } from "./command/types"
 import type { Navigation, PageContext, PageTarget } from "./page/types"
+import { createRefusals } from "./refusal"
+import type { Refusals } from "./refusal"
 import { createNavigation } from "./stack/navigation"
 import { createInitialState, paletteReducer } from "./stack/reducer"
 import type { PaletteAction, PaletteState } from "./stack/types"
@@ -64,6 +66,13 @@ export type PaletteStore = {
    * reports it wherever the user has got to by the time it lands.
    */
   readonly tasks: AsyncTasks
+  /**
+   * Every press the palette understood and did not carry out. Not tied to a
+   * page either, and for the same reason the tasks are not: what answers a
+   * refusal is the palette itself — the dialog shakes — and the page the
+   * refusal came from has nowhere to put that. See `core/refusal.ts`.
+   */
+  readonly refusals: Refusals
   /** Lets a host swap the dismiss handler without rebuilding the store. */
   setOnDismiss: (onDismiss: DismissHandler) => void
   /** The same, for the ran-a-command handler. */
@@ -81,6 +90,7 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
   let onDismiss = options.onDismiss
   let onCommand = options.onCommand
   const tasks = createAsyncTasks({ revealMs: options.revealMs })
+  const refusals = createRefusals()
   const listeners = new Set<() => void>()
   const resolvers = new Map<string, (value: unknown) => void>()
 
@@ -181,6 +191,7 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
     escape: navigation.escape,
     contextFor,
     tasks,
+    refusals,
 
     setOnDismiss: (handler) => {
       onDismiss = handler

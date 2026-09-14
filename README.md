@@ -204,6 +204,12 @@ the same thing a second time, and costs a tab stop and a row of vertical space a
 palette does not have. `done` runs only if the work really landed, so a failed
 save leaves the user on the form with everything still in it.
 
+**An invalid form shakes.** Nothing is said in the footer — the fields have
+already said it where the problem is — but a chord that changes nothing on
+screen cannot be told from one that never arrived, and the second ⌘↵ on a form
+that is still wrong changes nothing on screen. The refusal is answered where the
+press was made, and not at all for a reader who has asked for reduced motion.
+
 `formProps` is not decoration: Radix's checkbox and radio call
 `preventDefault()` on _every_ enter, and the frame stands down on anything
 already prevented — together that would silently break ⌘↵ the moment focus

@@ -1,6 +1,7 @@
 "use client"
 
 import { Activity, useCallback, useEffect, useRef, useState } from "react"
+import type { RefObject } from "react"
 import { Dialog, VisuallyHidden } from "radix-ui"
 
 import type { Command } from "../../core"
@@ -9,6 +10,7 @@ import { PaletteRoot, PaletteSurface } from "../palette"
 import type { RootConfig } from "../root-page"
 import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
 import { useModalShell } from "./use-modal-shell"
+import { usePaletteShake } from "./use-palette-shake"
 import { useToggleHotkey } from "./use-toggle-hotkey"
 
 /**
@@ -75,6 +77,16 @@ function usePaletteOpenState() {
  */
 function IdleReset({ open, after }: { open: boolean; after: number }) {
   useIdleReset(open, after)
+  return null
+}
+
+/**
+ * The same arrangement for the shake: it reads the store, so it sits inside
+ * the provider and is handed the element to shake from outside it. Renders
+ * nothing.
+ */
+function Shake({ target }: { target: RefObject<HTMLElement | null> }) {
+  usePaletteShake(target)
   return null
 }
 
@@ -150,6 +162,7 @@ export function CommandPalette({
   children?: React.ReactNode
 }) {
   const { open, visible, reveal, setOpen } = usePaletteOpenState()
+  const content = useRef<HTMLDivElement>(null)
 
   useToggleHotkey(() => setOpen(!open))
   useModalShell(open, { shellSelector })
@@ -165,6 +178,7 @@ export function CommandPalette({
     >
       {children}
       <IdleReset open={open} after={idleResetMs} />
+      <Shake target={content} />
 
       <Dialog.Root open={open} onOpenChange={setOpen} modal={false}>
         <Dialog.Portal forceMount>
@@ -182,6 +196,7 @@ export function CommandPalette({
           )}
 
           <Dialog.Content
+            ref={content}
             forceMount
             inert={!open}
             onEscapeKeyDown={(event) => event.preventDefault()}

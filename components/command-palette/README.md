@@ -668,11 +668,17 @@ the bar and the toast; `loading` is required there for the usual reason. Leave
 hands its values back rather than saving them.
 
 An invalid form cannot submit, because `handleSubmit` only calls the work when
-the values are good. Nothing is said about it in the footer: the fields have
+the values are good. Nothing is _said_ about it in the footer: the fields have
 already said it where the problem is, and the form library puts focus on the
-first one that failed. `done` is the other half of the same idea — it runs only
-if the work really landed, so a failed save leaves the user on the form with
-everything still in it.
+first one that failed. **The palette shakes instead.** A chord that changes
+nothing on screen cannot be told from a chord that never arrived, and the
+second ⌘↵ on a form that is still wrong changes nothing on screen — so the
+refusal is answered where the press was made, once per press, and with no
+message, because it is not one. Readers who have asked for reduced motion get
+no shake; the field messages are `role="alert"` and were always the real
+answer. `done` is the other half of the same idea — it runs only if the work
+really landed, so a failed save leaves the user on the form with everything
+still in it.
 
 `formProps` is not decoration. Radix's checkbox and radio call
 `preventDefault()` on _every_ enter, modifiers included — WAI-ARIA says a

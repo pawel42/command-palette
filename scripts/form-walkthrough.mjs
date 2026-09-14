@@ -10,7 +10,7 @@
  *  T3  esc closes a Radix select without also unwinding the page
  *  T4  tab cycles the form's own fields and never leaves the palette
  *  T5  ⌘↵ submits from anywhere in the form, checkboxes and radios included
- *  T7  an invalid form refuses in the footer, in the page's own words
+ *  T7  an invalid form refuses: the fields say why, the palette shakes
  *  T8  a form that resolves hands its values back to the command that pushed it
  */
 import { chromium } from "playwright"
@@ -261,7 +261,16 @@ await page.waitForTimeout(200)
 await page.keyboard.press("Enter")
 await page.waitForTimeout(250)
 await page.keyboard.press("Meta+Enter")
-await page.waitForTimeout(350)
+// Read before the shake is over — it runs for SHAKE_MS and a finished
+// animation is no longer a running one.
+const shook = await page.evaluate(() =>
+  document
+    .querySelector('[role="dialog"]')
+    ?.getAnimations()
+    .some((animation) => animation.playState === "running")
+)
+check("T7 the palette shook about it", shook === true, String(shook))
+await page.waitForTimeout(450)
 check("T7 the empty filter set did not apply", (await where())?.includes("Filters"), await where())
 {
   const footer = await footerText()
