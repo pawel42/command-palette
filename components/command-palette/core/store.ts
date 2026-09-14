@@ -94,6 +94,42 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
   const listeners = new Set<() => void>()
   const resolvers = new Map<string, (value: unknown) => void>()
 
+  /**
+   * Whose the run in flight is, when a command started it. Null while nothing
+   * is running, and null for work a page's own code started — that run belongs
+   * to no row, so no row is held to it.
+   *
+   * The run id is kept beside the command's, rather than the command alone,
+   * because ids only ever go up: the moment the run in flight is a different
+   * one, this is stale and says so without anyone having to clear it.
+   */
+  let owner: { run: number; command: string } | null = null
+
+  /** Records who the run in flight belongs to; clears it when there is none. */
+  const claim = (command: Command) => {
+    const run = tasks.currentRun()
+    owner = run === null ? null : { run, command: command.id }
+  }
+
+  /**
+   * Whether this command's *own* run is still going.
+   *
+   * The palette replaces a run with the next one because the next one is the
+   * user changing their mind. The same row pressed twice is not that: it is
+   * the first intention asked again, and answering it by throwing away the
+   * work already done and starting the clock over is the wrong answer — it is
+   * also invisible, since what comes back is the same message, so a command
+   * spammed for five seconds looks exactly like one that has been patiently
+   * running for five seconds and is no nearer landing.
+   *
+   * Replacing it with a *different* command is untouched: that really is a
+   * change of mind.
+   */
+  const isOwnRunInFlight = (command: Command) =>
+    owner !== null &&
+    owner.command === command.id &&
+    owner.run === tasks.currentRun()
+
   const getState = () => state
 
   /**
@@ -212,6 +248,13 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       const ctx = contextFor(target)
       if (!ctx) return
 
+      // Already running, and this press is the same press — see
+      // `isOwnRunInFlight`. Nothing happens, and nothing is said about it
+      // either: the palette is already saying the one true thing there is to
+      // say, which is that this command is running. A row that answered back
+      // would be answering with something the user can see is not the case.
+      if (isOwnRunInFlight(command)) return
+
       // Announced before it runs.
       onCommand?.(command)
 
@@ -226,7 +269,10 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       // (`async save() { await runAsync(…) }`), or by navigating, which calls
       // work off in `dispatch`. Wrapping again would only cancel what it just
       // started, since a second run is what cancelling means.
-      if (tasks.currentRun() !== runBefore) return result
+      if (tasks.currentRun() !== runBefore) {
+        claim(command)
+        return result
+      }
 
       // An `async run` is a run that takes a moment, with nothing declared
       // anywhere: returning a promise is the whole opt-in. The bar shows if it
@@ -237,7 +283,11 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       // work out of it — a page push, and a handler that already called
       // `runAsync` itself. See `async.ts`.
       if (result instanceof Promise && !isUntracked(result)) {
-        return tasks.run(result, { loading: progressLabel(command.title) })
+        const settled = tasks.run(result, {
+          loading: progressLabel(command.title),
+        })
+        claim(command)
+        return settled
       }
 
       // A command that did its work there and then. It is still the thing the
@@ -253,6 +303,8 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       // ("Copied") — which is the one thing here that must survive.
       tasks.cancel()
       if (toastBefore !== undefined) tasks.dismissToast(toastBefore)
+      // Nothing is running now, and that includes whatever this replaced.
+      claim(command)
 
       return result
     },

@@ -153,6 +153,38 @@ status("nothing was said about it")
 
 console.log("\nwhat the commands did about it:", ran)
 
+/* ------------------------------------------------------------ except itself */
+
+/**
+ * The one run a command cannot replace is its own. "One run at a time" answers
+ * a user who has changed their mind, and the same row pressed twice is not
+ * that — so the second press does nothing at all, quietly: the palette is
+ * already saying the one true thing there is to say about this command.
+ */
+console.log("")
+palette.tasks.dismissToast()
+status("idle again")
+
+const own = run("sync")
+const second = run("sync")
+console.log(
+  `  pressed again:       ${second === undefined ? "nothing ran" : "ran"}`
+)
+console.log(
+  `  the first one landed with: ${await own}   (12 = it was never cut short)`
+)
+await tick()
+status("one press, one run")
+
+// A different command is a change of mind, and still takes the run's place.
+const replaced = run("sync")
+run("deploy")
+console.log(
+  `\n  then a different command: the sync resolved with ${await replaced}`
+)
+await tick()
+status("the one that replaced it")
+
 /* ----------------------------------------------------------------- routes */
 
 /**

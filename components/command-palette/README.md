@@ -636,6 +636,28 @@ pages later where it means nothing.
 Typing and moving the selection are not commands and not navigation — a run
 survives the user searching around it.
 
+### Except itself
+
+A command cannot replace its own run, and nothing has to be declared for that.
+
+Replacing a run is right for a user who has changed their mind, and the same
+row pressed twice is not that: it is the first intention asked again, and
+answering it by throwing away the work already done and starting the clock over
+is the wrong answer. It is also invisible — what comes back is the same
+message, so a command spammed for five seconds looks exactly like one that has
+been patiently running for five seconds and is no nearer landing.
+
+So while a command's own run is in flight, pressing it again does nothing, and
+says nothing about having done nothing: the palette is already showing the one
+true thing there is to say, which is that this command is running. Nothing
+greys out, because nothing about the row has changed — it is the same command,
+still doing what it was asked to do. Picking a **different** command replaces
+the run as it always did, because that really is a change of mind.
+
+Holding a key is one press too, not sixty: ↵ leant on, or a shortcut held down,
+runs the command once. The arrows are the exception, and deliberately — holding
+↓ is how a long list is walked.
+
 Closing the palette is not navigation either: the work carries on, and the bar
 is still there on the next ⌘K. What a closed palette does stop is the clock on
 its messages — a toast's 2.5 seconds are seconds to read it in, and they are

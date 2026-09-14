@@ -180,6 +180,12 @@ export function useListController<T extends ItemMeta>(
       // ends a sequence must not also reach the input behind it.
       event.preventDefault()
 
+      // Held, not pressed: one chord is one command, the way it is for the
+      // frame's own actions. Still spent, though — the first press ran the
+      // thing, and letting the autorepeats through would type the shortcut's
+      // own key into the input behind it.
+      if (event.repeat) return
+
       if (outcome.type === "run") {
         select(entries.findIndex((entry) => entry.item === outcome.item))
       }
@@ -200,7 +206,12 @@ export function useListController<T extends ItemMeta>(
         break
       case "select":
         event.preventDefault()
-        select(activeIndex)
+        // The same rule, for the key most likely to be leant on: a finger left
+        // on ↵ is one press that is still happening, not sixty of them, and
+        // sixty of them would be sixty runs of whatever the row does. Only the
+        // keys that *run* something are held to this — the arrows above repeat
+        // on purpose, because holding ↓ is how a long list is walked.
+        if (!event.repeat) select(activeIndex)
         break
       case "escape":
         // Clears the input, or unwinds along this page's route — once. The
