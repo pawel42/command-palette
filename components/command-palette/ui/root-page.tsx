@@ -63,7 +63,7 @@ export function useRootPage(config: RootConfig): PageTarget {
     const root: Page<unknown, unknown> = {
       ...rest,
       id: "root",
-      search: "filter",
+      search: "input",
       render: () => (
         <ListPage
           items={(ctx) =>

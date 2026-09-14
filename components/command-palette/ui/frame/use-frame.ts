@@ -582,28 +582,27 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
 
       if (scrollByKey(event, slotRef.current)) return
 
-      // Reached from pages whose input is disabled or hidden.
+      // Reached from pages with no input of their own.
       handleBackspace(event, false)
     },
   }
 
+  // Only ever spread onto an input that is rendered, which is only on an
+  // editable page — so nothing in here has a disabled case to answer for.
   const inputProps = {
     ref: inputRef,
-    value: editable ? query : "",
-    disabled: !editable,
-    placeholder:
-      view.placeholder ?? (editable ? "Search…" : view.instance.page.title),
+    value: query,
+    placeholder: view.placeholder ?? "Search…",
     autoComplete: "off",
     autoCorrect: "off" as const,
     spellCheck: false,
     role: "combobox",
     // Stood down while the panel is up: two live comboboxes each claiming an
     // active row is a lie to a screen reader, and only one of them has focus.
-    "aria-expanded": editable && !panelOpen,
-    "aria-controls": editable && !panelOpen ? listId : undefined,
+    "aria-expanded": !panelOpen,
+    "aria-controls": panelOpen ? undefined : listId,
     "aria-autocomplete": "list" as const,
-    "aria-activedescendant":
-      editable && !panelOpen ? activeOptionId : undefined,
+    "aria-activedescendant": panelOpen ? undefined : activeOptionId,
     "aria-label": view.placeholder ?? "Search",
     onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
       setQuery(event.target.value),
@@ -645,9 +644,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
     busy,
     /** The one outcome the footer is showing, if any. */
     toast,
-    /** The input is gone on a "hidden" page; the row it sits in never is. */
-    showInput: view.search !== "hidden",
-    /** What the row says instead, then. */
+    /** What the row says when there is no input — see `SearchMode`. */
     title:
       view.instance.page.title ?? view.placeholder ?? view.instance.page.id,
     rootProps,

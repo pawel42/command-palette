@@ -18,6 +18,5 @@ export const renamePage = notePage(
       A dynamic segment matches exactly one segment, the way the router treats
       it. <code>[...slug]</code> matches the rest of the path instead.
     </p>
-  </>,
-  "hidden"
+  </>
 )

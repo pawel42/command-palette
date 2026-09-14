@@ -4,29 +4,34 @@ import type { RunAsync, ToastInput } from "../async"
 import type { FooterInput } from "./footer"
 
 /**
- * What the palette's single input means on a given page:
- *  - "filter"   — editable; the query filters what the page renders
- *  - "input"    — editable; the page owns the text (async search, "create X")
- *  - "disabled" — rendered, but greyed out and not editable
- *  - "hidden"   — no input; the row carries the page's title instead
+ * Whether the page has the palette's single input:
+ *  - "input"    — it does; the text is the page's query
+ *  - "disabled" — it does not; the row carries the page's title instead
  *
- * None of them take the row away: the header row is the frame's, it is always
- * there, and every page below the root shows the same back button in it.
+ * One bit, and it is drawn as one: the input is there or it is not. "disabled"
+ * means gone rather than greyed out — a box that cannot be typed into is a box
+ * that only looks like one, and the title says more in the same space. It takes
+ * nothing but the input: the header row is the frame's, it is always there, and
+ * every page below the root shows the same back button in it.
  *
- * The last two have no query to clear, so esc unwinds on the first press.
+ * What the query *does* is not this field's business and never was. A page's
+ * rows narrow as the user types because the page renders a `ListPage`, which
+ * reads the query itself; a page that searches a server reads the same query
+ * out of its context and does its own thing with it. Both are "input" — the
+ * palette only needs to know whether to draw the box.
  *
- * While the input is editable the frame keeps the caret in it — a click on
+ * A disabled page has no query to clear, so esc unwinds on the first press.
+ *
+ * While the input is there the frame keeps the caret in it — a click on
  * anything unfocusable inside the palette goes back to the input, because the
  * list is driven from its key handler. A page with fields of its own is
- * therefore a page whose search is off: pick "disabled" for a form, so the row
- * stays put and nothing shifts on the way in, or "hidden" to drop it.
+ * therefore a page whose input is off: "disabled" is what a form declares, so
+ * its first field is the first thing the caret can land in.
  *
- * Left out, it defaults to "filter": a palette page is a list unless it says
- * otherwise, and the frame cannot see inside `render` to tell. The exceptions
- * declare themselves — a form says "disabled" or "hidden", because a live
- * input that filters nothing is an invitation to type into nothing.
+ * Left out, it defaults to "input": a palette page is something you type into
+ * unless it says otherwise, and the frame cannot see inside `render` to tell.
  */
-export type SearchMode = "filter" | "input" | "disabled" | "hidden"
+export type SearchMode = "input" | "disabled"
 
 /**
  * Where esc goes once the page's input is already empty. The default unwinds
@@ -120,7 +125,7 @@ type PageBase<Props, Result> = NoHeader & {
   readonly id: string
   /** Breadcrumb label, and what the header row shows when there is no input. */
   readonly title?: string
-  /** Defaults to "filter" — see `SearchMode` and `searchModeOf`. */
+  /** Defaults to "input" — see `SearchMode` and `searchModeOf`. */
   readonly search?: SearchMode
   readonly placeholder?: string
   readonly escape?: EscapeRoute

@@ -17,6 +17,5 @@ export const invitePage = notePage(
       page is somewhere you already are; a command is the offer to go there, and
       the offer is the thing worth withdrawing.
     </p>
-  </>,
-  "hidden"
+  </>
 )

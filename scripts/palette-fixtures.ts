@@ -38,7 +38,7 @@ export const page41: Page = {
   render: () => null,
 }
 
-/** A form: the input is inert, so esc pops on the first press. */
+/** A form: no input at all, so esc pops on the first press. */
 export const formPage: Page = {
   id: "form",
   title: "Form",

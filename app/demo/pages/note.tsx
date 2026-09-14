@@ -14,7 +14,7 @@ export function notePage(
   id: string,
   title: string,
   body: React.ReactNode,
-  /** "disabled" keeps the frame's input in place but greyed out. */
+  /** "disabled" drops the frame's input; the row carries the title instead. */
   search: SearchMode = "disabled"
 ): Page {
   function Note() {

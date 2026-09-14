@@ -153,7 +153,7 @@ const RELEASES: Release[] = [
 export const releaseNotesPage: Page = {
   id: "release-notes",
   title: "Release Notes",
-  search: "hidden",
+  search: "disabled",
   render: () => <ReleaseNotes />,
 }
 

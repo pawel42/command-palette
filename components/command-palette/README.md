@@ -438,12 +438,13 @@ Anything nested deeper inside a body reaches the same context through the
 hooks: `usePage(page)` for this instance's `props`, `query` and `resolve`, plus
 `useNavigation`, `useSearch`, `useRunAsync`, `usePageFooter`.
 
-`search` left out means `"filter"`: a palette page is a list unless it says
-otherwise, and the frame cannot see inside `render` to tell. A page with
-fields of its own says `search: "disabled"` — the same row, inert — because an
-input that filters nothing is an invitation to type into nothing. Say
-`search: "hidden"` to drop the input and let the title take its place, or
-`"input"` for a body that owns the text.
+`search` left out means `"input"`: a palette page is something you type into
+unless it says otherwise, and the frame cannot see inside `render` to tell. A
+page with fields of its own says `search: "disabled"` — the input is not drawn
+at all and the title takes its place — because an input that does nothing is an
+invitation to type into nothing. What the query is _for_ is not this field's
+business: a `ListPage` narrows its rows with it, a page that searches a server
+reads the same query and does its own thing with it, and both are `"input"`.
 
 A `ListPage`'s rows carry their section on the right, every one of them, with
 the keys beside it wherever there are keys — the section on the outer edge, so
@@ -590,9 +591,9 @@ The input row is the same on every page: the search glyph at the root, the back
 chevron everywhere else, then the one input. A page cannot change it, and that
 is enforced rather than implied — `Page` types `icon`, `backIcon`, `header` and
 friends as `never`, so a page that tries fails to compile whether it was
-written as a literal or built by spreading. `search:
-"hidden"` hides the _input_, not the row: the title takes its place and the way
-back stays where the user left it.
+written as a literal or built by spreading. `search: "disabled"` drops the
+_input_, not the row: the title takes its place and the way back stays where
+the user left it.
 
 What a page does get is the footer:
 
@@ -600,7 +601,7 @@ What a page does get is the footer:
 const notesPage: Page = {
   id: "notes",
   title: "Notes",
-  search: "hidden",
+  search: "disabled",
   footer: {
     hints: [{ keys: ["Escape"], label: "discards this draft" }],
     actions: [

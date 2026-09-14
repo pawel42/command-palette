@@ -24,11 +24,9 @@ export const detailsPage = notePage(
       <li>Anything popped loses its state; anything still stacked keeps it.</li>
     </ul>
     <p className="text-xs">
-      This page uses <code>search: &quot;hidden&quot;</code>, so the row above
-      carries its title instead of an input. Pages that keep the input visible
-      but inert use <code>search: &quot;disabled&quot;</code>. Neither takes the
-      row away — the way back belongs to the frame, on every page.
+      This page uses <code>search: &quot;disabled&quot;</code>, so the row above
+      carries its title instead of an input. It takes the input and nothing else
+      — the way back belongs to the frame, on every page.
     </p>
-  </>,
-  "hidden"
+  </>
 )

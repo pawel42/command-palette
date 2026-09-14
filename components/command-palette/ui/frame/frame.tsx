@@ -26,7 +26,7 @@ export function PaletteFrame({
 }) {
   const {
     view,
-    showInput,
+    editable,
     title,
     rootProps,
     slotProps,
@@ -77,13 +77,15 @@ export function PaletteFrame({
           </button>
         )}
 
-        {showInput ? (
+        {editable ? (
           <input
             {...inputProps}
-            className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-default disabled:placeholder:text-muted-foreground/60"
+            className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         ) : (
-          // Same height as the input, so the row is the same row on every page.
+          // The input is not drawn inert, it is not drawn at all — see
+          // `SearchMode`. Same height, so the row is the same row on every
+          // page and only its contents change.
           <h2 className="flex h-12 w-full items-center text-sm font-medium">
             {title}
           </h2>
