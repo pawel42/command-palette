@@ -108,7 +108,7 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *    palette snaps back to full opacity and full size the instant the fade
  *    ends — a flash, whenever that beats the hide below to the paint.
  */
-export function CommandPaletteDialog({
+export function CommandPalette({
   path,
   onCommand,
   shellSelector,

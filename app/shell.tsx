@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import {
-  CommandPaletteDialog,
+  CommandPalette,
   Kbd,
   TOGGLE_SHORTCUT,
 } from "@/components/command-palette"
@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           it opens on, the path they are judged against, and two bridges that
           publish the theme toggle and the router to them — commands are plain
           data and cannot call hooks themselves. */}
-      <CommandPaletteDialog
+      <CommandPalette
         commands={rootCommands}
         path={pathname}
         placeholder="Search for a page or an action…"
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <ThemeCommandBridge />
         <RouterCommandBridge />
-      </CommandPaletteDialog>
+      </CommandPalette>
     </div>
   )
 }

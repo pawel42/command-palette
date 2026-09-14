@@ -24,7 +24,7 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 2. **`data-app-shell` on whatever the palette should cover** — the dialog puts
    `inert` on it while open, which is how the app behind stops being focusable
    and stops being read by a screen reader. Pass `shellSelector` to
-   `CommandPaletteDialog` to use a different marker.
+   `CommandPalette` to use a different marker.
 3. **React 19.** `<Activity>` is what lets a page be hidden instead of
    unmounted, which is the whole reason the stack keeps its state.
 4. **The current path, and the paths there are.** Every command says where it
@@ -35,7 +35,7 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
 ## Using it
 
 ```tsx
-import { CommandPaletteDialog, ListPage } from "@/components/command-palette"
+import { CommandPalette, ListPage } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 
 const settingsPage: Page = {
@@ -73,7 +73,7 @@ const commands = [
 
 export function App() {
   return (
-    <CommandPaletteDialog
+    <CommandPalette
       commands={commands}
       path={usePathname()}
       placeholder="Search for a page or an action…"
@@ -185,12 +185,12 @@ nothing.
 
 ### Telling the palette where the user is
 
-`path` is a required prop on `CommandPaletteDialog`, `CommandPalette` and
+`path` is a required prop on `CommandPalette`, `InlinePalette` and
 `PaletteRoot`, and unlike the root config it is read on every render, because
 it moves:
 
 ```tsx
-<CommandPaletteDialog commands={commands} path={usePathname()} … />
+<CommandPalette commands={commands} path={usePathname()} … />
 ```
 
 That is the whole of what the palette is told. It never imports a router —
@@ -284,7 +284,7 @@ Two seams exist for a list the host keeps outside React, and between them they
 are a recents section:
 
 ```tsx
-<CommandPaletteDialog
+<CommandPalette
   // Idle, what was last used; typing, one ranked list under one heading.
   commands={({ query }) =>
     query.trim() ? commands.map(asResult) : [...recentRows(), ...commands]
@@ -485,13 +485,18 @@ To the console it is, because catching the rejection is what stopped the
 browser from logging it and putting a line there is not a palette's decision to
 make. What the caught error gets is a way out:
 
-```tsx
-<CommandPaletteDialog commands={commands} onError={console.error} />
+```ts
+runAsync(() => deploy(), {
+  loading: "Deploying…",
+  onError: console.error,
+})
 ```
 
-`onError` is handed every failure the palette swallowed, after the user has
-been shown it — `console.error` to get the old browser behavior back, or a
-reporter, or nothing.
+`onError` is handed the failure the palette swallowed, after the user has been
+shown it — `console.error` to get the old browser behavior back, or a reporter,
+or nothing. It sits on the run rather than on the palette, because whether a
+handled failure deserves a line in the console belongs to whoever wrote the
+command and not to the host that mounted the thing.
 
 A page's own code — a button, an effect, a hook it keeps its behavior in —
 reaches the same thing with `useRunAsync()`, so work started inside a page is
@@ -628,8 +633,10 @@ is exported for anything else that has to do the same.
 
 ## Composing it yourself
 
-`CommandPaletteDialog` is one opinionated host. For any other presentation,
-delete `ui/dialog/` and compose the two halves directly:
+`CommandPalette` is one opinionated host: the ⌘K dialog. `InlinePalette` is
+the same palette with nothing around it, for a host that brings its own
+container. For any other presentation, delete `ui/dialog/` and compose the two
+halves directly:
 
 ```tsx
 <PaletteRoot commands={commands} onDismiss={close}>

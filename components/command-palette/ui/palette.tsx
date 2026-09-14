@@ -78,11 +78,15 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
 }
 
 /**
- * The palette as one piece, with no opinion about what surrounds it. Hosts
- * that unmount their container (a dialog, say) should compose `PaletteRoot`
- * and `PaletteSurface` themselves instead, so the stack outlives the close.
+ * The palette as one piece, rendered where it stands and with no opinion about
+ * what surrounds it — for a host that brings its own container, or none at
+ * all. `CommandPalette` is the ⌘K dialog, and is what most hosts want.
+ *
+ * Hosts that unmount their container (a dialog, say) should compose
+ * `PaletteRoot` and `PaletteSurface` themselves instead, so the stack outlives
+ * the close.
  */
-export function CommandPalette({
+export function InlinePalette({
   path,
   onDismiss,
   onCommand,
