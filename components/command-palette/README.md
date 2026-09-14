@@ -266,11 +266,16 @@ input that filters nothing is an invitation to type into nothing. Say
 `search: "hidden"` to drop the input and let the title take its place, or
 `"input"` for a body that owns the text.
 
-A `ListPage`'s rows carry their section on the right; the footer's action panel
-carries the keys instead, which are the point of it. Nothing else rides along —
-a row that opens a page draws no chevron, and there is no option to ask for one.
-Either way the shortcut still runs the command: it is matched off the item, not
-off what was drawn.
+A `ListPage`'s rows carry their section on the right, every one of them, with
+the keys beside it wherever there are keys — the section on the outer edge, so
+that column lines up down the list, and the ragged one inboard of it. They are
+answers to different questions and neither stands in for the other: the section
+says what the row is, which is what keeps a row readable once a list has
+regrouped it under "Recent", and the keys say how to run it without coming back
+here. The footer's action panel carries the keys alone, which are the point of
+it. Nothing else rides along — a row that opens a page draws no chevron, and
+there is no option to ask for one. Either way the shortcut still runs the
+command: it is matched off the item, not off what was drawn.
 
 A row is filed under its `section`, which is also what the right edge says.
 A list can file one somewhere else — under "Recent", or all of them under

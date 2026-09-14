@@ -15,14 +15,17 @@ export type ListRow = {
 }
 
 /**
- * What the right edge of a row carries: the keys that run it, or the section
- * it belongs to.
+ * What the right edge of a row carries: the keys that run it, the section it
+ * belongs to, or both.
  *
- * `"auto"` is what a list page wants and is its default — the keys on the rows
- * that have keys, and the section on the rest. A row with a shortcut has
- * something to teach; a row without one only has somewhere it lives, and under
- * a heading that already says so, repeating it is the noise. The action panel
- * forces `"shortcut"`, which is the whole point of it.
+ * `"auto"` is what a list page wants and is its default — the section on every
+ * row, and the keys beside it wherever there are keys. The two answer
+ * different questions, so one is not the other's stand-in: the section says
+ * what the row *is*, which is what makes a regrouped row still readable under
+ * "Recent", and the keys say how to run it without coming back here. A row
+ * that dropped its section the moment it gained a shortcut would change kind
+ * under the user for a reason that has nothing to do with kind. The action
+ * panel forces `"shortcut"`, which is the whole point of it.
  *
  * Whatever is drawn, the shortcut still *works*: it is matched off the item,
  * not off what was drawn — see `useListController`'s key handler.
@@ -104,8 +107,9 @@ export function CommandRow({
 }) {
   const { item, indices, isActive } = row
   const platform = usePlatform()
-  // "auto" is the one that decides per row: keys where there are keys.
-  const shows = trailing === "auto" ? (item.shortcut ? "shortcut" : "label") : trailing
+  // "auto" asks for both and lets the row have whichever of them it has.
+  const keys = trailing === "label" ? undefined : item.shortcut
+  const label = trailing === "shortcut" ? undefined : item.section
 
   return (
     <div
@@ -139,9 +143,9 @@ export function CommandRow({
 
       {/* One group per press: ⌘D then L reads as two presses, with air
           between them, not as four keys held at once. */}
-      {shows === "shortcut" && item.shortcut && (
+      {keys && (
         <span className="flex shrink-0 items-center gap-2">
-          {formatChords(item.shortcut, platform).map((chord, index) => (
+          {formatChords(keys, platform).map((chord, index) => (
             <span key={index} className="flex items-center gap-1">
               {chord.map((key) => (
                 <Kbd key={key}>{key}</Kbd>
@@ -152,11 +156,14 @@ export function CommandRow({
       )}
 
       {/* Where the row lives, which is not always the heading it is under: a
-          row copied into "Recent" still says "Pages" here. */}
-      {shows === "label" && item.section && (
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {item.section}
-        </span>
+          row copied into "Recent" still says "Pages" here.
+
+          Last, and so pinned to the same edge on every row — the keys sit
+          inboard of it because they are the ragged column of the two, and a
+          column of kinds that lines up is what lets the list be read down
+          rather than across. */}
+      {label && (
+        <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
       )}
     </div>
   )
