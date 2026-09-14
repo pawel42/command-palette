@@ -4,20 +4,12 @@ import { logActivity } from "../activity"
 import { bind, Icon, ICONS, ListPage } from "@/components/command-palette"
 import type { Page, PageFooter } from "@/components/command-palette"
 
-export type Project = {
-  id: string
-  name: string
-  tasks: number
-  archived?: boolean
-}
+import { ALL_PROJECTS } from "../projects"
+import type { Project } from "../projects"
 
-const ALL_PROJECTS: Project[] = [
-  { id: "atlas", name: "Atlas Redesign", tasks: 12 },
-  { id: "beacon", name: "Beacon API", tasks: 4 },
-  { id: "comet", name: "Comet Migration", tasks: 27 },
-  { id: "delta", name: "Delta Docs", tasks: 2 },
-  { id: "echo", name: "Echo (2023)", tasks: 0, archived: true },
-]
+import { EVERYWHERE } from "../paths"
+
+export type { Project }
 
 /**
  * A list that takes props and returns a value: `archived` decides what it
@@ -39,6 +31,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
       : [
           {
             id: "archived",
+            paths: EVERYWHERE,
             title: "Browse archived projects",
             description: "the same page, other props",
             section: "View",
@@ -55,6 +48,7 @@ export const projectsPage: Page<{ archived: boolean }, Project> = {
         (project) => props.archived || !project.archived
       ).map((project) => ({
         id: project.id,
+        paths: EVERYWHERE,
         title: project.name,
         subtitle: `${project.tasks} open`,
         section: "Projects",

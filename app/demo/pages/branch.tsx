@@ -3,6 +3,7 @@
 import { logActivity } from "../activity"
 import { Icon, ICONS, ListPage } from "@/components/command-palette"
 import type { Command, Page } from "@/components/command-palette"
+import { EVERYWHERE } from "../paths"
 import { notePage } from "./note"
 
 const pageA = notePage(
@@ -36,6 +37,7 @@ const pageC = notePage(
 const destinations: Command[] = [
   {
     id: "page-a",
+    paths: EVERYWHERE,
     title: "Page A",
     description: "esc → back here",
     section: "Destinations",
@@ -44,6 +46,7 @@ const destinations: Command[] = [
   },
   {
     id: "page-b",
+    paths: EVERYWHERE,
     title: "Page B",
     description: "esc → back here",
     section: "Destinations",
@@ -52,6 +55,7 @@ const destinations: Command[] = [
   },
   {
     id: "page-c",
+    paths: EVERYWHERE,
     title: "Page C",
     description: "esc → straight to root",
     section: "Destinations",
@@ -61,6 +65,7 @@ const destinations: Command[] = [
   },
   {
     id: "note",
+    paths: EVERYWHERE,
     title: "Log what I typed",
     description: "runs an action, stays put",
     section: "Actions",

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
+import { AppShell } from "./shell"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           {/* Marked inert while the palette is open — see `useModalShell`. */}
-          <div data-app-shell>{children}</div>
+          <div data-app-shell>
+            <AppShell>{children}</AppShell>
+          </div>
         </ThemeProvider>
       </body>
     </html>

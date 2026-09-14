@@ -6,6 +6,7 @@ import {
   ACTIONS_SHORTCUT,
   RESERVED_SHORTCUTS,
   ariaKeyShortcut,
+  availableOn,
   claimEscape,
   clearPending,
   isEditable,
@@ -17,6 +18,7 @@ import {
 } from "../../core"
 import type { Chord, Command, FooterHint, Shortcut } from "../../core"
 import {
+  useCurrentPath,
   usePaletteStore,
   usePaletteTasks,
   usePaletteView,
@@ -219,6 +221,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   const [query, setQuery] = useSearch()
   const { getKeyHandler, activeOptionId, listId } = useFrameBridge()
   const { footer, getFooter } = useFrameFooter()
+  const path = useCurrentPath()
   // Palette-wide, not per page: a run outlives the row that started it, and it
   // is reported wherever the user has got to by the time it lands.
   const { busy, toast } = usePaletteTasks()
@@ -244,7 +247,12 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
   // say whether one is there — but a mounted list publishes its ids through
   // the bridge, and takes them with it when it goes.
   const hasList = listId !== undefined
-  const actions = footer.actions ?? []
+  // A footer's actions answer to the path like any other command: an action
+  // that does not exist here is out of the panel and its shortcut is dead.
+  const actions = availableOn(footer.actions ?? [], path)
+
+  /** The same, live — see `runActionShortcut` for why it cannot be the drawn one. */
+  const liveActions = () => availableOn(getFooter().actions ?? [], path)
 
   /**
    * The panel is open *for* one page on one showing of the palette — never
@@ -313,7 +321,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
     // user is finishing a chord, not typing a word.
     if (typing && !waiting && !(event.metaKey || event.ctrlKey)) return false
 
-    const outcome = resolveShortcut(getFooter().actions ?? [], event, {
+    const outcome = resolveShortcut(liveActions(), event, {
       // The lead press has to survive a form field, so it must carry a
       // modifier there. The type says so for sequences; this is the rest.
       eligible: (action: Command) =>
@@ -599,7 +607,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
       id: panelId,
       ref: panelRef,
       actions,
-      getFooter,
+      getActions: liveActions,
       close: closePanel,
     },
     /** The footer's right-hand control. Empty footers get no trigger. */

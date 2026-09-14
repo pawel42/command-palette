@@ -184,7 +184,7 @@ export function PaletteFrame({
                 id={panel.id}
                 panelRef={panel.ref}
                 actions={panel.actions}
-                getFooter={panel.getFooter}
+                getActions={panel.getActions}
                 close={panel.close}
               />
             )}

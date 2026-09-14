@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import type { Command, PageFooter } from "../../core"
+import type { Command } from "../../core"
 import { useListController, usePaletteStore } from "../../react"
 import { CommandRows } from "../internal/rows"
 import type { ListSection } from "../internal/rows"
@@ -11,9 +11,11 @@ import { SearchIcon } from "../primitives"
 export type ActionPanelProps = {
   id: string
   panelRef: React.RefObject<HTMLDivElement | null>
-  /** What to draw. Handlers are taken from `getFooter` at the last moment. */
+  /** What to draw. Handlers are taken from `getActions` at the last moment. */
   actions: readonly Command[]
-  getFooter: () => PageFooter
+  /** The same actions, live: rebuilt from the page's footer and re-checked
+   *  against the current path — see `useFrame`. */
+  getActions: () => readonly Command[]
   close: () => void
 }
 
@@ -33,7 +35,7 @@ export function ActionPanel({
   id,
   panelRef,
   actions,
-  getFooter,
+  getActions,
   close,
 }: ActionPanelProps) {
   const store = usePaletteStore()
@@ -50,8 +52,7 @@ export function ActionPanel({
       // showing the previous page's actions over it.
       close()
 
-      const live =
-        getFooter().actions?.find((action) => action.id === item.id) ?? item
+      const live = getActions().find((action) => action.id === item.id) ?? item
       store.runCommand(live)
     },
     // Belt and braces. Esc is handled once, on the frame root, and the input

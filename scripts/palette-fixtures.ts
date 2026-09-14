@@ -78,11 +78,26 @@ const wait = (ms: number, signal?: AbortSignal) =>
     )
   })
 
+/**
+ * Where these commands exist. The walkthrough drives the engine with no UI
+ * attached and the path rules are applied in `ui/`, so nothing here depends on
+ * it — but `paths` is required of every command there is, which is the point:
+ * a command with nowhere to be is a command nobody can reach.
+ */
+const EVERYWHERE = ["/*"] as const
+
 export function createCommands(log: string[]): Command[] {
   return [
-    { id: "page-1", title: "Page 1", section: "Pages", page: page1 },
+    {
+      id: "page-1",
+      paths: EVERYWHERE,
+      title: "Page 1",
+      section: "Pages",
+      page: page1,
+    },
     {
       id: "projects",
+      paths: EVERYWHERE,
       title: "Search Projects",
       section: "Pages",
       keywords: ["client", "work"],
@@ -90,6 +105,7 @@ export function createCommands(log: string[]): Command[] {
     },
     {
       id: "log",
+      paths: EVERYWHERE,
       title: "Log The Query",
       section: "Actions",
       shortcut: ["Mod", "L"],
@@ -100,6 +116,7 @@ export function createCommands(log: string[]): Command[] {
     {
       // The declared form: named outcomes, and `runAsync` never rejects.
       id: "sync",
+      paths: EVERYWHERE,
       title: "Sync With Remote",
       section: "Actions",
       run: ({ runAsync }) =>
@@ -120,6 +137,7 @@ export function createCommands(log: string[]): Command[] {
       // A failure with a side effect beyond the toast: `onError` lives on
       // `runAsync`'s own options, next to the messages, not on the command.
       id: "deploy",
+      paths: EVERYWHERE,
       title: "Deploy a Preview",
       section: "Actions",
       run: ({ runAsync }) =>
@@ -141,6 +159,7 @@ export function createCommands(log: string[]): Command[] {
       // Instant, and it has something to say: the pair of cases that broke
       // once — a toast from a quiet palette, and one that replaces a run.
       id: "copy",
+      paths: EVERYWHERE,
       title: "Copy Link",
       section: "Actions",
       run: ({ toast }) => toast({ title: "Copied" }),

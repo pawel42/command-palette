@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Icon, ICONS, usePageFooter } from "@/components/command-palette"
 import type { Page } from "@/components/command-palette"
 
+import { EVERYWHERE } from "../paths"
+
 type Release = {
   version: string
   date: string
@@ -161,6 +163,7 @@ function ReleaseNotes() {
     actions: [
       {
         id: "density",
+        paths: EVERYWHERE,
         title: detailed ? "Compact view" : "Detailed view",
         description: "how much each release says",
         section: "View",

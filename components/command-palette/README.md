@@ -27,6 +27,10 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
    `CommandPaletteDialog` to use a different marker.
 3. **React 19.** `<Activity>` is what lets a page be hidden instead of
    unmounted, which is the whole reason the stack keeps its state.
+4. **The current path, and the paths there are.** Every command says where it
+   exists, so the palette has to be told where the user is — `path` is a
+   required prop — and the host declares its pathnames once so those rules are
+   checked rather than guessed. See "Where a command exists".
 
 ## Using it
 
@@ -39,7 +43,9 @@ const settingsPage: Page = {
   title: "Settings",
   render: () => (
     <ListPage
-      items={[{ id: "theme", title: "Toggle Dark Mode", run: () => toggleTheme() }]}
+      items={[
+        { id: "theme", paths: ["/*"], title: "Toggle Dark Mode", run: () => toggleTheme() },
+      ]}
     />
   ),
 }
@@ -48,9 +54,17 @@ const settingsPage: Page = {
 // whatever it was handed — so the palette builds it and the host never writes
 // it. Everything below the root is a page you do write.
 const commands = [
-  { id: "settings", title: "Settings", section: "Pages", page: settingsPage },
+  {
+    id: "settings",
+    // Where it exists. Required of every command — see below.
+    paths: ["/*"],
+    title: "Settings",
+    section: "Pages",
+    page: settingsPage,
+  },
   {
     id: "save",
+    paths: ["/documents/[id]"],
     title: "Save",
     section: "Actions",
     run: ({ query }) => save(query),
@@ -61,6 +75,7 @@ export function App() {
   return (
     <CommandPaletteDialog
       commands={commands}
+      path={usePathname()}
       placeholder="Search for a page or an action…"
     />
   )
@@ -91,6 +106,106 @@ A command either opens a page or runs an action, never both. Pages that need
 props bind them at the call site with `bind(page, { … })`, and `nav.push`
 returns a promise that settles with whatever the page resolves — or `undefined`
 if the user escaped out of it.
+
+## Where a command exists
+
+A palette that spans an app is a palette whose rows are answerable to where the
+user is. So every command says where it exists, and `paths` is required —
+there is no default, because a default is the question going unasked:
+
+```ts
+paths: ["/*"]                        // everywhere there is
+paths: ["/*", "!/admin/*"]           // everywhere except the admin area
+paths: ["/admin/*"]                  // /admin, and everything under it
+paths: ["/admin/*", "!/admin/users"] // that subtree, less one page
+paths: ["/settings"]                 // exactly one path
+paths: ["/projects/[id]"]            // one dynamic route: /projects/atlas
+```
+
+Four things to read off that:
+
+**Nothing is available until a rule says so.** An empty list is a command
+nobody can reach, which is why `"/*"` is written out rather than implied.
+
+**`X/*` is the subtree, `X` included.** `"/admin/*"` covers `/admin` as well as
+`/admin/users`, which is what makes `"/*"` mean every path by the same reading
+rather than by a special case. It stops at a segment boundary, so it never
+catches `/administrators`.
+
+**The last rule that covers the path wins.** That is what lets a list read as a
+general case and then its exceptions: `["/*", "!/admin/*"]` is everywhere-but,
+and the same two the other way round are nowhere-but. A rule that covers
+nothing is never consulted, so order only matters between rules that overlap.
+
+**A dynamic segment is written the way the route is.** `"/projects/[id]"`
+matches `/projects/atlas` and not `/projects`, because a dynamic segment still
+has to be a segment; `"/docs/[...slug]"` takes the rest of the path.
+
+Unavailable is *not there*, not greyed out. The row is out of the list, out of
+the ⌘⇧K panel, and its shortcut does nothing — an unavailable command is one
+the user has no business seeing, not one they should be told they cannot have.
+There is no second check when it runs, because there is nothing left to run it
+from.
+
+### The pathnames are the host's, and they are checked
+
+The rules above are not `string`. The palette has no router, so the host
+declares its pathnames once and every `paths` anywhere in the app is checked
+against them — `"/setttings"` is then a compile error with a "did you mean",
+rather than a command that quietly never appears:
+
+```ts
+// app/routes.ts — one list, read by the nav and by every rule
+export const ROUTES = {
+  "/": "Home",
+  "/projects": "Projects",
+  "/projects/[id]": "Project",
+  "/admin": "Admin",
+  "/admin/users": "Users",
+  "/settings": "Settings",
+} as const
+
+declare global {
+  interface PaletteRoutes {
+    path: keyof typeof ROUTES
+  }
+}
+```
+
+Global rather than a module augmentation because there is no import specifier
+to get subtly wrong, and getting one wrong would fail by silently going back to
+unchecked strings. Declare nothing and that is exactly what you get: `paths`
+takes any string, the folder still works, and there is simply no vocabulary to
+check against.
+
+Wildcards are derived, not free-form: `"/admin/*"` compiles because something
+is declared at or under `/admin`, and `"/billing/*"` does not. `"/*"` always
+compiles, and `"/*/users"` never does — a `*` is the tail of a rule or it is
+nothing.
+
+### Telling the palette where the user is
+
+`path` is a required prop on `CommandPaletteDialog`, `CommandPalette` and
+`PaletteRoot`, and unlike the root config it is read on every render, because
+it moves:
+
+```tsx
+<CommandPaletteDialog commands={commands} path={usePathname()} … />
+```
+
+That is the whole of what the palette is told. It never imports a router —
+that would be the end of the folder being copyable — and a host on any other
+router passes whatever that one calls the same thing. Query strings, hashes and
+a trailing slash are trimmed off before anything is read against it.
+
+The rules are applied where the rows are, so they re-apply as the path moves:
+navigate with the palette open and the list rebuilds under you, the action
+panel with it. Commands are plain data and cannot call hooks, so a command that
+navigates does it through a bridge, the same way one that toggles the theme
+does.
+
+`isAvailableOn(paths, path)` and `availableOn(items, path)` are exported for a
+host that wants to ask the same question itself.
 
 ## Pages are objects
 
@@ -131,7 +246,7 @@ const projectsPage: Page<{ archived: boolean }, Project> = {
 }
 
 // opening it, from a command or from code
-{ id: "projects", title: "Projects", page: bind(projectsPage, { archived: false }) }
+{ id: "projects", paths: ["/*"], title: "Projects", page: bind(projectsPage, { archived: false }) }
 const project = await nav.push(projectsPage, { archived: false })
 ```
 
@@ -283,8 +398,8 @@ const notesPage: Page = {
   footer: {
     hints: [{ keys: ["Escape"], label: "discards this draft" }],
     actions: [
-      { id: "save", title: "Save", shortcut: ["Mod", "Enter"], run: () => save() },
-      { id: "archive", title: "Open the archive", page: archivePage },
+      { id: "save", paths: ["/*"], title: "Save", shortcut: ["Mod", "Enter"], run: () => save() },
+      { id: "archive", paths: ["/*"], title: "Open the archive", page: archivePage },
     ],
   },
   render: () => <Notes />,
@@ -292,8 +407,9 @@ const notesPage: Page = {
 ```
 
 `hints` are key legends with nothing behind them, drawn beside the frame's own.
-`actions` are ordinary commands — the same shape as a list row, so they filter,
-group by `section` and open pages just as rows do. They live behind **⌘⇧K**,
+`actions` are ordinary commands — the same shape as a list row, so they carry
+`paths`, filter, group by `section` and open pages just as rows do. They live
+behind **⌘⇧K**,
 which opens a searchable panel at the footer's right; any that carry a
 `shortcut` also fire straight from the page. A shortcut that is meant to work
 while a form field has focus has to include `Mod` or `Ctrl`, or it would be
@@ -305,7 +421,7 @@ definition, so that page publishes it from inside instead:
 ```tsx
 usePageFooter({
   actions: [
-    { id: "density", title: detailed ? "Compact" : "Detailed", run: toggle },
+    { id: "density", paths: ["/*"], title: detailed ? "Compact" : "Detailed", run: toggle },
   ],
 })
 ```
@@ -321,7 +437,7 @@ A command that returns a promise is an async command, and returning it is the
 whole declaration:
 
 ```tsx
-{ id: "deploy", title: "Deploy a Preview", run: () => api.deploy() }
+{ id: "deploy", paths: ["/*"], title: "Deploy a Preview", run: () => api.deploy() }
 ```
 
 While it runs, a bar sweeps under the input and the footer says what is

@@ -42,6 +42,18 @@ export async function deployPreview(signal?: AbortSignal): Promise<never> {
   throw new Error("The preview build failed — check the deploy log")
 }
 
+/** Admin-only work: fast enough that the bar barely shows, which is the point
+ *  of `REVEAL_MS` — a run this short shows only its outcome. */
+export async function purgeCdn(signal?: AbortSignal): Promise<number> {
+  await wait(1400, signal)
+  return 214
+}
+
+/** Settings-only work. */
+export async function exportData(signal?: AbortSignal): Promise<void> {
+  await wait(1800, signal)
+}
+
 /** What a hand-written page's own form submits to. */
 export async function saveTask(
   title: string,

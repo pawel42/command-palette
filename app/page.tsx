@@ -1,60 +1,53 @@
-"use client"
+import { RouteIntro, Rule } from "./demo/prose"
 
-import {
-  CommandPaletteDialog,
-  Kbd,
-  TOGGLE_SHORTCUT,
-} from "@/components/command-palette"
-
-import { useActivity } from "./demo/activity"
-import { rememberRootCommand, rootCommands, rootFooter } from "./demo/commands"
-import { recentIds, subscribeRecent } from "./demo/recent"
-import { ThemeCommandBridge } from "./demo/theme-bridge"
-
-export default function Page() {
-  const activity = useActivity()
-
+export default function Home() {
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-6 px-4">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        Press
-        <span className="flex items-center gap-1">
-          {TOGGLE_SHORTCUT.map((key) => (
-            <Kbd key={key}>{key}</Kbd>
-          ))}
-        </span>
-        to open the command palette
-      </p>
+    <>
+      <RouteIntro title="Home">
+        <p>
+          One palette, mounted once in the shell and handed{" "}
+          <Rule>usePathname()</Rule>. Every command declares where it exists,
+          and nothing exists until it says so — there is no default that means
+          &ldquo;everywhere&rdquo; except the one you write, <Rule>{"/*"}</Rule>
+          .
+        </p>
+        <p>
+          Walk the nav with ⌘K open and watch the list change under you — the
+          &ldquo;Go to&rdquo; rows do it without closing the palette, which is
+          the quickest way to see a rule take effect. The two columns below say
+          what to expect before you press anything.
+        </p>
+      </RouteIntro>
 
-      {/* The palette knows nothing about this app: it is handed the commands
-          it opens on, and a bridge that publishes the theme toggle to them —
-          commands are plain data and cannot call hooks themselves. */}
-      <CommandPaletteDialog
-        commands={rootCommands}
-        placeholder="Search for a page or an action…"
-        footer={rootFooter}
-        // The recents live outside React, so say what else the root watches:
-        // without this a write out there waits for the next keystroke.
-        watch={{ subscribe: subscribeRecent, getSnapshot: recentIds }}
-        onCommand={(command) => rememberRootCommand(command.id)}
-      >
-        <ThemeCommandBridge />
-      </CommandPaletteDialog>
+      <dl className="space-y-3 text-sm">
+        <Line rule={`["/*"]`}>everywhere there is</Line>
+        <Line rule={`["/*", "!/admin/*"]`}>
+          everywhere except the admin area — the later rule wins where both
+          apply
+        </Line>
+        <Line rule={`["/admin/*"]`}>
+          <code className="font-mono">/admin</code> and everything under it
+        </Line>
+        <Line rule={`["/admin/*", "!/admin/users"]`}>
+          the admin area with one page cut back out of it
+        </Line>
+        <Line rule={`["/projects/[id]"]`}>
+          one dynamic route: <code className="font-mono">/projects/atlas</code>{" "}
+          matches, <code className="font-mono">/projects</code> does not
+        </Line>
+        <Line rule={`["/"]`}>this page, and nowhere else</Line>
+      </dl>
+    </>
+  )
+}
 
-      <ul
-        aria-live="polite"
-        aria-label="Recent palette activity"
-        className="space-y-1 text-center text-xs text-muted-foreground"
-      >
-        {activity.map((entry, index) => (
-          <li
-            key={`${entry}-${index}`}
-            className={index > 0 ? "opacity-50" : undefined}
-          >
-            {entry}
-          </li>
-        ))}
-      </ul>
-    </main>
+function Line({ rule, children }: { rule: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[16rem_1fr] sm:gap-4">
+      <dt>
+        <Rule>{rule}</Rule>
+      </dt>
+      <dd className="text-muted-foreground">{children}</dd>
+    </div>
   )
 }

@@ -3,9 +3,11 @@
 import { useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 
+import { availableOn } from "../../core"
 import type { ExternalStore, ListCommand, PageContext } from "../../core"
 import {
   useCommandList,
+  useCurrentPath,
   useInstanceId,
   usePaletteState,
   usePaletteStore,
@@ -66,6 +68,7 @@ export function useListPage({
 }: ListPageProps) {
   const store = usePaletteStore()
   const instanceId = useInstanceId()
+  const path = useCurrentPath()
   // Subscribes this list to the store, so query and selection changes re-render it.
   const state = usePaletteState()
   // And to whatever else the items are built from.
@@ -79,7 +82,13 @@ export function useListPage({
   const resolved =
     ctx === null ? [] : typeof items === "function" ? items(ctx) : items
 
-  const list = useCommandList(resolved, {
+  // Where the user is, applied before anything else looks at the rows — so a
+  // command that does not exist here is not filtered, not counted towards
+  // "no results", and not reachable by its own shortcut, which the controller
+  // matches off this same array.
+  const here = availableOn(resolved, path)
+
+  const list = useCommandList(here, {
     // Through the store rather than straight to `resolveCommand`: it builds
     // the same context from the same instance, and it is the one place a host
     // watching for what ran gets to see it.

@@ -7,6 +7,7 @@ export {
 export {
   PageProvider,
   PaletteProvider,
+  useCurrentPath,
   useInstanceId,
   usePaletteState,
   usePaletteStore,

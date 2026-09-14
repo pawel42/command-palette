@@ -8,16 +8,21 @@ import type {
   PageFooter,
 } from "@/components/command-palette"
 
+import { NAV, ROUTES } from "../routes"
 import { clearActivity, logActivity } from "./activity"
-import { deployPreview, syncRemote } from "./api"
+import { deployPreview, exportData, purgeCdn, syncRemote } from "./api"
 import { recentIds, rememberCommand } from "./recent"
 import { branchPage } from "./pages/branch"
 import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
 import { detailsPage } from "./pages/details"
+import { invitePage } from "./pages/invite"
+import { renamePage } from "./pages/rename"
 import { projectsPage } from "./pages/projects"
 import { releaseNotesPage } from "./pages/release-notes"
 import { accountPage } from "./pages/signup"
+import { EVERYWHERE } from "./paths"
+import { navigate } from "./router-bridge"
 import { toggleTheme } from "./theme-bridge"
 
 /**
@@ -27,6 +32,7 @@ import { toggleTheme } from "./theme-bridge"
 export const commands: Command[] = [
   {
     id: "branch",
+    paths: EVERYWHERE,
     title: "Branch Out",
     description: "three destinations",
     section: "Pages",
@@ -35,6 +41,7 @@ export const commands: Command[] = [
   },
   {
     id: "create-task",
+    paths: EVERYWHERE,
     title: "Create Task",
     description: "a form that keeps its draft",
     section: "Pages",
@@ -46,6 +53,7 @@ export const commands: Command[] = [
   },
   {
     id: "account",
+    paths: EVERYWHERE,
     title: "New Account",
     description: "two forms, one pushed from the other",
     section: "Pages",
@@ -55,6 +63,7 @@ export const commands: Command[] = [
   },
   {
     id: "projects",
+    paths: ["/*", "!/admin/*"],
     title: "Browse Projects",
     description: "takes props, returns a value",
     section: "Pages",
@@ -68,6 +77,7 @@ export const commands: Command[] = [
   },
   {
     id: "deep",
+    paths: EVERYWHERE,
     title: "Deep Dive",
     description: "three levels, one esc home",
     section: "Pages",
@@ -77,6 +87,7 @@ export const commands: Command[] = [
   },
   {
     id: "release-notes",
+    paths: EVERYWHERE,
     title: "Release Notes",
     description: "long, scrollable, keeps its place",
     section: "Pages",
@@ -87,6 +98,7 @@ export const commands: Command[] = [
   },
   {
     id: "details",
+    paths: EVERYWHERE,
     title: "How This Works",
     section: "Pages",
     keywords: ["help", "readme", "about"],
@@ -95,6 +107,7 @@ export const commands: Command[] = [
   },
   {
     id: "theme",
+    paths: EVERYWHERE,
     title: "Toggle Dark Mode",
     section: "Actions",
     shortcut: ["Mod", "D"],
@@ -111,6 +124,7 @@ export const commands: Command[] = [
     // and `syncRemote` takes the signal, so starting something else or
     // navigating away really does call the request off.
     id: "sync",
+    paths: ["/*", "!/admin/*"],
     title: "Sync with Remote",
     description: "slow, and says how it went",
     section: "Actions",
@@ -134,6 +148,7 @@ export const commands: Command[] = [
     // this, but the work itself has no way of being told. Take the signal —
     // `runAsync(deployPreview, { loading: "Deploying…" })` — to really abort.
     id: "deploy",
+    paths: ["/*", "!/admin/*"],
     title: "Deploy a Preview",
     description: "fails, and says so",
     section: "Actions",
@@ -144,6 +159,7 @@ export const commands: Command[] = [
   {
     // No work behind it at all: the same footer line, said directly.
     id: "copy-link",
+    paths: EVERYWHERE,
     title: "Copy Palette Link",
     section: "Actions",
     keywords: ["share", "url", "toast"],
@@ -153,11 +169,128 @@ export const commands: Command[] = [
   },
   {
     id: "log-query",
+    // One exact path. Home is where the activity log is read, so the command
+    // that writes to it lives there and is not offered anywhere it could not
+    // be seen to have worked.
+    paths: ["/"],
     title: "Log What I Typed",
     description: "actions can read the query",
     section: "Actions",
     icon: <Icon path={ICONS.dot} />,
     run: ({ query }) => logActivity(`root query: “${query}”`),
+  },
+
+  /* ---- Where a command exists, the interesting cases -------------------- */
+
+  {
+    // The whole subtree, index included: `/admin/*` covers `/admin` itself as
+    // well as everything under it, which is what makes `/*` mean every path by
+    // the same reading rather than by a special case.
+    id: "purge-cdn",
+    paths: ["/admin/*"],
+    title: "Purge the CDN",
+    description: "admin, and everything under it",
+    section: "Admin",
+    keywords: ["cache", "invalidate", "edge"],
+    icon: <Icon path={ICONS.upload} />,
+    run: ({ runAsync }) =>
+      runAsync(purgeCdn, {
+        loading: "Purging every edge…",
+        success: (nodes) => `Purged ${nodes} edge nodes`,
+      }),
+  },
+  {
+    // A subtree with one page cut back out of it. Both rules cover
+    // `/admin/users`; the later one decides, so this is the one admin command
+    // that does not follow you in there.
+    id: "rotate-keys",
+    paths: ["/admin/*", "!/admin/users"],
+    title: "Rotate Signing Keys",
+    description: "admin, but not the users page",
+    section: "Admin",
+    keywords: ["secret", "security", "jwt"],
+    icon: <Icon path={ICONS.check} />,
+    run: ({ toast }) =>
+      toast({ title: "Rotated", message: "New keys are live in every region" }),
+  },
+  {
+    id: "invite",
+    paths: ["/admin/users"],
+    title: "Invite a Teammate",
+    description: "that one page",
+    section: "Admin",
+    shortcut: ["Mod", "Shift", "I"],
+    keywords: ["seat", "member", "add"],
+    icon: <Icon path={ICONS.user} />,
+    page: invitePage,
+  },
+  {
+    // The projects area: the index and every project under it.
+    id: "new-project",
+    paths: ["/projects/*"],
+    title: "Start a Project",
+    description: "the projects area",
+    section: "Projects",
+    keywords: ["create", "new"],
+    icon: <Icon path={ICONS.plus} />,
+    page: createTaskPage,
+  },
+  {
+    // A dynamic route, named the way the router names it. `/projects/atlas`
+    // is covered; `/projects` is not, because a dynamic segment still has to
+    // be a segment.
+    id: "rename-project",
+    paths: ["/projects/[id]"],
+    title: "Rename This Project",
+    description: "one project, not the index",
+    section: "Projects",
+    keywords: ["title", "edit"],
+    icon: <Icon path={ICONS.pencil} />,
+    page: renamePage,
+  },
+  {
+    // One exact path, and a shortcut that goes with it: ⌘⇧E does nothing at
+    // all anywhere else, because an unavailable command is not a greyed-out
+    // row — it is a command that is not there to be matched.
+    id: "export-data",
+    paths: ["/settings"],
+    title: "Export Your Data",
+    description: "settings only, shortcut and all",
+    section: "Settings",
+    shortcut: ["Mod", "Shift", "E"],
+    keywords: ["download", "archive", "gdpr"],
+    icon: <Icon path={ICONS.upload} />,
+    run: ({ runAsync }) =>
+      runAsync(exportData, {
+        loading: "Building your export…",
+        success: "Export ready — check your email",
+      }),
+  },
+
+  /* ---- Getting around, so the rules can be watched moving --------------- */
+
+  ...NAV.filter((href) => href !== "/").map((href): Command => ({
+    id: `go${href}`,
+    // A way somewhere is available everywhere except where it already is.
+    paths: ["/*", `!${href}`],
+    title: `Go to ${ROUTES[href]}`,
+    section: "Go to",
+    keywords: ["navigate", "route", href],
+    icon: <Icon path={ICONS.chevronRight} />,
+    run: () => navigate(href),
+  })),
+  {
+    id: "go-project",
+    paths: ["/*", "!/projects/[id]"],
+    title: "Go to a Project",
+    description: "picks one, then routes to it",
+    section: "Go to",
+    keywords: ["navigate", "open", "atlas"],
+    icon: <Icon path={ICONS.folder} />,
+    run: async ({ nav }) => {
+      const project = await nav.push(projectsPage, { archived: false })
+      if (project) navigate(`/projects/${project.id}`)
+    },
   },
 ]
 
@@ -194,7 +327,7 @@ function recentRows(): ListCommand[] {
   })
 }
 
-/** Called with every command the palette runs — see `app/page.tsx`. */
+/** Called with every command the palette runs — see `app/shell.tsx`. */
 export function rememberRootCommand(id: string) {
   const rootId = id.startsWith(RECENT_PREFIX)
     ? id.slice(RECENT_PREFIX.length)
@@ -224,6 +357,7 @@ export const rootFooter: PageFooter = {
   actions: [
     {
       id: "clear-activity",
+      paths: EVERYWHERE,
       title: "Clear the activity log",
       description: "the list under the palette",
       shortcut: ["Mod", "Shift", "L"],
@@ -232,10 +366,24 @@ export const rootFooter: PageFooter = {
     },
     {
       id: "whats-new",
+      paths: EVERYWHERE,
       title: "What's new",
       description: "an action can open a page",
       icon: <Icon path={ICONS.clock} />,
       page: releaseNotesPage,
+    },
+    {
+      // The footer answers to the path like everything else: open ⌘⇧K on
+      // Home and this is not in it, on Admin it is, and its ⌘⇧B only fires
+      // where the action itself exists.
+      id: "impersonate",
+      paths: ["/admin/*"],
+      title: "Impersonate a user",
+      description: "admin only, panel and shortcut alike",
+      shortcut: ["Mod", "Shift", "B"],
+      icon: <Icon path={ICONS.user} />,
+      run: ({ toast }) =>
+        toast({ title: "Not in the demo", message: "But the row is real" }),
     },
   ],
 }

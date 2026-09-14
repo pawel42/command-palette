@@ -11,6 +11,7 @@ import {
 
 import type { Command } from "../core/command"
 import type { PageTarget } from "../core/page"
+import { normalizePath } from "../core/routes"
 import { selectView } from "../core/stack"
 import type { PaletteState, PaletteView } from "../core/stack"
 import { createPaletteStore } from "../core/store"
@@ -18,15 +19,28 @@ import type { PaletteStore } from "../core/store"
 
 const StoreContext = createContext<PaletteStore | null>(null)
 const InstanceContext = createContext<string | null>(null)
+const PathContext = createContext<string | null>(null)
 
 export function PaletteProvider({
   rootPage,
+  path,
   onDismiss,
   onCommand,
   revealMs,
   children,
 }: {
   rootPage: PageTarget
+  /**
+   * Where the user is, as the router sees it — `usePathname()` in Next, and
+   * whatever the host's own router calls the same thing. Every command says
+   * which paths it exists on, and this is what those are read against.
+   *
+   * A prop rather than anything the palette works out for itself: it has no
+   * router, and taking one would be the end of the folder being copyable.
+   * Unlike the root config this is read on every render, because it moves —
+   * the palette is mounted above the router and outlives any one route.
+   */
+  path: string
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
   /** Called with every command the palette runs. */
@@ -49,7 +63,27 @@ export function PaletteProvider({
     store.setOnCommand(onCommand)
   }, [store, onCommand])
 
-  return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
+  // Normalized here, once, so nothing downstream has to wonder whether it is
+  // holding a trailing slash or a query string.
+  const here = normalizePath(path)
+
+  return (
+    <StoreContext.Provider value={store}>
+      <PathContext.Provider value={here}>{children}</PathContext.Provider>
+    </StoreContext.Provider>
+  )
+}
+
+/**
+ * The path the palette is being shown on, normalized. What every command's
+ * `paths` is answered against — see `isAvailableOn`.
+ */
+export function useCurrentPath(): string {
+  const path = useContext(PathContext)
+  if (path === null) {
+    throw new Error("useCurrentPath must be used inside a <PaletteProvider>")
+  }
+  return path
 }
 
 export function usePaletteStore(): PaletteStore {

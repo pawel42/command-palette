@@ -9,6 +9,8 @@ import {
   page3,
   page4,
 } from "./palette-fixtures"
+import { isAvailableOn } from "../components/command-palette/core/routes"
+import type { PathPattern } from "../components/command-palette/core/routes"
 import type { PaletteStore } from "../components/command-palette/core/store"
 
 const { store, commands, log } = createTestStore(() => log.push("dismissed"))
@@ -143,3 +145,74 @@ await tick()
 status("nothing was said about it")
 
 console.log("\nwhat the commands did about it:", ran)
+
+/* ----------------------------------------------------------------- routes */
+
+/**
+ * Where a command exists. Pure `core/`, so it is exercised here rather than
+ * through the UI that applies it: one table of rules against one table of
+ * paths, and the answer each pair should give.
+ */
+const RULES: Array<[readonly string[], string, boolean]> = [
+  // Nothing at all is available by default.
+  [[], "/", false],
+  [[], "/admin", false],
+
+  // The one rule that means everywhere.
+  [["/*"], "/", true],
+  [["/*"], "/admin/users/roles", true],
+
+  // A subtree covers its own base as well as what is under it.
+  [["/admin/*"], "/admin", true],
+  [["/admin/*"], "/admin/users", true],
+  [["/admin/*"], "/", false],
+  // …and stops at a segment boundary, not at a prefix.
+  [["/admin/*"], "/administrators", false],
+
+  // Exact means exact.
+  [["/admin"], "/admin", true],
+  [["/admin"], "/admin/users", false],
+
+  // The last rule that covers the path wins.
+  [["/*", "!/admin/*"], "/projects", true],
+  [["/*", "!/admin/*"], "/admin", false],
+  [["/*", "!/admin/*"], "/admin/users", false],
+  [["/admin/*", "!/admin/users"], "/admin", true],
+  [["/admin/*", "!/admin/users"], "/admin/users", false],
+  // Order is what decides it, so the same two rules the other way round mean
+  // the opposite thing.
+  [["!/admin/*", "/*"], "/admin", true],
+
+  // A rule that covers nothing is simply never consulted.
+  [["!/admin", "/settings"], "/admin", false],
+  [["!/admin", "/settings"], "/settings", true],
+
+  // A dynamic segment matches one segment, the way the router reads it.
+  [["/projects/[id]"], "/projects/atlas", true],
+  [["/projects/[id]"], "/projects", false],
+  [["/projects/[id]"], "/projects/atlas/tasks", false],
+  // A catch-all matches the rest of the path.
+  [["/docs/[...slug]"], "/docs/a/b/c", true],
+  [["/docs/[...slug]"], "/docs", false],
+
+  // The path is normalized before anything is read against it.
+  [["/admin"], "/admin/", true],
+  [["/admin"], "/admin?tab=seats", true],
+  [["/"], "", true],
+]
+
+let wrong = 0
+for (const [paths, path, expected] of RULES) {
+  const actual = isAvailableOn(paths as readonly PathPattern[], path)
+  if (actual === expected) continue
+
+  wrong += 1
+  console.log(
+    `  ✗ ${JSON.stringify(paths).padEnd(32)} on ${path.padEnd(22)} ` +
+      `expected ${expected}, got ${actual}`
+  )
+}
+
+console.log(
+  `\nroute rules: ${RULES.length - wrong}/${RULES.length} as expected`
+)

@@ -20,12 +20,15 @@ import type { RootConfig } from "./root-page"
  * small bridge component mounted here publishes what they need.
  */
 export function PaletteRoot({
+  path,
   onDismiss,
   onCommand,
   revealMs,
   children,
   ...root
 }: RootConfig & {
+  /** Where the user is — see `PaletteProvider`. Every command answers to it. */
+  path: string
   onDismiss?: () => void
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
@@ -38,6 +41,7 @@ export function PaletteRoot({
   return (
     <PaletteProvider
       rootPage={rootPage}
+      path={path}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}
@@ -79,12 +83,14 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
  * and `PaletteSurface` themselves instead, so the stack outlives the close.
  */
 export function CommandPalette({
+  path,
   onDismiss,
   onCommand,
   revealMs,
   children,
   ...root
 }: RootConfig & {
+  path: string
   onDismiss?: () => void
   onCommand?: (command: Command) => void
   revealMs?: number
@@ -93,6 +99,7 @@ export function CommandPalette({
   return (
     <PaletteRoot
       {...root}
+      path={path}
       onDismiss={onDismiss}
       onCommand={onCommand}
       revealMs={revealMs}

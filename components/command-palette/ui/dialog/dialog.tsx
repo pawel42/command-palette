@@ -109,6 +109,7 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *    ends — a flash, whenever that beats the hide below to the paint.
  */
 export function CommandPaletteDialog({
+  path,
   onCommand,
   shellSelector,
   idleResetMs = IDLE_RESET_MS,
@@ -116,6 +117,12 @@ export function CommandPaletteDialog({
   children,
   ...root
 }: RootConfig & {
+  /**
+   * Where the user is, as the router sees it — `usePathname()` in Next. Every
+   * command declares which paths it exists on, and this is what those are read
+   * against. See `PaletteProvider`.
+   */
+  path: string
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
@@ -141,6 +148,7 @@ export function CommandPaletteDialog({
   return (
     <PaletteRoot
       {...root}
+      path={path}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}
       revealMs={revealMs}
