@@ -9,7 +9,12 @@ import type { PaletteAction, PaletteState } from "./stack/types"
 
 export type PaletteStoreOptions = {
   rootPage: PageTarget
-  /** Called when esc is pressed at the root with an empty input. */
+  /**
+   * Called when the palette asks to be closed: esc at the root with an empty
+   * input, or a command that called `closePalette()`. One handler for both,
+   * because from the host's side they are the same event — the palette is done
+   * being looked at, and what closing means is the host's own business.
+   */
   onDismiss?: () => void
   /**
    * Called with every command the palette runs, just before it runs. The
@@ -160,6 +165,9 @@ export function createPaletteStore(options: PaletteStoreOptions): PaletteStore {
       query: instance.query,
       setQuery: (query) => dispatch({ type: "setQuery", instanceId, query }),
       resolve: (value) => settleAndClose(instanceId, value),
+      // Read through the closure rather than captured, so a context built
+      // before the host swapped its handler still reaches the current one.
+      closePalette: () => onDismiss?.(),
       nav: navigation,
       runAsync: tasks.run,
       toast: tasks.toast,

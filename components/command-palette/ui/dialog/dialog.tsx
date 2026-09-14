@@ -102,7 +102,8 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *  - `onEscapeKeyDown` is prevented, because Radix listens for esc in the
  *    capture phase and would close on the first press. Esc has to clear the
  *    input and unwind the stack first, so the palette decides instead and the
- *    dialog closes through `onDismiss` — esc at the root with an empty input;
+ *    dialog closes through `onDismiss` — esc at the root with an empty input,
+ *    or a command that called `closePalette()`;
  *  - the exit animation has to hold its own last frame. Radix pins
  *    `animation-fill-mode: forwards` when a closing layer unmounts, and a
  *    force-mounted one never unmounts, so without `fill-mode-forwards` the

@@ -14,7 +14,8 @@ import type { RootConfig } from "./root-page"
  * Everything stateful: the engine and the frame↔page bridge. It renders no UI
  * of its own, so a host can keep it mounted while the visible surface comes
  * and goes — that is what makes the stack survive a close. `onDismiss` fires
- * when esc is pressed at the root with an empty input.
+ * when the palette asks to be closed: esc at the root with an empty input, or
+ * a command that called `closePalette()`.
  *
  * Anything a command needs but cannot reach — a theme setter, a router — is
  * passed in as a child: commands are plain data and cannot call hooks, so a

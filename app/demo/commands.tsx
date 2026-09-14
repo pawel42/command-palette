@@ -310,7 +310,20 @@ export const commands: Command[] = [
     section: "Go to",
     keywords: ["navigate", "route", href],
     icon: <Icon path={ICONS.chevronRight} />,
-    run: () => navigate(href),
+    // The one kind of command that closes: the answer is the page behind the
+    // palette, and it cannot be read through it. Everything else here stays
+    // open, because the palette is where it says how it went.
+    //
+    // Closed and started over, in that order — the close is what the user
+    // asked for and the reset happens behind the fade. Without it the palette
+    // would keep its place the way it does on esc, and the place it kept
+    // would be the query that named a command that does not exist on the page
+    // it just went to: reopening on Settings to read "No results found".
+    run: ({ closePalette, nav }) => {
+      closePalette()
+      nav.reset()
+      navigate(href)
+    },
   })),
   {
     id: "go-project",
@@ -320,11 +333,16 @@ export const commands: Command[] = [
     section: "Go to",
     keywords: ["navigate", "open", "atlas"],
     icon: <Icon path={ICONS.folder} />,
-    run: async ({ nav }) => {
+    run: async ({ nav, closePalette }) => {
       const project = await nav.push(projectsPage, { archived: false })
+      // Escaped out of the picker: nothing was chosen, so there is nowhere to
+      // go and no reason to take the palette away.
+      if (!project) return
+
+      closePalette()
+      nav.reset()
       // The route, not the URL — `/de/projekte/atlas` is this, in German.
-      if (project)
-        navigate({ pathname: "/projects/[id]", params: { id: project.id } })
+      navigate({ pathname: "/projects/[id]", params: { id: project.id } })
     },
   },
 ]

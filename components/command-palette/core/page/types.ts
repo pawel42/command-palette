@@ -54,6 +54,25 @@ export type PageContext<Props = unknown, Result = unknown> = {
   setQuery: (query: string) => void
   /** Settles the promise returned by the `push` that opened this page, then closes it. */
   resolve: (value: Result) => void
+  /**
+   * Closes the palette — what a command calls when it has sent the user
+   * somewhere else, and there is nothing left to look at here.
+   *
+   * The default is the other way round: a run leaves the palette open, because
+   * the palette is where a run is reported from. The bar belongs to the
+   * command that is still working and the toast to the one that just landed,
+   * and closing on every ↵ would be closing over both of them. So a command
+   * that wants to be the last thing in the palette says so.
+   *
+   * It closes and nothing more: the stack, the page state and the text are all
+   * still there on the next ⌘K, the same as any other close, until the idle
+   * reset starts it over. `nav.reset()` first is how a command leaves a clean
+   * root behind instead.
+   *
+   * Reaches the host through the same `onDismiss` esc does, so a palette given
+   * none — an inline one, with nothing to close to — goes on ignoring it.
+   */
+  closePalette: () => void
   nav: Navigation
   /**
    * Work that takes a moment, with the palette reporting on it: the progress

@@ -164,6 +164,18 @@ export function createCommands(log: string[]): Command[] {
       section: "Actions",
       run: ({ toast }) => toast({ title: "Copied" }),
     },
+    {
+      // The one that asks to be the last thing in the palette — it has sent
+      // the user somewhere the palette is in the way of.
+      id: "go",
+      paths: EVERYWHERE,
+      title: "Go Somewhere Else",
+      section: "Actions",
+      run: ({ closePalette }) => {
+        log.push("navigated")
+        closePalette()
+      },
+    },
   ]
 }
 

@@ -145,6 +145,11 @@ with nothing typed, close. A closed palette keeps the user's place: the same
 stack, page state, text and scroll are there on the next ⌘K, until it has been
 closed for 30 seconds, at which point it starts over on a clean root.
 
+Running a command does not close the palette — the palette is where a run
+reports from, the bar while it works and the toast when it lands. The command
+that really is the last thing here says so, which in practice is the one that
+navigates: `run: ({ closePalette }) => { closePalette(); router.push("/settings") }`.
+
 The palette is one fixed height on every page and at every filter, so nothing
 reflows under the user mid-keystroke.
 

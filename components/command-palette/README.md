@@ -114,6 +114,32 @@ props bind them at the call site with `bind(page, { … })`, and `nav.push`
 returns a promise that settles with whatever the page resolves — or `undefined`
 if the user escaped out of it.
 
+Running a command does not close the palette. The palette is where a run is
+reported from — the bar while it works, the toast when it lands — so closing
+on every ↵ would be closing over the answer. A command that really is the last
+thing to happen here says so, and `closePalette()` is on the same context as
+everything else:
+
+```ts
+{
+  id: "go-settings",
+  paths: ["/*", "!/settings"],
+  title: "Go to Settings",
+  run: ({ closePalette }) => {
+    closePalette()
+    router.push("/settings")
+  },
+}
+```
+
+Navigating is the case it exists for: the answer is the page behind the
+palette, and the palette is in the way of it. It closes and nothing more — the
+stack, the page state and the text are all still there on the next ⌘K, the
+same as any other close, until the idle reset starts it over; `nav.reset()`
+first is how a command leaves a clean root behind instead. It reaches the host
+through the same `onDismiss` esc does, so a palette given none — an inline one,
+with nothing to close to — goes on ignoring it.
+
 ## Where a command exists
 
 A palette that spans an app is a palette whose rows are answerable to where the

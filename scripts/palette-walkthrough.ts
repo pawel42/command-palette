@@ -32,6 +32,13 @@ show(store, "start")
 store.runCommand(commands.find((command) => command.id === "log")!)
 show(store, "run action command")
 
+// Two commands, two endings. An action leaves the palette where it is, which
+// is why the stack above is untouched; this one closes it — the only way to
+// close short of esc at the root — and the stack is untouched by that too,
+// because a closed palette keeps the user's place.
+store.runCommand(commands.find((command) => command.id === "go")!)
+show(store, "run a command that closes")
+
 store.runCommand(commands.find((command) => command.id === "page-1")!)
 show(store, "open page1")
 
