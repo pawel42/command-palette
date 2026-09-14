@@ -15,7 +15,7 @@ import { useEffect } from "react"
  *
  * Focus is put back where it came from on close, which is the other thing the
  * dialog can no longer do for us now that it never unmounts. Keeping focus in
- * while it is open is the frame's job — see `wrapTabFocus`.
+ * while it is open is the frame's job — see `moveTabFocus`.
  *
  * The host has to mark its own shell — everything the palette should cover —
  * with `data-app-shell`, or pass a different selector.

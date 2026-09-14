@@ -9,6 +9,7 @@
  * What it pins down, in order — each of these was a real bug at some point:
  *  T3  esc closes a Radix select without also unwinding the page
  *  T4  tab cycles the form's own fields and never leaves the palette
+ *  T4b a field arrives whole — the hint under the last one is not left below the fold
  *  T5  ⌘↵ submits from anywhere in the form, checkboxes and radios included
  *  T7  an invalid form refuses: the fields say why, the palette shakes
  *  T8  a form that resolves hands its values back to the command that pushed it
@@ -204,6 +205,35 @@ check(
   ring.join(" → ")
 )
 
+/* T4b — tabbing to a field brings the whole of it, hint included, into view */
+{
+  // Tabbed to, not focused from the script: the browser's own scroll-on-focus
+  // is the thing being measured, and `.focus()` would be a different one.
+  for (let i = 0; i < 14; i++) {
+    if ((await activeInfo())?.id === "issue-description") break
+    await page.keyboard.press("Tab")
+    await page.waitForTimeout(40)
+  }
+  await page.waitForTimeout(150)
+
+  const shown = await page.evaluate(() => {
+    const scroller = document.querySelector('[role="dialog"] .overflow-y-auto')
+    const hint = [...document.querySelectorAll('[data-slot="field-description"]')].pop()
+    const field = hint.getBoundingClientRect()
+    const box = scroller.getBoundingClientRect()
+    return {
+      active: document.activeElement?.id,
+      text: hint.textContent.slice(0, 24),
+      visible: field.top >= box.top - 1 && field.bottom <= box.bottom + 1,
+    }
+  })
+  check(
+    "T4b the last field's own hint is not left below the fold",
+    shown.active === "issue-description" && shown.visible,
+    JSON.stringify(shown)
+  )
+}
+
 /* T5 — the happy path: cmd+enter, a toast, and it pops home */
 await page.locator("#issue-title").fill("Ship the form API")
 await page.locator('[data-slot="checkbox"]').first().click()
@@ -238,8 +268,13 @@ if (!(await where())?.includes("Filters")) {
 }
 
 const scroller = palette().locator("div.overflow-y-auto").first()
-const before = await scroller.evaluate((el) => el.scrollTop)
 await page.locator('[data-slot="radio-group-item"]').first().focus()
+// Read *after* the focus, not before it. Focusing a field scrolls the whole of
+// it into view — label, control and the hint under it, see `useFormPage` — and
+// that is a different scroll with a different cause. What this is watching for
+// is the frame reading an arrow the radio group has already spent.
+await page.waitForTimeout(150)
+const before = await scroller.evaluate((el) => el.scrollTop)
 await page.keyboard.press("ArrowDown")
 await page.waitForTimeout(150)
 const after = await scroller.evaluate((el) => el.scrollTop)

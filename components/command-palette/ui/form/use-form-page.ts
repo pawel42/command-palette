@@ -119,10 +119,12 @@ export type FormPageHandle = {
   submit: () => void
   /**
    * Spread on whatever element the fields live in. Not optional in practice —
-   * see the capture handler below for the collision it exists to settle.
+   * see the capture handler below for the collision it exists to settle, and
+   * the focus handler for what a browser leaves half-shown.
    */
   formProps: {
     onKeyDownCapture: (event: React.KeyboardEvent) => void
+    onFocus: (event: React.FocusEvent) => void
   }
 }
 
@@ -267,5 +269,49 @@ export function useFormPage<Values, Result>(
     ],
   })
 
-  return { submit, formProps: { onKeyDownCapture } }
+  /**
+   * Brings the whole of a focused field into view, not just the control.
+   *
+   * What a browser scrolls to when focus moves is the focused element and
+   * nothing else, by the smallest amount that works. A palette form is a
+   * scroll box a few fields tall, and a field is a stack — label, control,
+   * then the description and the error underneath it. So tabbing to the last
+   * field parks its box against the bottom edge with the sentence explaining
+   * it still below the fold: "over 180 characters and ⌘↵ refuses" is exactly
+   * the thing the user needed a moment before they find out the hard way.
+   *
+   * The field is found by walking up to whatever sits directly inside the
+   * element `formProps` was spread on, rather than by looking for a class or a
+   * `data-slot` this folder has no business knowing. One field per child is
+   * what a form is; a page that groups them differently gets its group
+   * scrolled in, which is the same promise one level up.
+   *
+   * `block: "nearest"` throughout, so a field already in view is left alone and
+   * tabbing between the boxes of one group scrolls nothing at all.
+   *
+   * Then the control, which only matters when the two disagree: a group taller
+   * than the palette cannot be shown whole, and `"nearest"` answers that by
+   * pinning its top edge — which would park the box the user just tabbed to
+   * somewhere below the fold, and put it back there on every press. The second
+   * call is a no-op whenever the first one was enough, and the tie-breaker
+   * when it wasn't: whatever else is visible, the thing with the focus ring on
+   * it is.
+   */
+  const onFocus = useCallback((event: React.FocusEvent) => {
+    const container = event.currentTarget
+    const control = event.target
+    let field: Element | null = control
+
+    while (field && field.parentElement && field.parentElement !== container) {
+      field = field.parentElement
+    }
+
+    // Focus came from outside the form — an overlay this field portalled, say.
+    if (!field || field.parentElement !== container) return
+
+    field.scrollIntoView({ block: "nearest" })
+    control.scrollIntoView({ block: "nearest" })
+  }, [])
+
+  return { submit, formProps: { onKeyDownCapture, onFocus } }
 }

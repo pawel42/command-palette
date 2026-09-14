@@ -432,6 +432,28 @@ One rule worth knowing: a plain chord beats a sequence that starts with it. If
 will ever fire, because the chord has already run by the time the second press
 arrives. Pick a lead that does nothing by itself.
 
+### Tab is the frame's, and every press of it
+
+The frame answers tab itself rather than letting the browser move focus: the
+stops are the ones the browser would pick, in DOM order, and the ring wraps at
+both ends. There are two reasons, and the second is the one that bites.
+
+The ring has to wrap because the dialog is non-modal — nothing stops focus
+walking out the back of it, and the first thing outside that takes focus
+dismisses the layer and closes the palette. The _step_ has to be taken because
+whether tab stops on a `<button>` at all is a system preference on macOS: Full
+Keyboard Access, off by default, and Safari's "press tab to highlight each
+item" with it. Every control in a palette form that is not a text box is a
+button — Radix draws a checkbox, a radio and a select's trigger as one — so on
+a stock Mac a form with eight fields has two tab stops, and the rest cannot be
+reached by keyboard at all. A palette is a keyboard surface before it is
+anything else; its ring is not a thing to leave to a checkbox in System
+Settings.
+
+Composite widgets keep their own model inside that: a radio group is one stop
+and its arrows are its own, because the group carries the tab stop and the
+items answer to ↑↓. While the action panel is up, the ring is the panel.
+
 ## The header is the frame's; the footer is the page's
 
 The input row is the same on every page: the search glyph at the root, the back
@@ -687,6 +709,17 @@ down on anything already prevented, which is the rule that lets a widget own
 its own keys. Both are good rules, and together they mean ⌘↵ silently stops
 working the moment focus lands on a checkbox. `formProps` reads the chord in
 the capture phase, on the way down, before anything can prevent it.
+
+`formProps` also brings the whole of a focused field into view. What a browser
+scrolls to when focus moves is the focused element alone, by the smallest
+amount that works — and a field is a stack: label, control, then the
+description and the error under it. In a scroll box a few fields tall that
+parks the last control against the bottom edge with the sentence explaining it
+still below the fold, which is how "over 180 characters and ⌘↵ refuses" ends up
+being read after the refusal rather than before it. The field is found by
+walking up to whatever sits directly inside the element `formProps` was spread
+on, so there is no class or `data-slot` for your markup to match; a group too
+tall to show whole still keeps the control you tabbed to on screen.
 
 `useFormPage` imports no form library: it takes anything shaped like
 `SubmittableForm`, which react-hook-form's `UseFormReturn` already is. The rule

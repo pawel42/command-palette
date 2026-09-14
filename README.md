@@ -217,6 +217,14 @@ landed on a checkbox. It reads the chord in the capture phase instead. There is
 a matching seam, `claimsEscape`, for an overlay inside a page that has to own
 the esc that closes it.
 
+**The keyboard reaches every field, and arrives at the whole of it.** Two
+browser defaults are in the way of that, and neither is the form's doing.
+Whether tab stops on a `<button>` is a macOS system preference, off by
+default — and a checkbox, a radio and a select's trigger are all buttons — so
+the frame steps its own tab ring rather than asking. And what a browser scrolls
+to on focus is the control alone, which leaves the hint under it below the
+fold; `formProps` brings the field in whole, label and description included.
+
 ## Work that takes a moment
 
 A command that returns a promise is an async command, and returning it is the

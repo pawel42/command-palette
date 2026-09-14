@@ -65,46 +65,87 @@ const FOCUSABLE = [
 ].join(",")
 
 /**
- * Keeps tab inside the palette, wrapping at both ends.
+ * A tab press this frame has answered, taken out of the room entirely.
  *
- * The dialog is non-modal, so nothing stops focus walking out the back of it
- * — and the first thing outside that takes focus dismisses the layer, which
- * closes the palette. Covering the app with `inert` hides the host's own
- * controls, but not a dev-tools overlay or anything else portalled beside it.
+ * Stopping it matters more than preventing it, and only one of the two is
+ * obvious. Radix's `FocusScope` — the dialog the palette is drawn inside —
+ * keeps its own tab handler above this one, and that handler reads
+ * `document.activeElement` rather than the event's target: find the last
+ * tabbable element focused and it loops round to the first. By the time it
+ * runs, focus has already moved, so a step *onto* the last field reads to it
+ * as a press *from* the last field and it wraps a ring that had one stop left
+ * in it — the description of an issue, skipped on the way past. It does not
+ * consult `defaultPrevented`, so the only way to say the press is spent is to
+ * stop it here.
+ */
+function spend(event: React.KeyboardEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+/**
+ * Every tab press in the palette, answered here: one step along the palette's
+ * own ring, wrapping at both ends.
+ *
+ * The wrap is the structural half. The dialog is non-modal, so nothing stops
+ * focus walking out the back of it — and the first thing outside that takes
+ * focus dismisses the layer, which closes the palette. Covering the app with
+ * `inert` hides the host's own controls, but not a dev-tools overlay or
+ * anything else portalled beside it.
+ *
+ * The *step* is the half that has to be taken too, and it is the surprising
+ * one. Whether tab stops on a `<button>` at all is a system preference on
+ * macOS — Full Keyboard Access, off by default, and Safari's "press tab to
+ * highlight each item" with it. Every control in a palette form that is not a
+ * text box is a button: Radix draws a checkbox, a radio and a select's trigger
+ * as one. So on a stock Mac a form like New Issue has two tab stops, the title
+ * and the description, and the eight fields between them cannot be reached by
+ * keyboard at all — silently, and only for some of the people using it.
+ *
+ * A palette is a keyboard surface before it is anything else, so its tab ring
+ * is not a thing to leave to a checkbox in System Settings. The order is still
+ * the DOM's and the stops are still the ones the browser would pick; what is
+ * no longer asked is whether this browser, on this OS, feels like stopping on
+ * them.
  *
  * Hidden pages are skipped: `Activity` hides with `display: none`, and an
  * element with no box has no client rects.
  */
-function wrapTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
+function moveTabFocus(event: React.KeyboardEvent, root: HTMLElement | null) {
   if (!root) return
 
   const focusable = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
     (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
   )
 
-  const first = focusable[0]
-  const last = focusable[focusable.length - 1]
-  const active = document.activeElement
+  // A composite widget and its own items both answer the selector, and only
+  // the items are stops: Radix's radio group carries `tabindex="0"` on the
+  // group *and* on the checked item, and focusing the group only bounces
+  // focus to that item — a stop that lands somewhere else is a press spent on
+  // nothing. Keeping the innermost is what the browser does with the pair too.
+  const stops = focusable.filter(
+    (element) => !focusable.some((other) => other !== element && element.contains(other))
+  )
 
   // Nowhere to go: hold on to the press rather than hand focus to the page.
-  if (!first) {
-    event.preventDefault()
+  if (stops.length === 0) {
+    spend(event)
     return
   }
 
-  // The frame itself counts as the start — it sits before its own children.
-  const target = event.shiftKey
-    ? active === first || active === root
-      ? last
-      : null
-    : active === last
-      ? first
-      : null
+  const active = document.activeElement
+  // `contains`, not identity: focus may be on something nested inside a stop.
+  const from = stops.findIndex((element) => element.contains(active))
+  const step = event.shiftKey ? -1 : 1
+  // Off the ring — the frame itself holds focus — enters from the end the
+  // press is coming from, so the first tab lands on the first field.
+  const next =
+    from === -1
+      ? stops[event.shiftKey ? stops.length - 1 : 0]
+      : stops[(from + step + stops.length) % stops.length]
 
-  if (!target) return
-
-  event.preventDefault()
-  target.focus()
+  spend(event)
+  next.focus()
 }
 
 /** One arrow press worth of scrolling, which is what browsers step by too. */
@@ -512,7 +553,7 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
       if (event.key === "Tab") {
         // While the panel is up it is the whole focus ring: there is nothing
         // behind it worth tabbing to.
-        wrapTabFocus(event, panelOpen ? panelRef.current : rootRef.current)
+        moveTabFocus(event, panelOpen ? panelRef.current : rootRef.current)
         return
       }
 
