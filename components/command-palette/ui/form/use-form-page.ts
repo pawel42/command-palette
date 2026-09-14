@@ -215,21 +215,38 @@ export function useFormPage<Values, Result>(
     [submit]
   )
 
+  // ⌘ is not decoration here: a bare chord would be taken out of the middle of
+  // whatever the user is typing into.
+  const shortcut = options.shortcut ?? DEFAULT_SHORTCUT
+
   usePageFooter({
     actions: [
       {
         id: "submit",
         paths: HERE,
         title: options.title ?? "Submit",
-        // ⌘ is not decoration here: a bare chord would be taken out of the
-        // middle of whatever the user is typing into.
-        shortcut: options.shortcut ?? DEFAULT_SHORTCUT,
+        shortcut,
         icon: options.icon,
         run: submit,
       },
       ...(options.actions ?? []),
     ],
-    hints: options.hints ?? [{ keys: ["Escape"], label: "discards this form" }],
+    hints: [
+      // First, and drawn whether or not the page adds hints of its own. The
+      // chord is the whole of how a form is sent — there is no button to fall
+      // back on — so leaving it behind ⌘⇧K would be a page with no visible way
+      // to submit. Taken from the same `shortcut` the action fires on, so the
+      // legend and the key cannot drift.
+      //
+      // A sequence has nothing to draw here: it is two presses, and a hint is
+      // one legend. That form declares its own hint if it wants one.
+      ...(isSequence(shortcut)
+        ? []
+        : ([{ keys: shortcut, label: "submits" }] satisfies FooterHint[])),
+      ...(options.hints ?? [
+        { keys: ["Escape"], label: "discards this form" },
+      ]),
+    ],
   })
 
   return { submit, formProps: { onKeyDownCapture } }

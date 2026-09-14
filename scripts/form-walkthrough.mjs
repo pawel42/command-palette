@@ -126,6 +126,11 @@ check("T1 palette input is disabled", await input().isDisabled())
   const a = await activeInfo()
   check("T1 autoFocus landed on the title field", a?.id === "issue-title", JSON.stringify(a))
 }
+{
+  const footer = await footerText()
+  check("T1 the submit chord is in the hints", /submits/.test(footer), footer.slice(0, 80))
+  check("T1 backspace is not advertised", !/⌫|Backspace/.test(footer), footer.slice(0, 80))
+}
 
 /* T2 — cmd+enter on an invalid form refuses, says why, focuses the error */
 await page.keyboard.press("Meta+Enter")

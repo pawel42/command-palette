@@ -575,9 +575,10 @@ export function usePaletteFrame({ revealId }: { revealId?: number } = {}) {
       keys: ["Escape"],
       label: editable && query ? "clear" : view.isRoot ? "clear" : "back",
     },
-    ...(!view.isRoot && !query
-      ? ([{ keys: ["Backspace"], label: "back" }] satisfies FooterHint[])
-      : []),
+    // Backspace also goes back, and is deliberately not advertised. It says
+    // the same thing esc has already said one legend to the left, and a
+    // footer that lists every key that works is a footer nobody reads. A page
+    // that wants it back declares the hint itself.
     // The page's own, last: the frame's keys are the ones that are true
     // everywhere, and they should not move as pages come and go.
     ...(footer.hints ?? []),

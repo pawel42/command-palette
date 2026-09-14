@@ -63,9 +63,9 @@ export function PaletteFrame({
         ) : (
           // The only chrome a nested page gets, and it is the frame's: a way
           // back for the mouse, and only for the mouse. It is out of the tab
-          // order because it repeats what esc and backspace already do — both
-          // of which the footer spells out — and a tab stop that duplicates a
-          // key the page is advertising is a stop with nothing behind it.
+          // order because it repeats what esc already does — which the footer
+          // spells out — and a tab stop that duplicates a key the page is
+          // advertising is a stop with nothing behind it.
           <button
             type="button"
             tabIndex={-1}
