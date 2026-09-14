@@ -1,13 +1,14 @@
-import { RouteIntro, Rule } from "./demo/prose"
+import { RouteIntro, Rule } from "../demo/prose"
 
 export default function Home() {
   return (
     <>
       <RouteIntro title="Home">
         <p>
-          One palette, mounted once in the shell and handed{" "}
-          <Rule>usePathname()</Rule>. Every command declares where it exists,
-          and nothing exists until it says so — there is no default that means
+          One palette, mounted once in the shell and handed the app&rsquo;s{" "}
+          <Rule>routing</Rule> config — the same one the router uses. Every
+          command declares where it exists in those pathnames, and nothing
+          exists until it says so: there is no default that means
           &ldquo;everywhere&rdquo; except the one you write, <Rule>{"/*"}</Rule>
           .
         </p>
@@ -15,7 +16,10 @@ export default function Home() {
           Walk the nav with ⌘K open and watch the list change under you — the
           &ldquo;Go to&rdquo; rows do it without closing the palette, which is
           the quickest way to see a rule take effect. The two columns below say
-          what to expect before you press anything.
+          what to expect before you press anything. Switch to <Rule>de</Rule> up
+          in the corner and nothing about them moves: the URL becomes{" "}
+          <code className="font-mono">/de/verwaltung</code>, and the rule is
+          still <Rule>{'"/admin"'}</Rule>.
         </p>
       </RouteIntro>
 

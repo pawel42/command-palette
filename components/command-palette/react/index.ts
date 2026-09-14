@@ -7,12 +7,13 @@ export {
 export {
   PageProvider,
   PaletteProvider,
-  useCurrentPath,
   useInstanceId,
   usePaletteState,
   usePaletteStore,
   usePaletteView,
 } from "./context"
+export { PalettePathProvider, useCurrentPath } from "./path"
+export type { PaletteRouting } from "./path"
 export {
   useCommandList,
   useListController,

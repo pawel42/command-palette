@@ -1,6 +1,7 @@
 "use client"
 
 import { PaletteProvider, usePaletteVisible } from "../react"
+import type { PaletteRouting } from "../react"
 import type { Command } from "../core"
 
 import { PaletteFrame } from "./frame/frame"
@@ -20,6 +21,7 @@ import type { RootConfig } from "./root-page"
  * small bridge component mounted here publishes what they need.
  */
 export function PaletteRoot({
+  routing,
   path,
   onDismiss,
   onCommand,
@@ -27,8 +29,10 @@ export function PaletteRoot({
   children,
   ...root
 }: RootConfig & {
-  /** Where the user is — see `PaletteProvider`. Every command answers to it. */
-  path: string
+  /** The app's routing config — see `PaletteProvider`. */
+  routing?: PaletteRouting
+  /** Where the user is, said outright — the way out of the above. */
+  path?: string
   onDismiss?: () => void
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
@@ -41,6 +45,7 @@ export function PaletteRoot({
   return (
     <PaletteProvider
       rootPage={rootPage}
+      routing={routing}
       path={path}
       onDismiss={onDismiss}
       onCommand={onCommand}
@@ -87,6 +92,7 @@ export function PaletteSurface({ revealId }: { revealId?: number }) {
  * the close.
  */
 export function InlinePalette({
+  routing,
   path,
   onDismiss,
   onCommand,
@@ -94,7 +100,8 @@ export function InlinePalette({
   children,
   ...root
 }: RootConfig & {
-  path: string
+  routing?: PaletteRouting
+  path?: string
   onDismiss?: () => void
   onCommand?: (command: Command) => void
   revealMs?: number
@@ -103,6 +110,7 @@ export function InlinePalette({
   return (
     <PaletteRoot
       {...root}
+      routing={routing}
       path={path}
       onDismiss={onDismiss}
       onCommand={onCommand}

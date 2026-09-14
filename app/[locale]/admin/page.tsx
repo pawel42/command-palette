@@ -1,6 +1,6 @@
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 
-import { RouteIntro, Rule } from "../demo/prose"
+import { RouteIntro, Rule } from "../../demo/prose"
 
 export default function Admin() {
   return (

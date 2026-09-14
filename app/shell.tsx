@@ -1,13 +1,16 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useLocale } from "next-intl"
+import { useParams } from "next/navigation"
 
 import {
   CommandPalette,
   Kbd,
   TOGGLE_SHORTCUT,
 } from "@/components/command-palette"
+import { Link, usePathname, useRouter } from "@/i18n/navigation"
+import { routing } from "@/i18n/routing"
+import { cn } from "@/lib/utils"
 
 import { useActivity } from "./demo/activity"
 import { rememberRootCommand, rootCommands, rootFooter } from "./demo/commands"
@@ -15,8 +18,7 @@ import { recentIds, subscribeRecent } from "./demo/recent"
 import { RouterCommandBridge } from "./demo/router-bridge"
 import { ThemeCommandBridge } from "./demo/theme-bridge"
 import { HereAndNot } from "./demo/here-and-not"
-import { NAV, ROUTES } from "./routes"
-import { cn } from "@/lib/utils"
+import { NAV, NAV_LABELS } from "./nav"
 
 /**
  * Everything that outlives a route change: the nav, the palette, and the log
@@ -24,10 +26,14 @@ import { cn } from "@/lib/utils"
  *
  * The palette lives here rather than on a page because that is what the
  * feature is about — one registry, mounted once, whose rows answer to wherever
- * the user has got to. `usePathname()` is the whole of what it is told; every
- * command's `paths` is read against it.
+ * the user has got to. It is handed the routing config and works the rest out:
+ * the path a command's `paths` is read against is the one the router already
+ * knows, and nothing here has to fetch it and pass it on.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  // The internal pathname — `/projects/[id]`, not `/de/projekte/atlas`. The
+  // nav needs it to say which link is the current one; the palette gets at the
+  // same thing itself, off `routing`.
   const pathname = usePathname()
   const activity = useActivity()
 
@@ -46,11 +52,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {ROUTES[href]}
+              {NAV_LABELS[href]}
             </Link>
           ))}
 
           <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <LocaleSwitch />
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
               {pathname}
             </code>
@@ -85,12 +92,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </footer>
 
       {/* The palette knows nothing about this app: it is handed the commands
-          it opens on, the path they are judged against, and two bridges that
-          publish the theme toggle and the router to them — commands are plain
-          data and cannot call hooks themselves. */}
+          it opens on, the routing config their `paths` are judged against, and
+          two bridges that publish the theme toggle and the router to them —
+          commands are plain data and cannot call hooks themselves. */}
       <CommandPalette
         commands={rootCommands}
-        path={pathname}
+        routing={routing}
         placeholder="Search for a page or an action…"
         footer={rootFooter}
         // The recents live outside React, so say what else the root watches:
@@ -102,5 +109,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <RouterCommandBridge />
       </CommandPalette>
     </div>
+  )
+}
+
+/**
+ * The same page, in the other locale — the whole point of the routing config
+ * being the single list. It swaps the URL (`/settings` ⇄ `/de/einstellungen`)
+ * and changes nothing the palette reads: `usePathname()` says `/settings`
+ * either way, so every `paths` rule holds without being written twice.
+ */
+function LocaleSwitch() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useParams()
+  const locale = useLocale()
+
+  return (
+    <span className="flex items-center gap-1">
+      {routing.locales.map((next) => (
+        <button
+          key={next}
+          type="button"
+          onClick={() =>
+            router.replace(
+              // @ts-expect-error -- `params` is typed per route, and this one
+              // stands for all of them; they are the route's own params either
+              // way, carried across unchanged.
+              { pathname, params },
+              { locale: next }
+            )
+          }
+          className={cn(
+            "rounded px-1 py-0.5 font-mono uppercase",
+            next === locale
+              ? "bg-muted text-foreground"
+              : "hover:text-foreground"
+          )}
+        >
+          {next}
+        </button>
+      ))}
+    </span>
   )
 }

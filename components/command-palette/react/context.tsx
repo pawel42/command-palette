@@ -11,18 +11,19 @@ import {
 
 import type { Command } from "../core/command"
 import type { PageTarget } from "../core/page"
-import { normalizePath } from "../core/routes"
 import { selectView } from "../core/stack"
 import type { PaletteState, PaletteView } from "../core/stack"
 import { createPaletteStore } from "../core/store"
 import type { PaletteStore } from "../core/store"
+import { PalettePathProvider } from "./path"
+import type { PaletteRouting } from "./path"
 
 const StoreContext = createContext<PaletteStore | null>(null)
 const InstanceContext = createContext<string | null>(null)
-const PathContext = createContext<string | null>(null)
 
 export function PaletteProvider({
   rootPage,
+  routing,
   path,
   onDismiss,
   onCommand,
@@ -31,16 +32,20 @@ export function PaletteProvider({
 }: {
   rootPage: PageTarget
   /**
-   * Where the user is, as the router sees it — `usePathname()` in Next, and
-   * whatever the host's own router calls the same thing. Every command says
-   * which paths it exists on, and this is what those are read against.
+   * The app's routing config — what `defineRouting` returned, passed straight
+   * through. The palette reads the current pathname off it on every render,
+   * because it moves: the palette is mounted above the router and outlives any
+   * one route.
    *
-   * A prop rather than anything the palette works out for itself: it has no
-   * router, and taking one would be the end of the folder being copyable.
-   * Unlike the root config this is read on every render, because it moves —
-   * the palette is mounted above the router and outlives any one route.
+   * It is the routing config and not a path because a path is the answer to a
+   * question the router has already been asked. Handing it over twice is how
+   * the two come apart; handing over the config is how a command's `paths`
+   * comes to be written in the same words as the routes themselves — see
+   * `PalettePathProvider`.
    */
-  path: string
+  routing?: PaletteRouting
+  /** Where the user is, said outright — the way out of the above. */
+  path?: string
   /** Called when esc is pressed at the root with an empty input. */
   onDismiss?: () => void
   /** Called with every command the palette runs. */
@@ -63,27 +68,13 @@ export function PaletteProvider({
     store.setOnCommand(onCommand)
   }, [store, onCommand])
 
-  // Normalized here, once, so nothing downstream has to wonder whether it is
-  // holding a trailing slash or a query string.
-  const here = normalizePath(path)
-
   return (
     <StoreContext.Provider value={store}>
-      <PathContext.Provider value={here}>{children}</PathContext.Provider>
+      <PalettePathProvider routing={routing} path={path}>
+        {children}
+      </PalettePathProvider>
     </StoreContext.Provider>
   )
-}
-
-/**
- * The path the palette is being shown on, normalized. What every command's
- * `paths` is answered against — see `isAvailableOn`.
- */
-export function useCurrentPath(): string {
-  const path = useContext(PathContext)
-  if (path === null) {
-    throw new Error("useCurrentPath must be used inside a <PaletteProvider>")
-  }
-  return path
 }
 
 export function usePaletteStore(): PaletteStore {

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 
-import { projectById } from "../../demo/projects"
-import { RouteIntro, Rule } from "../../demo/prose"
+import { projectById } from "../../../demo/projects"
+import { RouteIntro, Rule } from "../../../demo/prose"
 
 export default async function ProjectDetail({
   params,
@@ -17,8 +17,11 @@ export default async function ProjectDetail({
       <RouteIntro title={project.name}>
         <p>
           A dynamic route. A rule names it the way the router does —{" "}
-          <Rule>&quot;/projects/[id]&quot;</Rule> — and it is the real path that
-          is matched against it, so this page is covered and{" "}
+          <Rule>&quot;/projects/[id]&quot;</Rule> — and that is what the palette
+          is matching, because the pathname it reads is the route and not the
+          URL. Look at the corner:{" "}
+          <code className="font-mono">/projects/atlas</code> in the address bar,{" "}
+          <Rule>/projects/[id]</Rule> up there. So this page is covered and{" "}
           <code className="font-mono">/projects</code> is not.
         </p>
         <p>

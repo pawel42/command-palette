@@ -4,6 +4,7 @@ import { Activity, useCallback, useEffect, useRef, useState } from "react"
 import { Dialog, VisuallyHidden } from "radix-ui"
 
 import type { Command } from "../../core"
+import type { PaletteRouting } from "../../react"
 import { PaletteRoot, PaletteSurface } from "../palette"
 import type { RootConfig } from "../root-page"
 import { IDLE_RESET_MS, useIdleReset } from "./use-idle-reset"
@@ -109,6 +110,7 @@ function IdleReset({ open, after }: { open: boolean; after: number }) {
  *    ends — a flash, whenever that beats the hide below to the paint.
  */
 export function CommandPalette({
+  routing,
   path,
   onCommand,
   shellSelector,
@@ -118,11 +120,17 @@ export function CommandPalette({
   ...root
 }: RootConfig & {
   /**
-   * Where the user is, as the router sees it — `usePathname()` in Next. Every
-   * command declares which paths it exists on, and this is what those are read
-   * against. See `PaletteProvider`.
+   * The app's routing config — what `defineRouting` returned. Every command
+   * declares which paths it exists on, and the palette reads where the user is
+   * off this, in those same words: `/projects/[id]`, whatever the URL says and
+   * whatever locale it says it in. See `PalettePathProvider`.
    */
-  path: string
+  routing?: PaletteRouting
+  /**
+   * Where the user is, said outright — for a host with no next-intl to ask.
+   * Wins over `routing`; one of the two is required.
+   */
+  path?: string
   /** Every command the palette runs, as it runs — see `PaletteStoreOptions`. */
   onCommand?: (command: Command) => void
   /** Marks what the palette covers while open; defaults to `[data-app-shell]`. */
@@ -148,6 +156,7 @@ export function CommandPalette({
   return (
     <PaletteRoot
       {...root}
+      routing={routing}
       path={path}
       onDismiss={() => setOpen(false)}
       onCommand={onCommand}

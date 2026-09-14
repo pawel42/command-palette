@@ -27,12 +27,12 @@ npm run dev     # then press ⌘K
 the question going unasked:
 
 ```ts
-paths: ["/*"]                        // everywhere there is
-paths: ["/*", "!/admin/*"]           // everywhere except the admin area
-paths: ["/admin/*"]                  // /admin, and everything under it
+paths: ["/*"] // everywhere there is
+paths: ["/*", "!/admin/*"] // everywhere except the admin area
+paths: ["/admin/*"] // /admin, and everything under it
 paths: ["/admin/*", "!/admin/users"] // that subtree, less one page
-paths: ["/settings"]                 // exactly one path
-paths: ["/projects/[id]"]            // one dynamic route: /projects/atlas
+paths: ["/settings"] // exactly one path
+paths: ["/projects/[id]"] // one dynamic route: /projects/atlas
 ```
 
 Nothing is available until a rule says so. `X/*` is the subtree with `X` in it,
@@ -42,8 +42,8 @@ general case and then its exceptions.
 
 One query, two paths — the same registry, the same ⌘K:
 
-| on `/` | on `/projects/atlas` |
-| --- | --- |
+| on `/`                                                                   | on `/projects/atlas`                                                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | ![Searching "project" on the home page: three rows](docs/paths-home.png) | ![The same search on a project page: two commands scoped to `/projects/[id]` have appeared](docs/paths-project.png) |
 
 "Start a Project" and "Rename This Project" are not greyed out on the left —
@@ -52,25 +52,29 @@ shortcuts do nothing. An unavailable command is one the user has no business
 seeing, not one to be told they cannot have. "Go to a Project" goes the other
 way: it drops out on the right, because you are already on one.
 
-### The pathnames are the host's, and they are checked
+### The pathnames are the router's, and they are checked
 
-`paths` is not `string`. The palette has no router; the host declares its
-pathnames once, and every rule anywhere in the app is checked against them:
+`paths` is not `string`. It is the keys of the app's routing config — the
+routes the router already knows — so there is no second list to keep in step:
 
 ```ts
-// app/routes.ts
-export const ROUTES = {
-  "/": "Home",
-  "/projects": "Projects",
-  "/projects/[id]": "Project",
-  "/admin": "Admin",
-  "/admin/users": "Users",
-  "/settings": "Settings",
-} as const
+// i18n/routing.ts
+export const routing = defineRouting({
+  locales: ["en", "de"],
+  defaultLocale: "en",
+  pathnames: {
+    "/": "/",
+    "/projects": { en: "/projects", de: "/projekte" },
+    "/projects/[id]": { en: "/projects/[id]", de: "/projekte/[id]" },
+    "/admin": { en: "/admin", de: "/verwaltung" },
+    "/admin/users": { en: "/admin/users", de: "/verwaltung/benutzer" },
+    "/settings": { en: "/settings", de: "/einstellungen" },
+  },
+})
 
 declare global {
   interface PaletteRoutes {
-    path: keyof typeof ROUTES
+    path: keyof typeof routing.pathnames
   }
 }
 ```
@@ -81,16 +85,22 @@ free-form: `"/admin/*"` compiles because something is declared at or under
 `/admin`; `"/billing/*"` does not. Declare nothing and the folder still works —
 `paths` just takes any string, because there is no vocabulary to check against.
 
-Telling the palette where the user is, is the whole of what it is told:
+The same config is the whole of what the palette is told:
 
 ```tsx
-<CommandPalette commands={commands} path={usePathname()} />
+<CommandPalette commands={commands} routing={routing} />
 ```
 
-It never imports a router, which is what keeps the folder copyable. The rules
-are applied where the rows are, so they re-apply as the path moves: navigate
-with the palette open and the list rebuilds under you — that is the middle of
-the recording above.
+No path is passed in, because a path is the answer to a question the router has
+already been asked. The palette asks it itself — next-intl's `usePathname()`,
+not `next/navigation`'s, because that one answers with the URL. On
+`/de/projekte/atlas` the URL is no use to a rule; the answer the palette gets is
+`/projects/[id]`, which is what the rule is written in. **One rule, every
+locale.** Switch the demo to `de` and watch the URLs change and the rules not.
+
+The rules are applied where the rows are, so they re-apply as the path moves:
+navigate with the palette open and the list rebuilds under you — that is the
+middle of the recording above.
 
 ## Search is fuzzy, and it reads more than the title
 
@@ -103,7 +113,7 @@ what was typed.
 
 Every row carries its section on the right, with the keys beside it wherever
 there are keys. The two answer different questions and neither stands in for
-the other: the section says what the row *is*, the keys say how to run it
+the other: the section says what the row _is_, the keys say how to run it
 without coming back here.
 
 ## Pages are objects, and they stack
@@ -142,7 +152,7 @@ reflows under the user mid-keystroke.
 
 ```ts
 shortcut: ["Mod", "Shift", "K"]
-shortcut: [["Mod", "G"], ["P"]]      // ⌘G, let go, then P
+shortcut: [["Mod", "G"], ["P"]] // ⌘G, let go, then P
 ```
 
 `Mod` is the key the platform runs commands with — ⌘ on a Mac, Ctrl elsewhere —
@@ -190,7 +200,7 @@ palette does not have. `done` runs only if the work really landed, so a failed
 save leaves the user on the form with everything still in it.
 
 `formProps` is not decoration: Radix's checkbox and radio call
-`preventDefault()` on *every* enter, and the frame stands down on anything
+`preventDefault()` on _every_ enter, and the frame stands down on anything
 already prevented — together that would silently break ⌘↵ the moment focus
 landed on a checkbox. It reads the chord in the capture phase instead. There is
 a matching seam, `claimsEscape`, for an overlay inside a page that has to own
@@ -202,8 +212,8 @@ A command that returns a promise is an async command, and returning it is the
 whole declaration. While it runs, a bar sweeps under the input and the footer
 says what is happening:
 
-| running | landed |
-| --- | --- |
+| running                                                                                    | landed                                                                 |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | ![A progress bar under the input and "Syncing with remote…" in the footer](docs/async.png) | ![The same footer, now reading "Synced 12 files"](docs/async-done.png) |
 
 ```tsx
@@ -233,7 +243,7 @@ on its messages stops until somebody can see them again.
 Copy `components/command-palette/` in. The host provides four things: Tailwind
 v4 with the shadcn color tokens, `data-app-shell` on whatever the palette should
 cover, React 19 (`<Activity>` is what lets a page be hidden rather than
-unmounted), and the current path.
+unmounted), and a next-intl routing config — or, failing that, a `path` string.
 
 ```tsx
 import { CommandPalette, ListPage } from "@/components/command-palette"
@@ -245,14 +255,25 @@ const settingsPage: Page = {
   render: () => (
     <ListPage
       items={[
-        { id: "theme", paths: ["/*"], title: "Toggle Dark Mode", run: toggleTheme },
+        {
+          id: "theme",
+          paths: ["/*"],
+          title: "Toggle Dark Mode",
+          run: toggleTheme,
+        },
       ]}
     />
   ),
 }
 
 const commands: Command[] = [
-  { id: "settings", paths: ["/*"], title: "Settings", section: "Pages", page: settingsPage },
+  {
+    id: "settings",
+    paths: ["/*"],
+    title: "Settings",
+    section: "Pages",
+    page: settingsPage,
+  },
   {
     id: "save",
     paths: ["/documents/[id]"],
@@ -267,7 +288,7 @@ export function App() {
   return (
     <CommandPalette
       commands={commands}
-      path={usePathname()}
+      routing={routing}
       placeholder="Search for a page or an action…"
     />
   )
@@ -289,8 +310,8 @@ every prop, every seam, and the reasoning behind each one.
 
 ```
 components/command-palette/   the component — core/ (headless), react/, ui/
-app/                          the demo: six routes and one registry
-app/routes.ts                 the pathname vocabulary every rule is checked against
+i18n/routing.ts               the routes, localized — the vocabulary every rule is checked against
+app/[locale]/                 the demo: six routes and one registry
 app/demo/commands.tsx         the registry, written to show the path rules off
 scripts/                      the walkthroughs, and the README's own pictures
 ```
@@ -299,12 +320,12 @@ The demo prints, under every page, which of its commands are available here and
 which are not — the same `isAvailableOn` the palette runs on every row, run over
 the whole registry so the rules can be read without opening ⌘K.
 
-| | |
-| --- | --- |
-| `npm run dev` | the demo app |
-| `npm run walkthrough` | drives the engine with no UI attached, printing the stack after every step |
+|                            |                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| `npm run dev`              | the demo app                                                                             |
+| `npm run walkthrough`      | drives the engine with no UI attached, printing the stack after every step               |
 | `npm run form-walkthrough` | drives the two form pages in a real browser, where focus and capture-phase keys are true |
-| `npm run capture` | redraws every picture in this README out of the running app |
+| `npm run capture`          | redraws every picture in this README out of the running app                              |
 
 The last one is why the screenshots are the thing itself rather than a mockup of
 it that drifts: it opens the real app in Playwright, presses the real keys, and

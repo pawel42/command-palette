@@ -10,8 +10,8 @@ ui/      the rendered surface, including the ⌘K dialog host
 ```
 
 Imports run one way only — `core → react → ui` — and never leave the folder.
-The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
-`radix-ui`.
+The external imports anywhere in it are `react`, `next-intl` inside
+`react/path.tsx`, and `radix-ui` inside `ui/dialog/`.
 
 ## What the host has to provide
 
@@ -27,10 +27,12 @@ The only external imports anywhere in it are `react` and, inside `ui/dialog/`,
    `CommandPalette` to use a different marker.
 3. **React 19.** `<Activity>` is what lets a page be hidden instead of
    unmounted, which is the whole reason the stack keeps its state.
-4. **The current path, and the paths there are.** Every command says where it
-   exists, so the palette has to be told where the user is — `path` is a
-   required prop — and the host declares its pathnames once so those rules are
-   checked rather than guessed. See "Where a command exists".
+4. **A next-intl routing config.** Every command says where it exists, so the
+   palette has to know where the user is and what the places are. Both come
+   from one `defineRouting({ pathnames })`: pass it as `routing`, and declare
+   its keys once as the vocabulary rules are checked against. A host without
+   next-intl passes `path` instead and gets the runtime half only. See "Where a
+   command exists".
 
 ## Using it
 
@@ -44,7 +46,12 @@ const settingsPage: Page = {
   render: () => (
     <ListPage
       items={[
-        { id: "theme", paths: ["/*"], title: "Toggle Dark Mode", run: () => toggleTheme() },
+        {
+          id: "theme",
+          paths: ["/*"],
+          title: "Toggle Dark Mode",
+          run: () => toggleTheme(),
+        },
       ]}
     />
   ),
@@ -75,7 +82,7 @@ export function App() {
   return (
     <CommandPalette
       commands={commands}
-      path={usePathname()}
+      routing={routing}
       placeholder="Search for a page or an action…"
     />
   )
@@ -114,12 +121,12 @@ user is. So every command says where it exists, and `paths` is required —
 there is no default, because a default is the question going unasked:
 
 ```ts
-paths: ["/*"]                        // everywhere there is
-paths: ["/*", "!/admin/*"]           // everywhere except the admin area
-paths: ["/admin/*"]                  // /admin, and everything under it
+paths: ["/*"] // everywhere there is
+paths: ["/*", "!/admin/*"] // everywhere except the admin area
+paths: ["/admin/*"] // /admin, and everything under it
 paths: ["/admin/*", "!/admin/users"] // that subtree, less one page
-paths: ["/settings"]                 // exactly one path
-paths: ["/projects/[id]"]            // one dynamic route: /projects/atlas
+paths: ["/settings"] // exactly one path
+paths: ["/projects/[id]"] // one dynamic route: /projects/atlas
 ```
 
 Four things to read off that:
@@ -141,62 +148,76 @@ nothing is never consulted, so order only matters between rules that overlap.
 matches `/projects/atlas` and not `/projects`, because a dynamic segment still
 has to be a segment; `"/docs/[...slug]"` takes the rest of the path.
 
-Unavailable is *not there*, not greyed out. The row is out of the list, out of
+Unavailable is _not there_, not greyed out. The row is out of the list, out of
 the ⌘⇧K panel, and its shortcut does nothing — an unavailable command is one
 the user has no business seeing, not one they should be told they cannot have.
 There is no second check when it runs, because there is nothing left to run it
 from.
 
-### The pathnames are the host's, and they are checked
+### The pathnames are the router's, and they are checked
 
-The rules above are not `string`. The palette has no router, so the host
-declares its pathnames once and every `paths` anywhere in the app is checked
-against them — `"/setttings"` is then a compile error with a "did you mean",
-rather than a command that quietly never appears:
+The rules above are not `string`. They are the keys of `routing.pathnames` —
+the routes the router already knows — so `"/setttings"` is a compile error with
+a "did you mean", rather than a command that quietly never appears:
 
 ```ts
-// app/routes.ts — one list, read by the nav and by every rule
-export const ROUTES = {
-  "/": "Home",
-  "/projects": "Projects",
-  "/projects/[id]": "Project",
-  "/admin": "Admin",
-  "/admin/users": "Users",
-  "/settings": "Settings",
-} as const
+// i18n/routing.ts — the app's routes, and what each is called in each locale
+export const routing = defineRouting({
+  locales: ["en", "de"],
+  defaultLocale: "en",
+  pathnames: {
+    "/": "/",
+    "/projects": { en: "/projects", de: "/projekte" },
+    "/projects/[id]": { en: "/projects/[id]", de: "/projekte/[id]" },
+    "/admin": { en: "/admin", de: "/verwaltung" },
+    "/admin/users": { en: "/admin/users", de: "/verwaltung/benutzer" },
+    "/settings": { en: "/settings", de: "/einstellungen" },
+  },
+})
 
 declare global {
   interface PaletteRoutes {
-    path: keyof typeof ROUTES
+    path: keyof typeof routing.pathnames
   }
 }
 ```
 
-Global rather than a module augmentation because there is no import specifier
-to get subtly wrong, and getting one wrong would fail by silently going back to
-unchecked strings. Declare nothing and that is exactly what you get: `paths`
-takes any string, the folder still works, and there is simply no vocabulary to
-check against.
+Derived, not written out, so there is no second list to keep in step: add a
+route and it is a rule you can write, rename one and every rule that named it
+stops compiling. Global rather than a module augmentation because there is no
+import specifier to get subtly wrong, and getting one wrong would fail by
+silently going back to unchecked strings. Declare nothing and that is exactly
+what you get: `paths` takes any string, the folder still works, and there is
+simply no vocabulary to check against.
 
 Wildcards are derived, not free-form: `"/admin/*"` compiles because something
 is declared at or under `/admin`, and `"/billing/*"` does not. `"/*"` always
 compiles, and `"/*/users"` never does — a `*` is the tail of a rule or it is
 nothing.
 
-### Telling the palette where the user is
+### Where the user is, the palette works out
 
-`path` is a required prop on `CommandPalette`, `InlinePalette` and
-`PaletteRoot`, and unlike the root config it is read on every render, because
-it moves:
+The same config is the other half. `routing` is a prop on `CommandPalette`,
+`InlinePalette` and `PaletteRoot`, and unlike the root config it is live —
+the palette reads the pathname off the router on every render, because it moves:
 
 ```tsx
-<CommandPalette commands={commands} path={usePathname()} … />
+<CommandPalette commands={commands} routing={routing} … />
 ```
 
-That is the whole of what the palette is told. It never imports a router —
-that would be the end of the folder being copyable — and a host on any other
-router passes whatever that one calls the same thing. Query strings, hashes and
-a trailing slash are trimmed off before anything is read against it.
+It asks next-intl, not `next/navigation`, and the difference is the whole
+reason the config is what gets passed: `next/navigation` answers with the URL,
+`/de/projekte/atlas`, and a rule can do nothing with that without knowing every
+locale prefix and every translated segment. next-intl answers with the internal
+pathname, `/projects/[id]` — which is exactly what a `paths` rule is written
+in. One rule, every locale.
+
+Inside the palette it is `useCurrentPath()`, so a page of your own can read
+where it was opened without being handed anything. Query strings, hashes and a
+trailing slash are trimmed off before anything is read against it.
+
+A host with no next-intl to ask passes `path` instead — a plain string, worked
+out however it likes. It wins over `routing`, and one of the two is required.
 
 The rules are applied where the rows are, so they re-apply as the path moves:
 navigate with the palette open and the list rebuilds under you, the action
@@ -218,7 +239,9 @@ is the filtered, keyboard-navigable list of commands, configured inside
 const menuPage: Page = {
   id: "menu",
   title: "Menu",
-  render: () => <ListPage items={({ query }) => (query ? search(query) : recent())} />,
+  render: () => (
+    <ListPage items={({ query }) => (query ? search(query) : recent())} />
+  ),
 }
 
 const notesPage: Page = {
@@ -403,8 +426,19 @@ const notesPage: Page = {
   footer: {
     hints: [{ keys: ["Escape"], label: "discards this draft" }],
     actions: [
-      { id: "save", paths: ["/*"], title: "Save", shortcut: ["Mod", "Enter"], run: () => save() },
-      { id: "archive", paths: ["/*"], title: "Open the archive", page: archivePage },
+      {
+        id: "save",
+        paths: ["/*"],
+        title: "Save",
+        shortcut: ["Mod", "Enter"],
+        run: () => save(),
+      },
+      {
+        id: "archive",
+        paths: ["/*"],
+        title: "Open the archive",
+        page: archivePage,
+      },
     ],
   },
   render: () => <Notes />,
@@ -426,7 +460,12 @@ definition, so that page publishes it from inside instead:
 ```tsx
 usePageFooter({
   actions: [
-    { id: "density", paths: ["/*"], title: detailed ? "Compact" : "Detailed", run: toggle },
+    {
+      id: "density",
+      paths: ["/*"],
+      title: detailed ? "Compact" : "Detailed",
+      run: toggle,
+    },
   ],
 })
 ```
@@ -610,7 +649,7 @@ if the work really landed, so a failed save leaves the user on the form with
 everything still in it.
 
 `formProps` is not decoration. Radix's checkbox and radio call
-`preventDefault()` on *every* enter, modifiers included — WAI-ARIA says a
+`preventDefault()` on _every_ enter, modifiers included — WAI-ARIA says a
 checkbox does not activate on enter, and they are right — and the frame stands
 down on anything already prevented, which is the rule that lets a widget own
 its own keys. Both are good rules, and together they mean ⌘↵ silently stops
@@ -628,11 +667,11 @@ at the top of this file still holds — react and radix-ui, and nothing else.
 ```
 
 Without it one press does two things. Radix's `DismissableLayer` listens for
-esc on the document in the *capture* phase and only on the topmost layer, so
+esc on the document in the _capture_ phase and only on the topmost layer, so
 the open dropdown closes itself first; the press then carries on to the frame,
 which reads esc before its own `defaultPrevented` guard — deliberately, because
 the palette's own dialog has already marked the event by then. So the menu
-shuts *and* the page unwinds, and the user loses a form they only meant to
+shuts _and_ the page unwinds, and the user loses a form they only meant to
 close a menu on. `claimsEscape` claims the press for the overlay; `claimEscape`
 is exported for anything else that has to do the same.
 

@@ -1,4 +1,4 @@
-import { RouteIntro, Rule } from "../demo/prose"
+import { RouteIntro, Rule } from "../../demo/prose"
 
 export default function Settings() {
   return (

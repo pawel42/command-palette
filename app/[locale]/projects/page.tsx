@@ -1,7 +1,7 @@
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 
-import { ALL_PROJECTS } from "../demo/projects"
-import { RouteIntro, Rule } from "../demo/prose"
+import { ALL_PROJECTS } from "../../demo/projects"
+import { RouteIntro, Rule } from "../../demo/prose"
 
 export default function ProjectsIndex() {
   return (
@@ -21,7 +21,7 @@ export default function ProjectsIndex() {
         {ALL_PROJECTS.filter((project) => !project.archived).map((project) => (
           <li key={project.id}>
             <Link
-              href={`/projects/${project.id}`}
+              href={{ pathname: "/projects/[id]", params: { id: project.id } }}
               className="flex items-baseline justify-between px-4 py-3 text-sm hover:bg-accent"
             >
               <span className="font-medium">{project.name}</span>

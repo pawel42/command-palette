@@ -4,7 +4,7 @@
  *   keys/     DOM key events -> intents; knows nothing about the palette
  *   list/     a query becomes ranked, grouped rows with one of them active
  *   page/     what a page is — a plain object — and how it is referenced
- *   routes/   where a command exists: the host's pathnames, as a type
+ *   routes/   where a command exists: the router's pathnames, as a type
  *   command/  what a row is, and what running it does
  *   stack/    the state machine: push, pop, esc, and the derived view
  *

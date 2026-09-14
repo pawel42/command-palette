@@ -8,7 +8,7 @@ import type {
   PageFooter,
 } from "@/components/command-palette"
 
-import { NAV, ROUTES } from "../routes"
+import { NAV, NAV_LABELS } from "../nav"
 import { clearActivity, logActivity } from "./activity"
 import { deployPreview, exportData, purgeCdn, syncRemote } from "./api"
 import { currentFilters, setFilters } from "./filters"
@@ -306,7 +306,7 @@ export const commands: Command[] = [
     id: `go${href}`,
     // A way somewhere is available everywhere except where it already is.
     paths: ["/*", `!${href}`],
-    title: `Go to ${ROUTES[href]}`,
+    title: `Go to ${NAV_LABELS[href]}`,
     section: "Go to",
     keywords: ["navigate", "route", href],
     icon: <Icon path={ICONS.chevronRight} />,
@@ -322,7 +322,9 @@ export const commands: Command[] = [
     icon: <Icon path={ICONS.folder} />,
     run: async ({ nav }) => {
       const project = await nav.push(projectsPage, { archived: false })
-      if (project) navigate(`/projects/${project.id}`)
+      // The route, not the URL — `/de/projekte/atlas` is this, in German.
+      if (project)
+        navigate({ pathname: "/projects/[id]", params: { id: project.id } })
     },
   },
 ]

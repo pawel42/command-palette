@@ -2,23 +2,25 @@
  * Where a command is available, written as patterns over the app's own
  * pathnames.
  *
- * The vocabulary is the host's routing config, not `string`: the palette has
- * no router and cannot know what a path is, so the host declares its paths
- * once and every rule anywhere in the app is checked against them. A typo in
- * `"/setttings"` is then a compile error rather than a command that silently
- * never appears.
+ * The vocabulary is the host's routing config, not `string`: a command names
+ * the routes the router already knows, and every rule anywhere in the app is
+ * checked against them. A typo in `"/setttings"` is then a compile error
+ * rather than a command that silently never appears.
  */
 
 declare global {
   /**
    * The app's pathnames. Empty here — the host declares them, once, anywhere
-   * in its own code:
+   * in its own code, off the routing config it already keeps:
    *
    *     declare global {
    *       interface PaletteRoutes {
-   *         path: "/" | "/projects" | "/projects/[id]" | "/admin"
+   *         path: keyof typeof routing.pathnames
    *       }
    *     }
+   *
+   * Derived rather than written out, so there is no second list to drift: the
+   * routes a rule can name are the routes there are.
    *
    * Declared globally rather than as a module augmentation because there is no
    * import specifier to get wrong: augmenting a re-exporting barrel silently
