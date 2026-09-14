@@ -562,6 +562,70 @@ Two promises are deliberately not treated as work: `nav.push(…)`, which stays
 pending for as long as the pushed page is open, and anything already handed to
 `runAsync`. Both are marked at the source — see `core/async.ts`.
 
+## Forms
+
+A form is a page whose body is yours, so there is nothing to configure and no
+field to register — react-hook-form, TanStack Form and plain `useState` all
+work in `render` untouched. Two things are not the form library's to settle,
+though, and both are here:
+
+```tsx
+const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues })
+
+const { formProps } = useFormPage(form, {
+  title: "Create the issue",
+  loading: "Creating the issue…",
+  success: (issue) => `Created ${issue.key}`,
+  submit: (values, signal) => api.createIssue(values, signal),
+  done: () => nav.popToRoot(),
+})
+
+return <div {...formProps}>{/* fields, and no button */}</div>
+```
+
+**The submit is ⌘↵ and a footer row, never a button.** The user got here by
+typing and the footer is already spelling the chord out, so a primary button
+at the bottom of a form says the same thing a second time — and costs a tab
+stop and a row of the vertical space a palette does not have. `submit` may
+take a signal and return a promise, which puts it through `runAsync` and gets
+the bar and the toast; `loading` is required there for the usual reason. Leave
+`loading` out and the submit is just called — `resolve(values)` for a page that
+hands its values back rather than saving them.
+
+An invalid form cannot submit, because `handleSubmit` only calls the work when
+the values are good. Nothing is said about it in the footer: the fields have
+already said it where the problem is, and the form library puts focus on the
+first one that failed. `done` is the other half of the same idea — it runs only
+if the work really landed, so a failed save leaves the user on the form with
+everything still in it.
+
+`formProps` is not decoration. Radix's checkbox and radio call
+`preventDefault()` on *every* enter, modifiers included — WAI-ARIA says a
+checkbox does not activate on enter, and they are right — and the frame stands
+down on anything already prevented, which is the rule that lets a widget own
+its own keys. Both are good rules, and together they mean ⌘↵ silently stops
+working the moment focus lands on a checkbox. `formProps` reads the chord in
+the capture phase, on the way down, before anything can prevent it.
+
+`useFormPage` imports no form library: it takes anything shaped like
+`SubmittableForm`, which react-hook-form's `UseFormReturn` already is. The rule
+at the top of this file still holds — react and radix-ui, and nothing else.
+
+### An overlay in a page owns the esc that closes it
+
+```tsx
+<SelectContent {...claimsEscape}>
+```
+
+Without it one press does two things. Radix's `DismissableLayer` listens for
+esc on the document in the *capture* phase and only on the topmost layer, so
+the open dropdown closes itself first; the press then carries on to the frame,
+which reads esc before its own `defaultPrevented` guard — deliberately, because
+the palette's own dialog has already marked the event by then. So the menu
+shuts *and* the page unwinds, and the user loses a form they only meant to
+close a menu on. `claimsEscape` claims the press for the overlay; `claimEscape`
+is exported for anything else that has to do the same.
+
 ## Composing it yourself
 
 `CommandPaletteDialog` is one opinionated host. For any other presentation,

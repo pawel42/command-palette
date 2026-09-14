@@ -11,8 +11,10 @@ import type {
 import { NAV, ROUTES } from "../routes"
 import { clearActivity, logActivity } from "./activity"
 import { deployPreview, exportData, purgeCdn, syncRemote } from "./api"
+import { currentFilters, setFilters } from "./filters"
 import { recentIds, rememberCommand } from "./recent"
 import { branchPage } from "./pages/branch"
+import { describeFilters, filtersPage, newIssuePage } from "./pages/forms"
 import { createTaskPage } from "./pages/create-task"
 import { level1Page } from "./pages/deep"
 import { detailsPage } from "./pages/details"
@@ -50,6 +52,37 @@ export const commands: Command[] = [
     keywords: ["new", "todo", "form"],
     icon: <Icon path={ICONS.plus} />,
     page: createTaskPage,
+  },
+  {
+    id: "new-issue",
+    paths: EVERYWHERE,
+    title: "New Issue",
+    description: "shadcn Field + react-hook-form, ⌘↵ to submit",
+    section: "Pages",
+    shortcut: [["Mod", "G"], ["I"]],
+    keywords: ["form", "validation", "select", "checkbox", "zod"],
+    icon: <Icon path={ICONS.pencil} />,
+    page: newIssuePage,
+  },
+  {
+    // Opens a form and waits on it, the way "Go to a Project" waits on a
+    // picker. The page resolves with its values or, on esc, with nothing —
+    // which is the difference between applying filters and leaving them.
+    id: "filters",
+    paths: EVERYWHERE,
+    title: "Filter Issues",
+    description: "checkboxes, radios and a select",
+    section: "Pages",
+    shortcut: [["Mod", "G"], ["F"]],
+    keywords: ["filter", "status", "facet", "checkbox", "sort"],
+    icon: <Icon path={ICONS.layers} />,
+    run: async ({ nav }) => {
+      const applied = await nav.push(filtersPage, currentFilters())
+      if (!applied) return
+
+      setFilters(applied)
+      logActivity(describeFilters(applied))
+    },
   },
   {
     id: "account",

@@ -127,15 +127,6 @@ function ProfileForm({ resolve }: { resolve: (profile: Profile) => void }) {
           className={`${FIELD} resize-none`}
         />
       </Label>
-
-      <button
-        type="button"
-        onClick={saveProfile}
-        className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        <Icon path={ICONS.check} className="size-3.5" />
-        Save profile
-      </button>
     </div>
   )
 }
@@ -239,15 +230,6 @@ function AccountForm() {
           />
         </button>
       </div>
-
-      <button
-        type="button"
-        onClick={createAccount}
-        className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        <Icon path={ICONS.check} className="size-3.5" />
-        Create account
-      </button>
     </div>
   )
 }

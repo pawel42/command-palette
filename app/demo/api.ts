@@ -62,3 +62,14 @@ export async function saveTask(
   await wait(900, signal)
   return title || "Untitled"
 }
+
+/** What the New Issue form submits to. Returns the key the toast names. */
+export async function createIssue(
+  title: string,
+  signal?: AbortSignal
+): Promise<string> {
+  await wait(1100, signal)
+  // Deliberately not derived from the title: the point of `done` is that the
+  // page gets what the server said, not what it sent.
+  return `PAL-${100 + Math.floor(title.length % 9)}`
+}

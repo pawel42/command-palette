@@ -65,15 +65,6 @@ function CreateTaskForm() {
           className="w-full resize-none rounded-md border border-border bg-transparent px-2.5 py-2 text-sm outline-none focus-visible:border-ring"
         />
       </label>
-
-      <button
-        type="button"
-        onClick={save}
-        className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover focus-visible:outline-none"
-      >
-        <Icon path={ICONS.check} className="size-3.5" />
-        Save and go home
-      </button>
     </div>
   )
 }

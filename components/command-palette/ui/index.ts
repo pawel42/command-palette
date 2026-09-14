@@ -4,6 +4,7 @@
  *
  *   palette.tsx   the two halves a host composes: state, and the visible surface
  *   frame/        the chrome around every page — the one input and the footer
+ *   form/         the two things a form page and the palette have to agree on
  *   list-page/    the list of commands as a component, configured in a page's render
  *   dialog/       the opinionated ⌘K host, and the only place radix-ui appears
  *   root-page.ts  the root every host builds from the commands it is handed
@@ -11,6 +12,7 @@
  */
 
 export * from "./dialog"
+export * from "./form"
 export * from "./frame"
 export * from "./list-page"
 export { CommandPalette, PaletteRoot, PaletteSurface } from "./palette"
